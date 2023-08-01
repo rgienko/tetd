@@ -104,11 +104,13 @@ def adminDashboard(request):
     # engagements = Engagement.objects.annotate(total_hours=Sum('time__hours'))
 
     engagements = Engagement.objects.values("engagement_id", "engagement_srg_id", "parent_id", "parent__parent_name",
-                                            "provider_id", "provider__provider_name", "time_code", "time_code__time_code_desc",
+                                            "provider_id", "provider__provider_name", "time_code",
+                                            "time_code__time_code_desc",
                                             "is_complete", "fye", "budget_hours").annotate(
         engagement_hours_sum=Sum('time__hours')).order_by('engagement_hours_sum')
 
-    engagement_billable = Time.objects.values("engagement_id").filter(time_type_id='B').annotate(bill_hours=Sum('hours'))
+    engagement_billable = Time.objects.values("engagement_id").filter(time_type_id='B').annotate(
+        bill_hours=Sum('hours'))
     engagement_non_billable = Time.objects.values("engagement_id").filter(time_type_id='N').annotate(
         non_bill_hours=Sum('hours'))
 
@@ -152,116 +154,11 @@ def adminDashboard(request):
     else:
         createEngagementForm = CreateEngagementForm()
 
-
-    context = {'user_info': user_info, 'parents': parents,
+    context = {'user_info': user_info, 'parents': parents, 'createEngagementForm': createEngagementForm,
                'engagements': engagements, 'engagement_billable': engagement_billable,
                'engagement_non_billable': engagement_non_billable, "result": result}
 
     return render(request, 'adminDashboard.html', context)
-
-
-def admin_dashboard(request):
-    user_info = get_object_or_404(User, pk=request.user.id)
-
-    parents = Parent.objects.all()
-    all_engagements = Engagement.objects.all()
-    all_ts_entries = Time.objects.all()
-    for parent in parents:
-        parent.parent_engagements = all_engagements.filter(provider__parent=parent.parent_id)
-        # parent.parent_engagements = Engagement.objects.select_related("parent")
-
-        for engagement in parent.parent_engagements:
-            engagement_ts_entries = all_ts_entries.filter(engagement=engagement.engagement_id)
-            # engagement_td_entries = Todolist.objects.filter(engagement=engagement.engagement_id)
-
-            total_engagement_hours = engagement_ts_entries.aggregate(Sum('hours'))
-            if total_engagement_hours['hours__sum'] is None:
-                total_engagement_hours['hours__sum'] = 0
-
-            engagement.total_engagement_bhours = engagement_ts_entries.filter(time_type_id='B').aggregate(Sum('hours'))
-
-            engagement.total_engagement_nhours = engagement_ts_entries.filter(time_type_id='N').aggregate(Sum('hours'))
-
-            engagement.total_engagement_hours = total_engagement_hours
-
-            engagement.variance = engagement.budget_hours - total_engagement_hours['hours__sum']
-
-            # engagement.engagement_hours_by_employee = engagement_ts_entries.values(
-            #    'employee__user__username',
-            #    'employee__title__rate').annotate(
-            #    engagement_employee_hours=Sum('hours'))
-
-            # engagement.engagement_tdhours_by_employee = engagement_td_entries.values(
-            #    'employee__user__username',
-            #    'employee__title__rate').annotate(
-            #    engagement_employee_tdhours=Sum('anticipated_hours'))
-
-            engagement.rawSQL = Engagement.objects.raw(
-                """
-                    SELECT  ae.engagement_id,
-                            MAX(ae.engagement_srg_id),
-                            at.employee_id,
-                            MAX(at.username) as username,
-                            MAX(at.title_id) AS title_id,
-                            at.srg_id,
-                            SUM(at.total_hours) AS TS_Hours,
-                            SUM(tl.total_anticipated_hours) AS TD_Hours,
-                            SUM(at.total_hours) - SUM(tl.total_anticipated_hours) AS tdts_variance,
-                            MAX(at.rate) AS rate
-                    FROM    app_engagement ae
-                    JOIN (
-                        SELECT  srg_id,
-                                app_time.employee_id,
-                                MAX(auth_user.username) AS username,
-                                MAX(app_employee.user_id) AS user_id,
-                                MAX(app_employee.title_id) as title_id,
-                                MAX(app_employeetitles.rate) as rate,
-                                SUM(hours) AS total_hours
-                        FROM    app_time
-                        JOIN    app_employee on app_time.employee_id = app_employee.employee_id
-                        JOIN    auth_user on app_employee.user_id = auth_user.id
-                        JOIN    app_employeetitles on app_employee.title_id = app_employeetitles.title_id
-                        WHERE   srg_id = %s
-                        GROUP BY srg_id, app_time.employee_id
-                    ) at ON ae.engagement_id = at.srg_id
-                    JOIN (
-                        SELECT  srg_id,
-                                employee_id,
-                                SUM(anticipated_hours) AS total_anticipated_hours
-                        FROM    app_todolist
-                        WHERE   srg_id = %s
-                        GROUP BY srg_id, employee_id
-                    ) tl ON ae.engagement_id = tl.srg_id
-                    GROUP BY ae.engagement_id, at.employee_id, at.srg_id;
-                """, [engagement.engagement_id, engagement.engagement_id]
-            )
-
-    if request.method == 'POST':
-        createEngagementForm = CreateEngagementForm(request.POST)
-
-        who = request.POST.get('provider')
-        what = request.POST.get('time_code')
-        when = request.POST.get('fye')
-        how = request.POST.get('type')
-
-        if when == '':
-            engagement_srg_id = who + "." + str(what) + "." + how
-        else:
-            when = when[:4]
-            engagement_srg_id = who + "." + str(what) + "." + str(when) + "." + how
-
-        if createEngagementForm.is_valid():
-            new_engagement = createEngagementForm.save(commit=False)
-            new_engagement.engagement_srg_id = engagement_srg_id
-            new_engagement.save()
-
-            return redirect('admin-dashboard')
-    else:
-        createEngagementForm = CreateEngagementForm()
-
-    context = {'parents': parents, 'createEngagementForm': createEngagementForm, 'user_info': user_info}
-
-    return render(request, 'admin_dashboard.html', context)
 
 
 def AdminTimesheet(request):
