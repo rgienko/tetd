@@ -1,0 +1,101 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+    <div class="row border vh-100 d-flex justify-content-center">
+        <div class="col-9 mt-2">
+            <div class="card">
+                <div class="card-header srg-header">
+                    <h5>
+                        My Expenses <br>
+                        Period: {{ week_beg|date:'m/d/Y' }} - {{ week_end|date:'m/d/Y' }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr class="">
+                                    <th>Date</th>
+                                    <th class="">Provider</th>
+                                    <th class="">Scope</th>
+                                    <th class="">Category</th>
+                                    <th class="">Amount</th>
+                                </tr>
+                            </thead>
+
+                            {% for entry in employee_expenses %}
+                                <tr>
+                                    <td>
+                                        {{ entry.date|date:'m/d/Y' }}
+                                    </td>
+                                    <td>
+                                        {{ entry.getProvider }}
+                                    </td>
+                                    <td>
+                                        {{ entry.getScope }}
+                                    </td>
+                                    <td>
+                                        {{ entry.expense_category }}
+                                    </td>
+                                    <td>
+                                        {{ entry.expense_amount }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            <tfoot>
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <th>Total</th>
+                                    <th>{{ total_expense.expense_amount__sum }}</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+
+        <script>
+
+            function searchClients() {
+                // Declare Variables
+                let input, filter, ul, li, a, i, txtValue;
+                input = document.getElementById('searchBar')
+                filter = input.value.toUpperCase();
+                console.log(filter)
+                ul = document.getElementById('clientList')
+                li = ul.getElementsByClassName('srg-list-group-item');
+
+                // Loop through elements and display only matches
+                for (i = 0; i < li.length; i++) {
+                    a = li[i].getElementsByTagName("a")[0];
+                    txtValue = li[i].textContent || li[i].innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        li[i].style.display = "block";
+                    } else {
+                        li[i].style.display = "none";
+                    }
+                }
+
+            }
+        </script>
+
+        <script>
+          // Initialize the popover
+          $(document).ready(function(){
+            $('[data-toggle="popover"]').popover();
+          });
+        </script>
+
+
+
+
+
+
+{% endblock %}

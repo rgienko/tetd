@@ -1,0 +1,78 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+    <div class="row d-flex justify-content-between srg-bg-secondary">
+        <div class="col-12 srg-header text-center">
+            <h3 class="fw-normal">Extract Billing Report</h3>
+            <h5 class="fw-normal">Today: {{ today|date:'D m/d/Y' }}</h5>
+            <h5 class="fw-normal">Week: {{ week_beg|date:'D m/d/Y' }} - {{ week_end|date:'D m/d/Y' }}</h5>
+        </div>
+    </div>
+
+    <div class="row p-3 mt-2 d-flex justify-content-evenly">
+        <div class="col-6">
+            <div class="card">
+                <div class="card-header srg-bg-secondary">
+                    <h4 class="fw-normal srg-header">Filter Form</h4>
+                </div>
+                <div class="card-body">
+                    <form method="get">
+                        {% for field in filter.form %}
+                            <div class="fieldWrapper mb-3">
+                                {{ field.label_tag }} <br> {{ field }}
+                                {% if field.help_text %}
+                                <p class="help">{{ field.help_text|safe }}</p>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        <div class="card-footer bg-transparent d-flex justify-content-start align-items-center gap-3 px-0 py-2 m-0">
+                                <input class="srg-btn-primary" type="submit" value="Search">
+                                <input class="srg-btn-secondary" name='extract_button' type="submit" value="Extract">
+                            <a class="srg-link" href="{% url 'admin-timesheet' %}">Clear Form</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="row mt-2">
+        <div class="col-12 overflow-auto">
+            <div class="card">
+                <div class="card-header srg-header srg-bg-secondary">
+                    <h4 class="fw-normal srg-header">Timesheet Entries</h4>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr class="text-center">
+                                <th>Date</th>
+                                <th>Employee</th>
+                                <th>Engagement ID</th>
+                                <th>Parent</th>
+                                <th>Provider</th>
+                                <th>Scope</th>
+                                <th>Hours</th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        {% for entry in filter.qs %}
+                            <tr class="text-center align-middle">
+                                <td class="">{{ entry.date|date:'m/d/Y' }}</td>
+                                <td class="text-start">{{ entry.employee__user__username }}</td>
+                                <td class="text-start">{{ entry.engagement__engagement_srg_id }}</td>
+                                <td class="text-start">{{ entry.engagement__parent__parent_name }}</td>
+                                <td class="text-start">{{ entry.engagement__provider }} - {{ entry.engagement__provider__provider_name }}</td>
+                                <td class="text-start">{{ entry.engagement__time_code }} - {{ entry.engagement__time_code__time_code_desc }}</td>
+                                <td>{{ entry.hours }}</td>
+                                <td class="text-start">{{ entry.note }}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

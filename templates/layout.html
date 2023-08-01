@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+    <title>TandE Dashboard</title>
+
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/site.css' %}">
+
+    {% load mathfilters %}
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row flex-md-nowrap">
+            <div class="col-md-auto col-sm-auto srg-bg-primary sticky-top">
+                <div class="d-flex flex-column min-vh-100 px-2">
+                    <div class="text-center py-2 srg-text-secondary border-bottom">
+                        {{ user_info.first_name }} {{ user_info.last_name }}
+                    </div>
+                    <ul class="nav nav-pills flex-column pt-2" id="menu">
+                        <li class="py-2">
+                            <a href="{% url 'dashboard' %}" class="py-1 align-start ps-1 srg-link-secondary">
+                                <i class="bi-speedometer2"></i> <span class="d-none d-md-inline">Dashboard</span>
+                            </a>
+                        </li>
+
+                        <li class="py-2">
+                            <a href="{% url 'employee-timesheet' %}" class="py-1 px-0 ps-1 align-start srg-link-secondary">
+                                <i class="bi bi-clock"></i> <span class="d-none d-md-inline">Timesheet</span>
+                            </a>
+                        </li>
+
+                        <li class="py-2">
+                            <a href="{% url 'employee-todolist' %}" class="py-1 px-0 ps-1 align-start srg-link-secondary">
+                                <i class="bi bi-check2-circle"></i> <span class="d-none d-md-inline">To-Do List</span>
+                            </a>
+                        </li>
+
+                        <li class="py-2">
+                            <a href="{% url 'employee-expenses' %}" class="py-1 px-0 ps-1 align-start srg-link-secondary">
+                                <i class="bi bi-currency-dollar"></i> <span class="d-none d-md-inline">Expenses</span>
+                            </a>
+                        </li>
+
+                        {% if request.user.is_staff %}
+
+                            <li class="dropdown py-2">
+                                <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="py-1 px-0 ps-1 align-start srg-link-secondary dropdown-toggle">
+                                    <i class="bi bi-amd"></i> <span class="d-none d-md-inline">Admin</span>
+                                </a>
+
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="{% url 'admin-dashboard' %}"><i class="bi-speedometer2"></i> <span class="ms-1 d-none d-md-inline">Dashboard</span></a></li>
+                                    <li><a class="dropdown-item" href="{% url 'admin-dashboard-two' %}"><i class="bi-speedometer2"></i> <span class="ms-1 d-none d-md-inline">Dashboard 2</span></a></li>
+                                    <!--<li><a class="dropdown-item" href="#"><i class="bi bi-person-add"></i> <span class="ms-1 d-none-d-md-inline">Assign Projects</span></a></li>-->
+                                    <li><a class="dropdown-item" href="{% url 'admin-planning' %}"><i class="bi bi-calendar-week"></i> <span class="ms-1 d-none d-md-inline">Planning</span></a></li>
+                                    <li><a class="dropdown-item" href="{% url 'admin-timesheet' %}"><i class="bi bi-box-arrow-down"></i> <span class="ms-1 d-none d-md-inline">Extract Time & Expense</span></a></li>
+                                </ul>
+                            </li>
+                        {% else %}
+                        {% endif %}
+
+                    </ul>
+
+                </div>
+            </div>
+            <div class="col">
+                {% block content %}
+
+                {% endblock %}
+            </div>
+        </div>
+
+    </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <script type="text/javascript">
+        $(function() {
+            const current = location.pathname;
+            console.log(current)
+            $('.srg-link-secondary').each(function() {
+                const $this = $(this);
+                console.log($this)
+                if($this.attr('href').indexOf(current) !== -1) {
+                    $this.css("border-left", "2px solid #d9d9d9")
+                }
+
+            })
+        })
+    </script>
+
+
+</body>
+</html>

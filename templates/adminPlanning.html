@@ -1,0 +1,112 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+    <div class="container-xxl">
+        <div class="row d-flex justify-content-between mb-4">
+            <div class="col-12 srg-header text-center card shadow-sm srg-bg-secondary border-0 rounded-2">
+                <h3 class="fw-normal">Engagement Planning</h3>
+                <h5 class="fw-normal">Today: {{ today|date:'D m/d/Y' }}</h5>
+                <h5 class="fw-normal">Week: {{ week_beg|date:'D m/d/Y' }} - {{ week_end|date:'D m/d/Y' }}</h5>
+            </div>
+        </div>
+        <div class="row d-flex justify-content-center">
+            <div class="col-6">
+                <div class="card">
+                    <div class="card-header srg-bg-secondary">
+                        <h4 class="fw-normal srg-header">Filter</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="get">
+                            {% for field in todo_filter.form %}
+                                <div class="fieldWrapper mb-3">
+                                    {{ field.label_tag }} <br> {{ field }}
+                                    {% if field.help_text %}
+                                    <p class="help">{{ field.help_text|safe }}</p>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                            <div class="card-footer bg-transparent d-flex justify-content-start align-items-center gap-3 px-0 py-2 m-0">
+                                    <input class="srg-btn-primary" type="submit" value="Search">
+                                    <input class="srg-btn-secondary" name='extract_button' type="submit" value="Extract">
+                                <a class="srg-link" href="{% url 'admin-planning' %}">Clear Form</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4 d-flex justify-content-center">
+
+            <div class="col-12">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr class="text-center">
+                            <th>Staff</th>
+                            <th>Provider</th>
+                            <th>Engagement</th>
+                            <th>Hours</th>
+                        </tr>
+                    </thead>
+                    {% for dy in period_days %}
+                        <tr>
+                            <th scope="row" colspan="4" class="srg-bg-secondary text-center" style="background-color: #d9d9d9">{{ dy|date:'l, F d, Y' }}</th>
+                            {% for item in todo_filter.qs %}
+                                {% if item.todo_date == dy %}
+                                    <tr>
+                                        <td>{{ item.employee__user__username }}</td>
+                                        <td>{{ item.engagement__provider }} - {{ item.engagement__provider__provider_name }}</td>
+                                        <td>{{ item.engagement__engagement_srg_id }}</td>
+                                        <td>{{ item.anticipated_hours }}</td>
+                                    </tr>
+                                {% else %}
+                                {% endif %}
+                            {% endfor %}
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+
+
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+
+        <script>
+
+            function searchClients() {
+                // Declare Variables
+                let input, filter, ul, li, a, i, txtValue;
+                input = document.getElementById('searchBar')
+                filter = input.value.toUpperCase();
+                console.log(filter)
+                ul = document.getElementById('clientList')
+                li = ul.getElementsByClassName('srg-list-group-item');
+
+                // Loop through elements and display only matches
+                for (i = 0; i < li.length; i++) {
+                    a = li[i].getElementsByTagName("a")[0];
+                    txtValue = li[i].textContent || li[i].innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        li[i].style.display = "block";
+                    } else {
+                        li[i].style.display = "none";
+                    }
+                }
+
+            }
+        </script>
+
+        <script>
+          // Initialize the popover
+          $(document).ready(function(){
+            $('[data-toggle="popover"]').popover();
+          });
+        </script>
+
+
+
+
+
+
+{% endblock %}

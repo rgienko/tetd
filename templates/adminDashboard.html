@@ -1,0 +1,268 @@
+{% extends 'layout.html' %}
+{% load mathfilters %}
+
+{% block content %}
+    <div class="row border">
+        <div class="col-3 px-1">
+            <div class="card srg-border">
+                <div class="card-header srg-header d-flex justify-content-between align-items-baseline">
+                    <h5>Clients</h5>
+                    <input class="search-box" type="text" id="searchBar" onkeyup="searchClients()" placeholder="Search for clients.." title="Type in a name">
+                    <button type="button" class="btn srg-link" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><i class="bi bi-plus-circle"></i></button>
+                </div>
+
+                <div class="card-body">
+                    <div class="list-group" role="tablist" id="clientList">
+                        {% for parent in parents %}
+                            <a href="#list-{{ parent.parent_id }}" class="srg-link srg-list-group-item text-decoration-none mb-2" id="list-{{ parent.parent_id }}-list" data-bs-toggle="list" type="button" role="tab" aria-controls="tab-pane" aria-selected="true">
+                                {{ parent }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-8">
+            <div class="tab-content" id="nav-TabContent">
+                {% for parent in parents %}
+                    <div class="tab-pane" id="list-{{ parent.parent_id }}" role="tabpanel" aria-labelledby="list-{{ parent.parent_id }}-list">
+                        <div class="card p-1 pt-0 rounded-3">
+                            <div class="card-header d-flex justify-content-between align-items-baseline px-4">
+                                <h5 class="srg-header">{{ parent.parent_name }} Engagements</h5>
+                                <input class="search-box mt-2" type="text" id="search{{ parent.parent_id }}" onkeyup="searchEngagement{{ parent.parent_id }}()" placeholder="Search for engagements.." title="Type in a name">
+                                <button type="button" class="btn srg-link" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><i class="bi bi-plus-circle"></i> Add Engagement</button>
+                            </div>
+
+                            <script>
+                                function searchEngagement{{ parent.parent_id }}() {
+                                    let input, filter, ul, li, a, i, txtValue;
+                                    input = document.getElementById("search{{ parent.parent_id }}");
+                                    filter = input.value.toUpperCase();
+                                    console.log(filter)
+                                    ul = document.getElementById('accordionExample{{ parent.parent_id }}');
+                                    li = ul.getElementsByTagName("h6");
+
+                                    for (i = 0; i < li.length; i++) {
+                                        a = li[i].getElementsByTagName("button")[0];
+                                        txtValue = li[i].textContent || li[i].innerText;
+                                        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                                            li[i].style.display = "block";
+                                        } else {
+                                            li[i].style.display = "none";
+                                        }
+                                    }
+                                }
+                            </script>
+
+                            <div class="mt-2 accordion accordion-flush" id="accordionExample{{ parent.parent_id }}">
+                                {% for engagement in engagements %}
+                                    {% if engagement.parent_id == parent.parent_id %}
+                                    <div class="accordion-item border-0 mt-2">
+                                        <h6 class="accordion-header">
+                                            <button class="srg-accordion-button d-flex justify-content-between" type="button" data-bs-toggle="collapse" data-bs-target="#{{ engagement.engagement_srg_id }}" aria-expanded="false" aria-controls="{{ engagement.engagement_srg_id }}">
+                                                {{ engagement.engagement_srg_id }}: {{ engagement.provider }}-{{ engagement.provider__provider_name }} {{ engagement.time_code }}-{{ engagement.time_code__time_code_desc }} {{ engagement.fye|date:'m/d/Y' }}
+                                                <i class="bi bi-caret-down-fill srg-header"></i>
+                                            </button>
+                                        </h6>
+
+                                        <div id="{{ engagement.engagement_srg_id }}" class="accordion-collapse collapse" data-bs-parent="#accordionExample{{ forloop.counter }}">
+                                            <div class="accordion-body">
+                                                {% if engagement.is_complete is False %}<h5><span class="badge rounded-pill srg-bg-success fw-normal">Status: Open</span></h5>
+                                                {% else %}
+                                                    <h5><span class="badge rounded-pill srg-bg-danger fw-normal">Status: Closed</span></h5>
+                                                {% endif %}
+                                                <h5 class="srg-header">General Information </h5>
+                                                    <p>
+                                                        {{ engagement.time_code }}-{{ engagement.time_code__time_code_desc }} - {{ engagement.fye|date:'m/d/Y' }} <br>
+                                                        {{ engagement.provider_id }} - {{ engagement.provider__provider_name }} <br>
+                                                        {{ engagement.parent__parent_name }} <br>
+
+                                                    </p>
+                                                <h5 class="srg-header">Hours Breakdown</h5>
+                                                <div class="row d-flex justify-content-between py-1">
+                                                    <div class="col-2">
+                                                        <div class="card square text-center fs-6">
+                                                            <div class="card-header srg-bg-secondary srg-header">
+                                                                Non-Billable
+                                                            </div>
+                                                            <div class="card-body fs-3">
+                                                                {% for eng in engagement_non_billable %}
+                                                                    {% if eng.engagement_id == engagement.engagement_id %}
+                                                                        {{ eng.non_bill_hours }}
+                                                                        {% else %}
+                                                                        {% endif %}
+                                                                {% endfor %}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-2">
+                                                        <div class="card square text-center fs-6">
+                                                            <div class="card-header srg-bg-secondary srg-header">
+                                                                Billable
+                                                            </div>
+                                                            <div class="card-body fs-3">
+                                                                {% for eng in engagement_billable %}
+                                                                    {% if eng.engagement_id == engagement.engagement_id %}
+                                                                        {{ eng.bill_hours }}
+                                                                        {% else %}
+                                                                        {% endif %}
+                                                                {% endfor %}
+                                                            </div>
+                                                        </div>
+                                                   </div>
+                                                    <div class="col-2">
+                                                        <div class="card square text-center fs-6">
+                                                            <div class="card-header srg-bg-secondary srg-header">
+                                                                Budget
+                                                            </div>
+                                                            <div class="card-body fs-3">
+                                                                {{ engagement.budget_hours }}
+                                                            </div>
+                                                        </div>
+                                                   </div>
+                                                    <div class="col-2">
+                                                        <div class="card square text-center fs-6">
+                                                            <div class="card-header srg-bg-secondary srg-header">
+                                                                Variance
+                                                            </div>
+                                                            <div class="card-body fs-3">
+                                                                {{ engagement.budget_hours|sub:engagement.engagement_hours_sum }}
+                                                            </div>
+                                                        </div>
+                                                   </div>
+                                                </div>
+                                                <h5 class="srg-header mt-3">Hours By Employee</h5>
+
+                                                    <table class="table table-sm table-striped mt-0">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Employee</th>
+                                                                <th>TD Hours</th>
+                                                                <th>TS Hours</th>
+                                                                <th>Variance</th>
+                                                                <th>Rate</th>
+                                                            </tr>
+                                                        </thead>
+                                                        {% for emp in result %}
+                                                            {% if emp.engagement_id == engagement.engagement_id %}
+                                                            <tr>
+                                                                <td>{{ emp.employee__user__username }}</td>
+                                                                <td>{{ emp.TD_Hours }}</td>
+                                                                <td>{{ emp.TS_Hours }}</td>
+                                                                <td>{{ emp.tdts_variance }}</td>
+                                                                <td>{{ emp.employee__title__rate }}</td>
+                                                                <td></td>
+                                                            </tr>
+                                                            {% else %}
+                                                            {% endif %}
+                                                        {% endfor %}
+
+                                                    </table>
+                                                    <h5 class="srg-header">Actions</h5>
+                                                    <div class="btn-group">
+                                                        <a type="button" class="text-decoration-none open-modal-button srg-btn-primary"
+                                                           href="{% url 'extract-engagement-entries' engagement.engagement_id %}">
+                                                            <i class="bi bi-box-arrow-down"></i> Extract Timesheet
+                                                        </a>
+                                                        <a type="button" class="text-decoration-none open-modal-button srg-btn-ol-primary ms-2"
+                                                           href="{% url 'admin-assign' engagement.engagement_id %}">
+                                                            <i class="bi bi-person-add"></i> Assignments
+                                                        </a>
+
+                                                        {% if engagement.is_complete == False %}
+                                                            <a type="button" class="text-decoration-none srg-btn-danger mx-2"
+                                                               data-bs-toggle="modal" data-bs-target="#engagementStatusModal-{{ forloop.counter }}">
+                                                                <i class="bi bi-x-square"></i> Close Project
+                                                            </a>
+                                                        {% else %}
+                                                            <a type="button" class="text-decoration-none srg-btn-success mx-2"
+                                                               data-bs-toggle="modal" data-bs-target="#engagementStatusModal-{{ forloop.counter }}">
+                                                                <i class="bi bi-door-open"></i> Open Project
+                                                            </a>
+                                                        {% endif %}
+                                                    </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    {% endif %}
+
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+        </div>
+
+
+            <div class="modal fade" tabindex="-1" id="createEngagementModal" aria-labelledby="createEngagementModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header srg-bg-secondary pb-0">
+                            <h4 class="srg-header">Create Engagement Form</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form class="" method="POST">
+                                {% csrf_token %}
+                                {% for field in createEngagementForm %}
+                                    <div class="fieldWrapper mb-3">
+                                    {{ field.label_tag }}<br>{{ field }}
+                                    {% if field.help_text %}
+                                        <p class="help">{{ field.help_text|safe }}</p>
+                                    {% endif %}
+                                    </div>
+                                {% endfor %}
+
+                                <button class="srg-btn-primary my-2">Create Engagement</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+    </div>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+        <script type="text/javascript">
+            $(document).ready(function () {
+            $('a[data-bs-toggle="list"]').on('shown.bs.tab', function (e) {
+                $(e.target).css("color", "#ffffff");
+                $(e.target).css("background-color", "#02308C");
+                $(e.target).css("border-color", "#02308C");
+                $(e.relatedTarget).css("color", "#02308C");
+                $(e.relatedTarget).css("background-color", "#ffffff");
+                $(e.relatedTarget).css("border-color", "#a9a9a9");
+            })
+        })
+        </script>
+
+        <script>
+
+            function searchClients() {
+                // Declare Variables
+                let input, filter, ul, li, a, i, txtValue;
+                input = document.getElementById('searchBar')
+                filter = input.value.toUpperCase();
+                console.log(filter)
+                ul = document.getElementById('clientList')
+                li = ul.getElementsByTagName('a');
+
+                // Loop through elements and display only matches
+                for (i = 0; i < li.length; i++) {
+                    // a = li[i].getElementsByTagName("a")[0];
+                    txtValue = li[i].textContent || li[i].innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        li[i].style.display = "block";
+                    } else {
+                        li[i].style.display = "none";
+                    }
+                }
+
+            }
+        </script>
+{% endblock %}

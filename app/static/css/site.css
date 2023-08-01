@@ -1,0 +1,162 @@
+/* COLORS */
+.srg-bg-primary {
+    background: #02308C
+}
+
+.srg-bg-secondary {
+    background: #d9d9d9;
+}
+
+.srg-bg-success {
+    background: #004000
+}
+
+.srg-bg-danger {
+    background: #8B0000;
+}
+
+
+/* BORERS */
+.srg-border-secondary {
+    border: 1px solid blue;
+}
+
+.srg-border {
+    border: 1px solid #a9a9a9;
+    border-radius: 12px;
+}
+
+
+/* TEXT & HEADERS */
+.srg-header {
+    color: #02308C;
+}
+
+.srg-text-secondary {
+    color: #d9d9d9;
+}
+/* BUTTONS, LINKS, LISTS */
+.srg-active {
+    color: #ffffff;
+    background-color: #02308C;
+    border-color: #02308C;
+}
+
+
+.srg-link {
+    color: #02308C;
+}
+
+.srg-list-group-item {
+    padding:8px;
+    border: 1px solid #a9a9a9;
+    border-radius: 12px;
+}
+
+.srg-list-group-item:hover {
+    background-color: #d9d9d9;
+    border: 1px solid #d9d9d9;
+    color: #02308C;
+}
+
+.srg-btn-ol-primary {
+    background-color: white;
+    border: 1px solid #02308C;
+    color: #02308C;
+    padding: 8px 16px 8px 16px;
+    border-radius: 12px;
+}
+
+.srg-btn-ol-primary:hover {
+    background-color: #02308C;
+    border: 1px solid #02308C;
+    color: white;
+    padding: 8px 16px 8px 16px;
+    border-radius: 12px;
+}
+
+.srg-btn-ol-success {
+    background-color: white;
+    border: 1px solid #004000;
+    color: #004000;
+    padding: 8px 16px 8px 16px;
+    border-radius: 12px;
+}
+
+.srg-btn-ol-success:hover {
+    background-color: #004000;
+    border: 1px solid #004000;
+    color: white;
+    padding: 8px 16px 8px 16px;
+    border-radius: 12px;
+}
+
+.srg-btn-primary {
+    background-color: #02308C;
+    border: 1px solid #02308C;
+    color: #ffffff;
+    padding: 8px 16px 8px 16px;
+    border-radius: 16px;
+}
+
+.srg-btn-secondary {
+    background-color: #d9d9d9;
+    border: 1px solid #d9d9d9;
+    color: #02308C;
+    padding: 8px 16px 8px 16px;
+    border-radius: 16px;
+}
+
+.srg-btn-success {
+    background-color: #004000;
+    border: 1px solid #004000;
+    color: #ffffff;;
+    padding: 8px 16px 8px 16px;
+    border-radius: 16px;
+}
+
+.srg-btn-danger {
+    background: #8B0000;
+    border: 1px solid #8B0000;
+    color: white;
+    padding: 8px 16px 8px 16px;
+    border-radius: 16px;
+}
+
+.srg-link-secondary {
+    text-decoration: none;
+    color: #d9d9d9;
+}
+
+.srg-link-secondary:hover {
+    text-decoration: none;
+    border-left: 2px solid #d9d9d9;
+}
+
+.srg-login-button {
+    background: #02308C;
+    border:1px solid #02308C;
+    border-radius: 50px;
+    padding:8px 32px;
+    color: white;
+}
+
+.srg-accordion-button {
+    background: #d9d9d9;
+    border: 1px solid #d9d9d9;
+    padding: 16px 16px 16px 16px;
+    width:100%;
+    border-radius: 8px 8px;
+    text-align: left;
+
+}
+
+.search-box {
+    border: 1px solid #02308C;
+    border-radius: 5px;
+    height: 40px;
+    width: 50%;
+    max-width:360px;
+    padding: 2px 2px 2px 8px;
+    outline: 0;
+}

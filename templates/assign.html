@@ -1,0 +1,58 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+    <div class="row border vh-100 d-flex justify-content-center border">
+        <div class="col-9 mt-2">
+            <div class="card">
+                <div class="card-header p-2 srg-header text-center d-flex align-items-baseline justify-content-between">
+                    <h4>Project Assignments</h4>
+                    <h6><a href="{% url 'admin-dashboard' %}" class="srg-link">Back to Dashboard</a></h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center border fs-5">
+                            {{ engagement_instance.engagement_srg_id }}<br>
+                            {{ engagement_instance.getParentName }}<br>
+                            {{ engagement_instance.getProviderName }}<br>
+                            {{ engagement_instance.time_code }}<br>
+                            FY {{ engagement_instance.fye|date:'m/d/Y' }}
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col-6">
+                            <div class="card">
+                                <div class="card-header text-center">
+                                    <h5 class="srg-header">Assigned</h5>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group">
+                                    {% for emp in engagement_assignments %}
+                                        <li class="srg-list-group-item srg-border w-50 fs-6 my-1" style="list-style: none"><a class="srg-link" href="{% url 'remove-engagement-assign' engagement_instance.engagement_id emp.employee_id %}">
+                                            <i class="bi bi-x-circle"></i></a> {{ emp.employee }}</li>
+                                    {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="card">
+                                <div class="card-header text-center">
+                                    <h5 class="srg-header">Available</h5>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group text-middle">
+                                        {% for item in available_staff %}
+                                            <li class="srg-list-group-item srg-border w-50 fs-6 my-1" style="list-style: none"><a class="srg-link" href="{% url 'add-engagement-assign' engagement_instance.engagement_id item.employee_id %}">
+                                                <i class="bi bi-plus-circle"></i></a> {{ item }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+{% endblock %}
