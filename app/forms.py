@@ -1,3 +1,5 @@
+import calendar
+
 from django import forms
 
 from .models import *
@@ -9,7 +11,7 @@ class CreateEngagementForm(forms.ModelForm):
     class Meta:
         model = Engagement
 
-        fields = ['provider', 'parent', 'start_date', 'time_code', 'fye', 'type']
+        fields = ['provider', 'parent', 'start_date', 'time_code', 'fye', 'type', 'budget_amount']
 
         widgets = {
             'fye': DatePickerInput,
@@ -72,3 +74,9 @@ class UpdateEngagementStatusForm(forms.ModelForm):
         model = Engagement
 
         fields = ['is_complete']
+
+
+class MonthSelectForm(forms.Form):
+    MONTH_CHOICES = [(str(i), calendar.month_name[i]) for i in range(1, 13)]
+
+    month = forms.ChoiceField(choices=MONTH_CHOICES, widget=forms.Select(attrs={'class': 'form-select', 'onchange': 'submit()'}))

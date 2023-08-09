@@ -1,0 +1,260 @@
+{% extends 'layout.html' %}
+{% load mathfilters %}
+{% block content %}
+    <div class="row d-flex justify-content-center">
+        <div class="col-6 card p-0 shadow rounded-4">
+            <div class="card-header srg-bg-secondary rounded-4 rounded-bottom-0 border-bottom-0 pb-0">
+                <h4 class="fw-normal srg-header">Engagement Info</h4>
+            </div>
+
+            <div class="card-body">
+                {% if engagement.is_complete == false %}<h5><span class="badge rounded-pill srg-bg-success fw-normal">Status: Open</span></h5>
+                {% else %}
+                    <h5><span class="badge rounded-pill srg-bg-danger fw-normal">Status: Closed</span></h5>
+                {% endif %}
+
+
+                {{ engagement_instance.engagement_srg_id }}<br>
+                {{ engagement_instance.parent }}<br>
+                {{ engagement_instance.provider }}<br>
+                {{ engagement_instance.time_code }} - {{ engagement_instance.fye|date:"m/d/Y" }}
+            </div>
+            <div class="btn-group card-footer d-fle">
+                <a type="button" class="text-decoration-none open-modal-button srg-btn-primary"
+                   href="{% url 'extract-engagement-entries' engagement_instance.engagement_id %}">
+                    <i class="bi bi-box-arrow-down"></i> Extract Timesheet
+                </a>
+                <a type="button" class="text-decoration-none open-modal-button srg-btn-secondary ms-2"
+                   href="{% url 'admin-assign' engagement_instance.engagement_id %}">
+                    <i class="bi bi-person-add"></i> Assignments
+                </a>
+
+                {% if engagement.is_complete == false %}
+                    <a type="button" class="text-decoration-none srg-btn-danger mx-2"
+                       data-bs-toggle="modal" data-bs-target="#engagementStatusModal">
+                        <i class="bi bi-x-square"></i> Close Project
+                    </a>
+                {% else %}
+                    <a type="button" class="text-decoration-none srg-btn-success mx-2"
+                       data-bs-toggle="modal" data-bs-target="#engagementStatusModal">
+                        <i class="bi bi-door-open"></i> Open Project
+                    </a>
+                {% endif %}
+                <a type="button" class="text-decoration-none open-modal-button srg-btn-ol-primary"
+                   href="{% url 'renew-engagement' engagement_instance.engagement_id %}">
+                    <i class="bi bi-plus-circle"></i> Renew
+                </a>
+
+            </div>
+
+        </div>
+    </div>
+
+    <div class="row d-flex justify-content-center my-5">
+        <div class="col-6 card rounded-4 p-0 shadow">
+            <div class="card-header srg-bg-secondary rounded-4 rounded-bottom-0 border-bottom-0 pb-0">
+                <h5 class="srg-header">Hours Breakdown</h5>
+            </div>
+            <div class="card-body">
+                <div class="row d-flex justify-content-between py-1">
+                    <div class="col-2">
+                        <div class="card square text-center fs-6">
+                            <div class="card-header srg-bg-secondary srg-header">
+                                Non-Bill.
+                            </div>
+                            <div class="card-body fs-3">
+                                {% if total_non_billable_hours.non_billable_hours_sum__sum is None %}
+                                    0
+                                {% else %}
+                                    {{ total_non_billable_hours.non_billable_hours_sum__sum }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-2">
+                        <div class="card square text-center fs-6">
+                            <div class="card-header srg-bg-secondary srg-header">
+                                Billable
+                            </div>
+                            <div class="card-body fs-3">
+                                {% if total_billable_hours.billable_hours_sum__sum is None %}
+                                    0
+                                {% else %}
+                                    {{ total_billable_hours.billable_hours_sum__sum }}
+                                {% endif %}
+                            </div>
+                        </div>
+                   </div>
+                    <div class="col-2">
+                        <div class="card square text-center fs-6">
+                            <div class="card-header srg-bg-secondary srg-header">
+                                Budget
+                            </div>
+                            <div class="card-body fs-3">
+                                {{ budget_calc }}
+                            </div>
+                        </div>
+                   </div>
+                    <div class="col-2">
+                        <div class="card square text-center fs-6">
+                            <div class="card-header srg-bg-secondary srg-header">
+                                Variance
+                            </div>
+                            <div class="card-body fs-3">
+                                {{ budget_calc|sub:total_billable_hours.billable_hours_sum__sum }}
+                            </div>
+                        </div>
+                   </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row d-flex justify-content-center mt-4">
+        <div class="col-6 card rounded-4 p-0 shadow">
+            <div class="card-header srg-bg-secondary rounded-4 rounded-bottom-0 border-bottom-0 pb-0">
+                <h4 class="fw-normal srg-header">Hours By Employee</h4>
+            </div>
+
+            <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+            <canvas class="my-4 w-100 text-light" id="myChart" width="900" height="380"></canvas>
+            <script>
+                const config = {
+                    type: 'bar',
+                    data: {
+                        labels: [{% for emp in billable_hours_employee %}'{{ emp.employee__user__username|safe }}', {% endfor %}],
+                        datasets: [{
+                            label: 'Billable',
+                            backgroundColor: ['rgb(2,48,140)'],
+                            borderColor: ['rgb(2,48,140)'],
+                            data: [{% for emp in billable_hours_employee %}{{ emp.billable_hours_sum }}, {% endfor %}],
+                            fill: false
+                        },
+                        {
+                            label: 'Non-Billable',
+                            backgroundColor: ['rgb(217,217,217)'],
+                            borderColor: ['rgb(217,217,217)'],
+                            data: [{% for emp in non_billable_hours_employee %}{{ emp.non_billable_hours_sum }}, {% endfor %}],
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        indexAxis:'y',
+                        plugins: {
+                          legend: {
+                              display: true
+                          }
+                        },
+                        scales: {
+                            x: {
+                                stacked:true
+                            },
+                            y: {
+                                stacked:true
+                            },
+                            yAxes: [{
+                                ticks: {
+                                    fontColor: "black",
+                                    beginAtZero: true
+                                },
+                                gridLines: {
+                                    color:"rgb(56, 60, 74)"
+                                }
+                            }],
+                            xAxes: [{
+                                ticks: {
+                                    fontColor: "black"
+                                },
+                                gridLines: {
+                                    color:"rgb(56, 60, 74)"
+                                }
+                            }]
+                        }
+                    }
+                };
+                window.onload = function () {
+                    const ctx = document.getElementById('myChart').getContext('2d');
+                    window.myLine = new Chart(ctx, config);
+
+                }
+            </script>
+        </div>
+    </div>
+
+    <div class="row d-flex justify-content-center my-5">
+        <div class="col-6 card p-0 rounded-4 shadow">
+            <div class="card-header srg-bg-secondary border-bottom-0 rounded-4 rounded-bottom-0 pb-0">
+                <h4 class="fw-normal srg-header">Timesheet vs To-Do</h4>
+            </div>
+            <div class="card-body">
+                 <table class="table">
+                     <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>TS Hours</th>
+                            <th>TD Hours</th>
+                            <th>Variance</th>
+                        </tr>
+                     </thead>
+                     {% for emp in ts_vs_todo %}
+                         <tr>
+                            <td>{% if emp.ts_emp is None %}{{ emp.td_emp }}{% else %}{{ emp.ts_emp }}{% endif %}</td>
+                            <td>{% if emp.ts_hours is None %}0{% else %}{{ emp.ts_hours }}{% endif %}</td>
+                            <td>{% if emp.td_hours is None %}0{% else %}{{ emp.td_hours }}{% endif %}</td>
+                            <td>
+                                {% if emp.ts_hours is None %}
+                                    {{ emp.td_hours }}
+                                    {% elif emp.td_hours is None %}
+                                    {{ emp.ts_hours }}
+                                    {% else %}
+                                        {{ emp.ts_hours|sub:emp.TD_HOURS }}
+                                {% endif %}
+                             </td>
+                         </tr>
+                     {% endfor %}
+                 </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="row d-flex justify-content-center my-5">
+        <div class="col-6 card p-0 shadow rounded-4">
+            <div class="card-header srg-bg-secondary rounded-4 rounded-bottom-0 border-bottom-0 pb-0">
+                <h4 class="fw-normal srg-header">Engagement Notes</h4>
+            </div>
+            <div class="card-body">
+                 <form method="POST">
+                    {% csrf_token %}
+                    <textarea class="form-control bg-white text-dark" id="save_notes" name="save_notes" style="min-height: 150px;max-height: 175px">{{ engagement_instance.notes }}</textarea>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <input type="submit" class="srg-btn-primary mt-2 px-5" value="Save" />
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+
+    <div class="modal fade" id="engagementStatusModal" tabindex="-1" aria-labelledby="engagementStatusModal" aria-hidden="true">
+        <div class="modal-dialog" id="modal">
+            <div class="modal-content">
+                <div class="modal-header srg-bg-primary text-light fs-5">
+                    Confirm Project Completion
+                </div>
+                <div class="modal-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        {% if engagement_instance.is_complete == false %}
+                            <p class="">Are you sure you want to complete this engagement?</p>
+                        {% else %}
+                            <p class="">Are you sure you want to open this engagement?</p>
+                        {% endif %}
+                        <button class="srg-btn-primary my-2" id="confirm-button" name="confirm-button">Confirm</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

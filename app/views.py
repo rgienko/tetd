@@ -1,15 +1,18 @@
 import os
 from datetime import timedelta
+from itertools import chain
 
 import pandas
 from django.contrib import auth, messages
-from django.db.models import Sum, OuterRef, Subquery
+from django.db.models import Sum, OuterRef, Subquery, Max, Count, ExpressionWrapper, CharField, FloatField, \
+    IntegerField, Case, Value, When, Q
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django_pandas.io import read_frame
 from django.core.mail import EmailMessage
 from django.db.models import F
+from dateutil.relativedelta import relativedelta
 
 from .filters import TimesheetFilter, ExpenseFilter, AdminTodoListFilter
 from .models import *
@@ -97,39 +100,139 @@ def dashboard(request):
     return render(request, 'dashboard.html', context)
 
 
-def adminDashboard(request):
+def getCompilationData(mnth):
+    fixed_hours_by_employee = Time.objects.filter(engagement__type_id='F', date__month=mnth).values(
+        'employee_id', 'employee__title').annotate(
+        fixed_hours_by_employee_sum=Sum('hours')
+    )
+
+    hourly_hours_by_employee = Time.objects.filter(engagement__type_id='H', date__month=mnth).values(
+        'employee_id', 'employee__title').annotate(
+        hourly_hours_by_employee_sum=Sum('hours')
+    )
+
+    cgy_hours_by_employee = Time.objects.filter(engagement__type_id='C', date__month=mnth).values(
+        'employee_id').annotate(
+        cgy_hours_by_employee_sum=Sum('hours')
+    )
+
+    non_billable_hours_by_employee = Time.objects.filter(time_type_id='N', date__month=mnth).values(
+        'employee_id').annotate(non_billable_hours_sum=Sum('hours'))
+
+    pto_hours_by_employee = Time.objects.filter(engagement__time_code=945, date__month=mnth).values(
+        'employee_id').annotate(
+        pto_hours_by_employee_sum=Sum('hours')
+    )
+
+    billable_hours_by_employee = Time.objects.filter(time_type_id='B', date__month=mnth).values(
+        'employee_id').annotate(
+        billable_hours_sum=Sum('hours'))
+
+    total_hours_by_employee = Time.objects.filter(date__month=mnth).values('employee_id').annotate(
+        total_hours_sum=Sum('hours'))
+
+    # VP HOURS ##########
+    vp_fixed_hours_by_employee = fixed_hours_by_employee.filter(employee__title='VP')
+    vp_hourly_hours_by_employee = hourly_hours_by_employee.filter(Q(employee__title='EVP') | Q(employee__title='VP'))
+    vp_cgy_hours_by_employee = cgy_hours_by_employee.filter(Q(employee__title='EVP') | Q(employee__title='VP'))
+    vp_non_billable_hours_by_employee = non_billable_hours_by_employee.filter(Q(employee__title='EVP') | Q(employee__title='VP'))
+    vp_pto_hours_by_employee = pto_hours_by_employee.filter(Q(employee__title='EVP') | Q(employee__title='VP'))
+    vp_billable_hours_by_employee = billable_hours_by_employee.filter(Q(employee__title='EVP') | Q(employee__title='VP'))
+    vp_total_hours_by_employee = total_hours_by_employee.filter(Q(employee__title='EVP') | Q(employee__title='VP'))
+
+    vp_total_fixed_hours = vp_fixed_hours_by_employee.aggregate(Sum('fixed_hours_by_employee_sum'))
+    vp_total_hourly_hours = vp_hourly_hours_by_employee.aggregate(Sum('hourly_hours_by_employee_sum'))
+    vp_total_cgy_hours = vp_cgy_hours_by_employee.aggregate(Sum('cgy_hours_by_employee_sum'))
+    vp_total_non_billable_hours = vp_non_billable_hours_by_employee.aggregate(Sum('non_billable_hours_sum'))
+    vp_total_pto_hours = vp_pto_hours_by_employee.aggregate(Sum('pto_hours_by_employee_sum'))
+    vp_total_billable_hours = vp_billable_hours_by_employee.aggregate(Sum('billable_hours_sum'))
+    vp_total_hours = vp_total_hours_by_employee.aggregate(Sum('total_hours_sum'))
+
+    # TOTAL HOURS ###
+    srg_total_fixed_hours = vp_total_fixed_hours
+    srg_total_hourly_hours = vp_total_hourly_hours
+    srg_total_cgy_hours = vp_total_cgy_hours
+    srg_total_non_billable_hours = vp_total_non_billable_hours
+    srg_total_pto_hours = vp_total_pto_hours
+    srg_total_billable_hours = vp_total_billable_hours
+    srg_total_hours = vp_total_hours
+
+    return vp_fixed_hours_by_employee, vp_hourly_hours_by_employee, vp_cgy_hours_by_employee,\
+        vp_non_billable_hours_by_employee, vp_pto_hours_by_employee, vp_billable_hours_by_employee, \
+        vp_total_hours_by_employee, vp_total_fixed_hours, vp_total_hourly_hours, vp_total_cgy_hours, \
+        vp_total_non_billable_hours, vp_total_pto_hours, vp_total_billable_hours, vp_total_hours
+
+
+def AdminDashboard(request):
     user_info = get_object_or_404(User, pk=request.user.id)
-    parents = Parent.objects.all()
+    today = date.today()
+    week_beg = today - timedelta(days=today.weekday())
+    week_end = week_beg + timedelta(days=5)
+    employees = Employee.objects.all().order_by('title', 'user__last_name')
+    vps = employees.filter(title='VP')
+    mgrs = employees.filter(Q(title='M') | Q(title='SM'))
+    consultants = employees.filter(Q(title='C') | Q(title='SC'))
+    current_month = today.month
+    print(current_month)
+
+    if request.method == 'POST':
+        month_form = MonthSelectForm(request.POST)
+        if month_form.is_valid():
+            selected_month = month_form.cleaned_data['month']
+            new_data = getCompilationData(selected_month)
+
+            context = {'user_info': user_info, 'today': today, 'week_beg': week_beg,
+                       'week_end': week_end, 'employees': employees, 'vps': vps,
+                       'mgrs': mgrs, 'consultants': consultants,
+                       'vp_fixed_hours_by_employee': new_data[0],
+                       'vp_hourly_hours_by_employee': new_data[1],
+                       'vp_cgy_hours_by_employee': new_data[2],
+                       'selected_month': selected_month,
+                       'month_form': month_form}
+
+            return render(request, 'adminDashboard.html', context)
+
+    else:
+        month_form = MonthSelectForm(initial={'month': current_month})
+        current_month_data = getCompilationData(current_month)
+
+        context = {'user_info': user_info, 'today': today, 'week_beg': week_beg,
+                   'week_end': week_end, 'employees': employees, 'vps': vps,
+                   'mgrs': mgrs, 'consultants': consultants,
+                   'vp_fixed_hours_by_employee': current_month_data[0],
+                   'vp_hourly_hours_by_employee': current_month_data[1],
+                   'vp_cgy_hours_by_employee': current_month_data[2],
+                   'vp_non_billable_hours_by_employee': current_month_data[3],
+                   'vp_pto_hours_by_employee': current_month_data[4],
+                   'vp_billable_hours_by_employee': current_month_data[5],
+                   'vp_total_hours_by_employee': current_month_data[6],
+                   'vp_total_fixed_hours': current_month_data[7],
+                   'vp_total_hourly_hours': current_month_data[8],
+                   'vp_total_cgy_hours': current_month_data[9],
+                   'vp_total_non_billable_hours': current_month_data[10],
+                   'vp_total_pto_hours': current_month_data[11],
+                   'vp_total_billable_hours': current_month_data[12],
+                   'vp_total_hours': current_month_data[13],
+                   'selected_month': today,
+                   'month_form': month_form}
+
+        return render(request, 'adminDashboard.html', context)
+
+
+def EngagementDashboard(request):
+    user_info = get_object_or_404(User, pk=request.user.id)
+    parents = list(Parent.objects.all())
+    parents = sorted(parents, key=lambda x: (x.parent_id.isdigit(), x.parent_id))
 
     # engagements = Engagement.objects.annotate(total_hours=Sum('time__hours'))
 
     engagements = Engagement.objects.values("engagement_id", "engagement_srg_id", "parent_id", "parent__parent_name",
                                             "provider_id", "provider__provider_name", "time_code",
                                             "time_code__time_code_desc",
-                                            "is_complete", "fye", "budget_hours").annotate(
-        engagement_hours_sum=Sum('time__hours')).order_by('engagement_hours_sum')
-
-    engagement_billable = Time.objects.values("engagement_id").filter(time_type_id='B').annotate(
-        bill_hours=Sum('hours'))
-    engagement_non_billable = Time.objects.values("engagement_id").filter(time_type_id='N').annotate(
-        non_bill_hours=Sum('hours'))
-
-    # employee_ts_breakdown = Time.objects.values("engagement", "employee_id").annotate(total_ts_hours=Sum('hours'))
-    # employee_td_breakdown = Todolist.objects.values("engagement", "employee_id").annotate(
-    #    total_td_hours=Sum('anticipated_hours'))
-
-    result = Time.objects.values('engagement_id', 'employee_id', 'employee__user__username',
-                                 'employee__title__rate').annotate(
-        TS_Hours=Sum('hours'),
-        TD_Hours=Sum('engagement__todolist__anticipated_hours')
-    ).filter(engagement_id=F('engagement'), employee_id=F('employee')).values(
-        'engagement_id',
-        'employee_id',
-        'employee__user__username',
-        'TS_Hours',
-        'TD_Hours',
-        'employee__title__rate'
-    )
+                                            "is_complete", "fye", "budget_hours", "budget_amount").annotate(
+        engagement_hours_sum=Sum('time__hours'), budget_calc=Max('budget_amount') / 250).order_by('-fye', 'time_code',
+                                                                                                  'provider_id',
+                                                                                                  'engagement_hours_sum')
 
     if request.method == 'POST':
         createEngagementForm = CreateEngagementForm(request.POST)
@@ -155,10 +258,75 @@ def adminDashboard(request):
         createEngagementForm = CreateEngagementForm()
 
     context = {'user_info': user_info, 'parents': parents, 'createEngagementForm': createEngagementForm,
-               'engagements': engagements, 'engagement_billable': engagement_billable,
-               'engagement_non_billable': engagement_non_billable, "result": result}
+               'engagements': engagements}
 
-    return render(request, 'adminDashboard.html', context)
+    return render(request, 'engagementDashboard.html', context)
+
+
+def AdminEngagementDetail(request, pk):
+    user_info = get_object_or_404(User, pk=request.user.id)
+    engagement_instance = get_object_or_404(Engagement, pk=pk)
+
+    budget_calc = engagement_instance.budget_amount // 250
+
+    billable_hours_employee = Time.objects.filter(engagement=engagement_instance.engagement_id,
+                                                  time_type_id='B').values('engagement',
+                                                                           'employee__user__username').annotate(
+        billable_hours_sum=Sum('hours'))
+    non_billable_hours_employee = Time.objects.filter(engagement=engagement_instance.engagement_id,
+                                                      time_type_id='N').values('engagement',
+                                                                               'employee__user__username').annotate(
+        non_billable_hours_sum=Sum('hours'))
+
+    total_billable_hours = billable_hours_employee.aggregate(Sum('billable_hours_sum'))
+    total_non_billable_hours = non_billable_hours_employee.aggregate(Sum('non_billable_hours_sum'))
+
+    engagement_td_hours_by_employee = Todolist.objects.filter(engagement=engagement_instance.engagement_id).values(
+        'engagement', 'employee__user__username').annotate(td_hours=Sum('anticipated_hours')).values('td_hours')
+
+    engagement_ts_hours_by_employee = Time.objects.filter(engagement=engagement_instance.engagement_id).values(
+        'engagement', 'employee__user__username').annotate(ts_hours=Sum('hours')).values('ts_hours')
+
+    ts_vs_todo = Engagement.objects.raw('''
+                                        SELECT 
+                                            ae.engagement_id,
+                                            ae.engagement_srg_id,
+                                               ae.parent_id,
+                                               ae.provider_id,
+                                               at.username AS TS_EMP,
+                                               SUM(at.sum_hours) AS TS_HOURS,
+                                               tl.username AS TD_EMP,
+                                               SUM(tl.td_sum_hours) AS TD_HOURS
+                                        FROM app_engagement ae
+                                        FULL JOIN (
+                                            SELECT srg_id,
+                                                   au.username,
+                                                   SUM(hours) AS sum_hours
+                                            FROM app_time
+                                            JOIN app_employee on app_time.employee_id = app_employee.employee_id
+                                            JOIN auth_user au on app_employee.user_id = au.id
+                                            GROUP BY srg_id, au.username
+                                        ) at on ae.engagement_id = at.srg_id
+                                        FULL JOIN (
+                                            SELECT srg_id,
+                                                   au.username,
+                                                   SUM(anticipated_hours) AS td_sum_hours
+                                            FROM app_todolist
+                                            JOIN app_employee on app_todolist.employee_id = app_employee.employee_id
+                                            JOIN auth_user au on app_employee.user_id = au.id
+                                            GROUP BY srg_id, au.username
+                                        ) tl on ae.engagement_id = tl.srg_id
+                                        WHERE ae.engagement_srg_id = %s
+                                        GROUP BY ae.engagement_id, ae.engagement_srg_id, ae.parent_id, ae.provider_id, at.username, tl.username
+                                        ORDER BY ae.parent_id, ae.provider_id
+                                        ''', [engagement_instance.engagement_srg_id])
+
+    context = {'user_info': user_info, 'engagement_instance': engagement_instance,
+               'billable_hours_employee': billable_hours_employee, 'total_billable_hours': total_billable_hours,
+               'non_billable_hours_employee': non_billable_hours_employee, 'budget_calc': budget_calc,
+               'total_non_billable_hours': total_non_billable_hours, 'ts_vs_todo': ts_vs_todo}
+
+    return render(request, 'adminEngagementDetail.html', context)
 
 
 def AdminTimesheet(request):
@@ -428,19 +596,19 @@ def UpdateEngagementStatus(request, pk):
 
 
 def AssignmentProjects(request, pk):
+    user_info = get_object_or_404(User, pk=request.user.id)
     engagement_instance = get_object_or_404(Engagement, pk=pk)
     eid = engagement_instance.engagement_id
-    engagement_assignments = Assignments.objects.filter(engagement=engagement_instance)
-    available_staff = Employee.objects.raw(
-        """
-            SELECT *
-            FROM app_employee
-            WHERE employee_id NOT IN (SELECT employee_id FROM app_assignments WHERE engagement_id = %s);
-        """, [eid]
-    )
+    engagement_assignments = Assignments.objects.filter(engagement=engagement_instance).order_by('employee__user')
+
+    available_staff = Employee.objects.exclude(
+        employee_id__in=engagement_assignments.values('employee_id').filter(engagement=eid)
+    ).order_by('user__first_name')
+
+    # available_staff = available_staff
 
     context = {'engagement_assignments': engagement_assignments, 'engagement_instance': engagement_instance,
-               'available_staff': available_staff}
+               'available_staff': available_staff, 'user_info': user_info}
 
     return render(request, 'assign.html', context)
 
@@ -463,6 +631,43 @@ def RemoveAssignment(request, eng, emp):
     assignment_instance.delete()
 
     return redirect('admin-assign', eng)
+
+
+def RenewEngagement(request, pk):
+    engagement_instance = get_object_or_404(Engagement, pk=pk)
+    parent_instance = get_object_or_404(Parent, pk=engagement_instance.parent_id)
+    provider_instance = get_object_or_404(Provider, pk=engagement_instance.provider_id)
+    time_code_instance = get_object_or_404(Timecode, pk=engagement_instance.time_code_id)
+    bill_type_instance = get_object_or_404(BillingTypes, pk=engagement_instance.type_id)
+    new_start_date = engagement_instance.start_date + relativedelta(years=1)
+    new_fye = engagement_instance.fye + relativedelta(years=1)
+    new_budget_amount = engagement_instance.budget_amount
+    new_budget_hours = engagement_instance.budget_hours
+    is_complete = False
+    new_parent = parent_instance
+    new_provider = provider_instance
+    new_time_code = time_code_instance
+    new_bill_type = bill_type_instance
+
+    who = new_provider.provider_id
+    what = new_time_code.time_code
+    when = new_fye
+    how = new_bill_type.type_id
+
+    if when == '':
+        new_engagement_srg_id = str(who) + "." + str(what) + "." + str(how)
+    else:
+        when = when.year
+        new_engagement_srg_id = str(who) + "." + str(what) + "." + str(when) + "." + str(how)
+
+    new_engagement = Engagement(engagement_srg_id=new_engagement_srg_id, start_date=new_start_date, fye=new_fye,
+                                budget_amount=new_budget_amount, budget_hours=new_budget_hours, is_complete=is_complete,
+                                parent=new_parent, provider=new_provider, time_code=new_time_code, type=new_bill_type)
+
+    new_engagement.save()
+
+    return redirect('admin-dashboard')
+    # new_engagement = Engagement()
 
 
 def overBudgetAlert(pk):
@@ -498,3 +703,123 @@ def overBudgetAlert(pk):
     msg.send(fail_silently=False)
     # sg = SendGridAPIClient(SENDGRID_API_KEY)
     # response = sg.send(msg)
+
+
+# Archived Functions #
+'''
+def adminDashboardArchive(request):
+    user_info = get_object_or_404(User, pk=request.user.id)
+    parents = list(Parent.objects.all())
+    parents = sorted(parents, key=lambda x: (x.parent_id.isdigit(), x.parent_id))
+
+    # engagements = Engagement.objects.annotate(total_hours=Sum('time__hours'))
+
+    engagements = Engagement.objects.values("engagement_id", "engagement_srg_id", "parent_id", "parent__parent_name",
+                                            "provider_id", "provider__provider_name", "time_code",
+                                            "time_code__time_code_desc",
+                                            "is_complete", "fye", "budget_hours", "budget_amount").annotate(
+        engagement_hours_sum=Sum('time__hours'), budget_calc=Max('budget_amount') / 250).order_by('-fye', 'time_code',
+                                                                                                  'provider_id',
+                                                                                                  'engagement_hours_sum')
+
+    engagement_billable = Time.objects.values("engagement_id").filter(time_type_id='B').annotate(
+        bill_hours=Sum('hours'))
+    engagement_non_billable = Time.objects.values("engagement_id").filter(time_type_id='N').annotate(
+        non_bill_hours=Sum('hours'))
+
+    # employee_ts_breakdown = Time.objects.values("engagement", "employee_id").annotate(total_ts_hours=Sum('hours'))
+    # employee_td_breakdown = Todolist.objects.values("engagement", "employee_id").annotate(
+    #    total_td_hours=Sum('anticipated_hours'))
+
+    result = Time.objects.values('engagement_id', 'employee_id', 'employee__user__username',
+                                 'employee__title__rate').annotate(
+        TS_Hours=Sum('hours'),
+        TD_Hours=Sum('engagement__todolist__anticipated_hours')
+    ).filter(engagement_id=F('engagement'), employee_id=F('employee')).values(
+        'engagement_id',
+        'employee_id',
+        'employee__user__username',
+        'TS_Hours',
+        'TD_Hours',
+        'employee__title__rate'
+    ).distinct().order_by('engagement', 'employee_id')
+
+    # result = Time.objects.values('engagement_id', 'employee_id', 'employee__user__username',
+    #                            'employee__title__rate').annotate(TS_Hours=Sum('hours'))
+
+    ts_hours_qs = Time.objects.filter(engagement_id=OuterRef('engagement_id'),
+                                      employee_id=OuterRef('employee_id')).values(
+        'engagement_id', 'employee_id').annotate(TS_Hours=Sum('hours')).values('TS_Hours')
+
+    td_hours_qs = Todolist.objects.filter(engagement_id=OuterRef('engagement_id'),
+                                          employee_id=OuterRef('employee_id')).values(
+        'engagement_id', 'employee_id').annotate(TD_Hours=Sum('anticipated_hours')).values('TD_Hours')
+
+    result = Todolist.objects.values('engagement_id', 'employee_id', 'employee__user__username',
+                                     'employee__title__rate').annotate(
+        TS_Hours=Subquery(ts_hours_qs, output_field=IntegerField()),
+        TD_Hours=Sum('anticipated_hours')
+    ).annotate(
+        Rate=Case(
+            When(TS_Hours=0, then=Value(0)),
+            default=F('TS_Hours') / F('TD_Hours'),
+            output_field=FloatField()
+        )
+    )
+
+    result_qs = Engagement.objects.annotate(
+        engagement=F('engagement_id'),
+        par=F('parent_id'),
+        prov=F('provider_id'),
+        # TS_EMP=F('engagement_id__time__employee_id'),
+        TS_HOURS=Subquery(ts_hours_qs, output_field=IntegerField()),
+        # TD_EMP=F('engagement_id__todolist__employee_id'),
+        TD_HOURS=Subquery(td_hours_qs, output_field=IntegerField())
+    ).filter(
+        Q(time__srg_id__in=Subquery(ts_hours_qs.values('engagement_id'))) |
+        Q(todolist__srg_id__in=Subquery(td_hours_qs.values('engagement_id')))
+    ).distinct().order_by('parent_id', 'provider_id')
+
+    # Access the results from the queryset
+    for item in result_qs:
+        engagement_srg_id = item.engagement_srg_id
+        parent_id = item.parent_id
+        provider_id = item.provider_id
+        ts_emp = item.TS_EMP
+        ts_hours = item.TS_HOURS
+        td_emp = item.TD_EMP
+        td_hours = item.TD_HOURS
+
+        print(f"Engagement SRG ID: {engagement_srg_id}, Parent ID: {parent_id}, Provider ID: {provider_id}")
+        print(f"TS Employee ID: {ts_emp}, TS Hours: {ts_hours}")
+        print(f"TD Employee ID: {td_emp}, TD Hours: {td_hours}")
+
+    if request.method == 'POST':
+        createEngagementForm = CreateEngagementForm(request.POST)
+
+        who = request.POST.get('provider')
+        what = request.POST.get('time_code')
+        when = request.POST.get('fye')
+        how = request.POST.get('type')
+
+        if when == '':
+            engagement_srg_id = who + "." + str(what) + "." + how
+        else:
+            when = when[:4]
+            engagement_srg_id = who + "." + str(what) + "." + str(when) + "." + how
+
+        if createEngagementForm.is_valid():
+            new_engagement = createEngagementForm.save(commit=False)
+            new_engagement.engagement_srg_id = engagement_srg_id
+            new_engagement.save()
+
+            return redirect('admin-dashboard')
+    else:
+        createEngagementForm = CreateEngagementForm()
+
+    context = {'user_info': user_info, 'parents': parents, 'createEngagementForm': createEngagementForm,
+               'engagements': engagements, 'engagement_billable': engagement_billable,
+               'engagement_non_billable': engagement_non_billable, "result": result, 'td_hours_qs': td_hours_qs}
+
+    return render(request, 'adminDashboard.html', context)
+'''

@@ -1,0 +1,192 @@
+{% extends 'layout.html' %}
+{% load mathfilters %}
+
+{% block content %}
+
+    <div class="row border">
+        <div class="col-3 px-1">
+            <div class="card srg-border vh-100 overflow-auto">
+                <div class="card-header srg-bg-secondary srg-header d-flex justify-content-between align-items-baseline sticky-top">
+                    <h5>Clients</h5>
+                    <input class="search-box" type="text" id="searchBar" onkeyup="searchClients()" placeholder="Search for clients.." title="Type in a name">
+                    <button type="button" class="btn srg-link" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><i class="bi bi-plus-circle"></i></button>
+                </div>
+
+                <div class="card-body">
+                    <div class="list-group" role="tablist" id="clientList">
+                        {% for parent in parents %}
+                            <a href="#list-{{ parent.parent_id }}" class="srg-link srg-list-group-item text-decoration-none mb-2" id="list-{{ parent.parent_id }}-list" data-bs-toggle="list" type="button" role="tab" aria-controls="tab-pane" aria-selected="true">
+                                {{ parent }}
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-9">
+            <div class="tab-content" id="nav-TabContent">
+                {% for parent in parents %}
+                    <div class="tab-pane" id="list-{{ parent.parent_id }}" role="tabpanel" aria-labelledby="list-{{ parent.parent_id }}-list">
+                        <div class="card pt-0 rounded-3 vh-100 overflow-auto">
+                            <div class="card-header srg-bg-secondary d-flex justify-content-between align-items-baseline px-4 sticky-top">
+                                <h5 class="srg-header">{{ parent.parent_name }} Engagements</h5>
+                                <input class="search-box" type="text" id="search{{ parent.parent_id }}" onkeyup="searchEngagement{{ parent.parent_id }}()" placeholder="Search for engagements.." title="Type in a name">
+                                <button type="button" class="btn srg-link" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><i class="bi bi-plus-circle"></i> Add Engagement</button>
+                            </div>
+
+                            <script>
+                                function searchEngagement{{ parent.parent_id }}() {
+                                    let input, filter, table, rows, a, i, txtValue;
+                                    input = document.getElementById("search{{ parent.parent_id }}");
+                                    filter = input.value.toUpperCase();
+                                    console.log(filter)
+                                    table = document.getElementById('table{{ parent.parent_id }}');
+                                    rows = table.getElementsByTagName("tr");
+
+                                    for (i = 0; i < rows.length; i++) {
+                                        a = rows[i].getElementsByTagName("td")[0];
+                                        if (a) {
+                                            txtValue = a.textContent || a.innerText;
+                                            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                                                rows[i].style.display = "";
+                                            } else {
+                                                rows[i].style.display = "none";
+                                            }
+                                        }
+
+                                    }
+                                }
+                            </script>
+                            <div class="card-body">
+                                <table class="table" id="table{{ parent.parent_id }}">
+                                    <thead>
+                                        <tr>
+                                            <th>Engagement ID</th>
+                                            <th>Parent</th>
+                                            <th>Provider</th>
+                                            <th>Scope</th>
+                                            <th>FY</th>
+                                            <th>Total Hours</th>
+                                            <th>Hours Budget</th>
+                                            <th>Variance</th>
+                                        </tr>
+                                    </thead>
+                                    {% for engagement in engagements %}
+                                        {% if engagement.parent_id == parent.parent_id %}
+                                            <tr>
+                                                <td><a href="{% url 'engagement-detail' engagement.engagement_id %}" class="srg-link">{{ engagement.engagement_srg_id }}</a></td>
+                                                <td>{{ engagement.parent__parent_name }}</td>
+                                                <td>{{ engagement.provider_id }}-{{ engagement.provider__provider_name }}</td>
+                                                <td>{{ engagement.time_code }}-{{ engagement.time_code__time_code_desc }}</td>
+                                                <td>{{ engagement.fye|date:'m/d/Y' }}</td>
+                                                <td>{{ engagement.engagement_hours_sum }}</td>
+                                                <td>{{ engagement.budget_calc }}</td>
+                                                <td>{{ engagement.budget_calc|sub:engagement.engagement_hours_sum|floatformat:0 }}</td>
+                                            </tr>
+                                        {% endif %}
+
+                                    {% endfor %}
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+        </div>
+
+
+            <div class="modal fade" tabindex="-1" id="createEngagementModal" aria-labelledby="createEngagementModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header srg-bg-secondary pb-0">
+                            <h4 class="srg-header">Create Engagement Form</h4>
+                        </div>
+                        <div class="modal-body">
+                            <form class="" method="POST">
+                                {% csrf_token %}
+                                {% for field in createEngagementForm %}
+                                    <div class="fieldWrapper mb-3">
+                                    {{ field.label_tag }}<br>{{ field }}
+                                    {% if field.help_text %}
+                                        <p class="help">{{ field.help_text|safe }}</p>
+                                    {% endif %}
+                                    </div>
+                                {% endfor %}
+                                <button id="spinner-btn" class="srg-btn-primary my-2" type="submit">
+                                    <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+                                    Create Engagement
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+
+    </div>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+        <!--
+        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+        <script>
+          $(document).ready(function() {
+            // When the button is clicked
+            $("#spinner-btn").on("click", function() {
+              // Disable the button to prevent multiple clicks
+              $(this).prop("disabled", true);
+              // Show the spinner
+              $(this).find(".spinner-border").removeClass("d-none");
+
+              // Simulate some async task (e.g., API call) to demonstrate the spinner
+              setTimeout(function() {
+                // Re-enable the button after the task is completed
+                $("#spinner-btn").prop("disabled", false);
+                // Hide the spinner
+                $("#spinner-btn .spinner-border").addClass("visually-hidden");
+              }, 8000); // Simulated 2 seconds delay, replace this with your actual task
+            });
+          });
+        </script>
+        -->
+
+        <script type="text/javascript">
+            $(document).ready(function () {
+            $('a[data-bs-toggle="list"]').on('shown.bs.tab', function (e) {
+                $(e.target).css("color", "#ffffff");
+                $(e.target).css("background-color", "#02308C");
+                $(e.target).css("border-color", "#02308C");
+                $(e.relatedTarget).css("color", "#02308C");
+                $(e.relatedTarget).css("background-color", "#ffffff");
+                $(e.relatedTarget).css("border-color", "#a9a9a9");
+            })
+        })
+        </script>
+
+        <script>
+
+            function searchClients() {
+                // Declare Variables
+                let input, filter, ul, li, a, i, txtValue;
+                input = document.getElementById('searchBar')
+                filter = input.value.toUpperCase();
+                console.log(filter)
+                ul = document.getElementById('clientList')
+                li = ul.getElementsByTagName('a');
+
+                // Loop through elements and display only matches
+                for (i = 0; i < li.length; i++) {
+                    // a = li[i].getElementsByTagName("a")[0];
+                    txtValue = li[i].textContent || li[i].innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        li[i].style.display = "block";
+                    } else {
+                        li[i].style.display = "none";
+                    }
+                }
+
+            }
+        </script>
+{% endblock %}

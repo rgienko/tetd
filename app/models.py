@@ -3,6 +3,8 @@ from datetime import date
 from django.contrib.auth.models import User
 import uuid
 
+from django.db.models import Sum
+
 
 # Create your models here.
 
@@ -157,6 +159,10 @@ class Time(models.Model):
 
     def getScope(self):
         return self.engagement.time_code
+
+    def hours_by_employee_engagement(self):
+        sum_by_employee_engagement = self.objects.values('engagement', 'employee').annotate(sum_hours=Sum('hours'))
+        return sum_by_employee_engagement['sum_hours']
 
 
 class ExpenseCategory(models.Model):

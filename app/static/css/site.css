@@ -1,3 +1,7 @@
+.custom-width {
+    width: 150px;
+}
+
 /* COLORS */
 .srg-bg-primary {
     background: #02308C
@@ -36,6 +40,7 @@
     color: #d9d9d9;
 }
 /* BUTTONS, LINKS, LISTS */
+
 .srg-active {
     color: #ffffff;
     background-color: #02308C;
@@ -99,8 +104,24 @@
     border-radius: 16px;
 }
 
+.srg-btn-primary:hover {
+    background-color: white;
+    border: 1px solid #02308C;
+    color: #02308C;
+    padding: 8px 16px 8px 16px;
+    border-radius: 16px;
+}
+
 .srg-btn-secondary {
     background-color: #d9d9d9;
+    border: 1px solid #d9d9d9;
+    color: #02308C;
+    padding: 8px 16px 8px 16px;
+    border-radius: 16px;
+}
+
+.srg-btn-secondary:hover {
+    background-color: white;
     border: 1px solid #d9d9d9;
     color: #02308C;
     padding: 8px 16px 8px 16px;
@@ -119,6 +140,14 @@
     background: #8B0000;
     border: 1px solid #8B0000;
     color: white;
+    padding: 8px 16px 8px 16px;
+    border-radius: 16px;
+}
+
+.srg-btn-danger:hover {
+    background: white;
+    border: 1px solid #8B0000;
+    color: #02308C;
     padding: 8px 16px 8px 16px;
     border-radius: 16px;
 }
