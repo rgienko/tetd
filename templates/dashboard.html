@@ -1,4 +1,5 @@
 {% extends 'layout.html' %}
+{% load mathfilters %}
 
 {% block content %}
     <div class="container-xxl">
@@ -94,10 +95,10 @@
                         {% for engagement in user_engagements %}
                         <a href="#" class="srg-link srg-list-group-item text-decoration-none mb-2"
                            id="{{ engagement.engagement_srg_id }}-tab" data-bs-toggle="tab" data-bs-target="#{{ engagement.engagement_srg_id }}-tab-pane" type="button" role="tab" aria-controls="{{ engagement.engagement_srg_id }}-tab-pane" aria-selected="true">
-                            {{ engagement }}<br>
-                            {{ engagement.getParentName }}<br>
-                            {{ engagement.provider }}<br>
-                            {{ engagement.time_code }} - {{ engagement.fye|date:'m/d/Y' }}
+                            {{ engagement.engagement_srg_id }}<br>
+                            {{ engagement.parent_id }}-{{ engagement.parent__parent_name }}<br>
+                            {{ engagement.provider_id }}-{{ engagement.provider__provider_name }}<br>
+                            {{ engagement.time_code }}-{{ engagement.time_code__time_code_desc }} - {{ engagement.fye|date:'m/d/Y' }}
                         </a>
                         {% endfor %}
                     </div>
@@ -123,9 +124,10 @@
 
                                 <h5 class="srg-header">General Information</h5>
                                 <p>
-                                    {{ engagement.time_code }} - {{ engagement.fye|date:'m/d/Y' }}<br>
-                                    {{ engagement.getParentName }}<br>
-                                    {{ engagement.provider }}
+                                    {{ engagement.time_code }}-{{ engagement.time_code__time_code_desc }} - {{ engagement.fye|date:'m/d/Y' }}<br>
+                                    {{ engagement.parent_id }}-{{ engagement.parent__parent_name }}<br>
+                                    {{ engagement.provider_id }}-{{ engagement.provider__provider_name }}<br>
+
                                 </p>
                                 <h5 class="srg-header">Hours Breakdown</h5>
                                 <div class="row d-flex justify-content-center py-1">
@@ -135,7 +137,7 @@
                                                 Hours
                                             </div>
                                             <div class="card-body fs-3">
-                                                {{ engagement.total_engagement_hours.hours__sum }}
+                                                {{ engagement.engagement_hours_sum }}
                                             </div>
                                         </div>
                                    </div>
@@ -145,7 +147,7 @@
                                                 Budget
                                             </div>
                                             <div class="card-body fs-3">
-                                                {{ engagement.budget_hours }}
+                                                {{ engagement.budget_calc }}
                                             </div>
                                         </div>
                                    </div>
@@ -155,7 +157,7 @@
                                                 Variance
                                             </div>
                                             <div class="card-body fs-3">
-                                                {{ engagement.variance }}
+                                                {{ engagement.budget_calc|sub:engagement.engagement_hours_sum }}
                                             </div>
                                         </div>
                                    </div>

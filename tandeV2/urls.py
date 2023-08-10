@@ -27,6 +27,7 @@ urlpatterns = [
     path('todolist/', views.EmployeeTodolist, name='employee-todolist'),
     path('expenses/', views.EmployeeExpense, name='employee-expenses'),
     path('admin-dashboard/', views.AdminDashboard, name='admin-dashboard'),
+    path('admin-dashboard/generatepdf/<mnth>/', views.createEmployeeHoursCompilationReport, name='generate-report-pdf'),
     path('engagement-dashboard/', views.EngagementDashboard, name='engagement-dashboard'),
     path('engagement-detail/<pk>/', views.AdminEngagementDetail, name='engagement-detail'),
     path('admin-timesheet/', views.AdminTimesheet, name='admin-timesheet'),

@@ -78,5 +78,6 @@ class UpdateEngagementStatusForm(forms.ModelForm):
 
 class MonthSelectForm(forms.Form):
     MONTH_CHOICES = [(str(i), calendar.month_name[i]) for i in range(1, 13)]
+    MONTH_CHOICES.append(('YTD', 'YTD'))
 
     month = forms.ChoiceField(choices=MONTH_CHOICES, widget=forms.Select(attrs={'class': 'form-select', 'onchange': 'submit()'}))
