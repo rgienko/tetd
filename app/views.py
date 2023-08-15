@@ -283,6 +283,7 @@ def getCompilationData(mnth):
 def AdminDashboard(request):
     user_info = get_object_or_404(User, pk=request.user.id)
     today = date.today()
+    today_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     week_beg = today - timedelta(days=today.weekday())
     week_end = week_beg + timedelta(days=5)
     employees = Employee.objects.all().order_by('title', 'user__last_name')
@@ -352,6 +353,10 @@ def AdminDashboard(request):
                        'srg_total_pto_hours': new_data[46],
                        'srg_total_billable_hours': new_data[47],
                        'srg_total_hours': new_data[48],
+                       'vp_loss_rev': new_data[49],
+                       'mgr_lost_rev': new_data[50],
+                       'c_lost_rev': new_data[51],
+                       'srg_total_lost_revenue': new_data[52],
                        'selected_month': selected_month,
                        'month_form': month_form}
 
@@ -417,7 +422,7 @@ def AdminDashboard(request):
                    'mgr_lost_rev': current_month_data[50],
                    'c_lost_rev': current_month_data[51],
                    'srg_total_lost_revenue': current_month_data[52],
-                   'selected_month': today,
+                   'selected_month': today_time,
                    'month_form': month_form}
 
         return render(request, 'adminDashboard.html', context)
@@ -560,8 +565,8 @@ def AdminTimesheet(request):
         response = HttpResponse(content_type='application/vns.ms-excel')
         response['Content-Disposition'] = 'attachment; filename=' + fname + '.xlsx'
         with pandas.ExcelWriter(response, engine='xlsxwriter') as writer:
-            ts_data.to_excel(writer, sheet_name=('SRG Timesheet Compilation'), index=False, header=True)
-            ex_data.to_excel(writer, sheet_name=('SRG Expense Compilation'), index=False, header=True)
+            ts_data.to_excel(writer, sheet_name='SRG Timesheet Compilation', index=False, header=True)
+            ex_data.to_excel(writer, sheet_name='SRG Expense Compilation', index=False, header=True)
             # df_hfy.to_excel(writer, sheet_name=('PFY ' + fye), index=False, header=True)
 
             return response
@@ -910,7 +915,6 @@ def overBudgetAlert(pk):
 
 def createEmployeeHoursCompilationReport(request, mnth):
     global period
-    print(mnth)
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(name='Justify', alignment=TA_JUSTIFY))
     title = Paragraph('<para color=#02308C>Strategic Reimbursement Group, LLC</para>', styles['Normal'])
@@ -1017,31 +1021,95 @@ def createEmployeeHoursCompilationReport(request, mnth):
         [vp_total_text, vp_fixed_total_column, vp_hourly_total, vp_cgy_total, vp_nb_total, vp_pto_total,
          vp_billable_total, vp_total_total, vp_percent_billable_total])
 
-    table_row = Table(data, repeatRows=1, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
-                                                     2 * cm, 2 * cm, 2 * cm])
+    # ################################################# MANAGERS TABLE #################################################
+    mgr_fixed = compilationData[14]
+    mgr_hourly = compilationData[15]
+    mgr_cgy = compilationData[16]
+    mgr_nb = compilationData[17]
+    mgr_pto = compilationData[18]
+    mgr_billable = compilationData[19]
+    mgr_total = compilationData[20]
 
-    table_row.hAlign = 'CENTER'
+    mgrEmployeeFixedColumn = 0
+    mgrEmployeeHourlyColumn = 0
+    mgrEmployeeCGYColumn = 0
+    mgrEmployeeNBColumn = 0
+    mgrEmployeePTOColumn = 0
+    mgrEmployeeBillableColumn = 0
+    mgrEmployeeTotalColumn = 0
+    mgrPercentBillable = 0
+
+    mgr_data = []
+    mgr_total_data = []
+
+    for emp in mgrs:
+        employeeColumn = Paragraph('<para align=left>' + str(emp['user__username']) + '</para>', styles['Normal'])
+        for item in mgr_fixed:
+            if item['employee_id'] == emp['employee_id']:
+                mgrEmployeeFixedColumn = str(item['fixed_hours_by_employee_sum'])
+        for item in mgr_hourly:
+            if item['employee_id'] == emp['employee_id']:
+                mgrEmployeeHourlyColumn = Paragraph(
+                    '<para align=center>' + str(item['hourly_hours_by_employee_sum']) + '</para>', styles['Normal'])
+                # data.append([employeeHourlyColumn])
+        for item in mgr_cgy:
+            if item['employee_id'] == emp['employee_id']:
+                mgrEmployeeCGYColumn = Paragraph(
+                    '<para align=center>' + str(item['cgy_hours_by_employee_sum']) + '</para>')
+        for item in mgr_nb:
+            if item['employee_id'] == emp['employee_id']:
+                mgrEmployeeNBColumn = Paragraph(
+                    '<para align=center>' + str(item['non_billable_hours_sum']) + '</para>', styles['Normal'])
+        for item in mgr_pto:
+            if item['employee_id'] == emp['employee_id']:
+                mgrEmployeePTOColumn = Paragraph(
+                    '<para align=center>' + str(item['pto_hours_by_employee_sum']) + '</para>', styles['Normal'])
+        for item in mgr_billable:
+            if item['employee_id'] == emp['employee_id']:
+                mgrPercentBillable = (item['billable_hours_sum'] / 200) * 100
+                mgrEmployeeBillableColumn = Paragraph(
+                    '<para align=center>' + str(item['billable_hours_sum']) + '</para>', styles['Normal'])
+        for item in mgr_total:
+            if item['employee_id'] == emp['employee_id']:
+                mgrEmployeeTotalColumn = Paragraph(
+                    '<para align=center>' + str(item['total_hours_sum']) + '</para>', styles['Normal'])
+        mgrEmployeePercentBillableColumn = Paragraph('<para align=center>' + str(mgrPercentBillable) + ' %</para>',
+                                                     styles['Normal'])
+
+        mgr_data.append([employeeColumn, mgrEmployeeFixedColumn, mgrEmployeeHourlyColumn, mgrEmployeeCGYColumn,
+                         mgrEmployeeNBColumn, mgrEmployeePTOColumn, mgrEmployeeBillableColumn,
+                         mgrEmployeeTotalColumn, mgrEmployeePercentBillableColumn])
+
     tblStyle = TableStyle([('BOX', (0, 0), (-1, -1), 1, colors.black),
-                           ('INNERGRID', (0, 0), (-1, -1), 1, colors.black)])
+                           ('INNERGRID', (0, 0), (-1, -1), 1, colors.black),
+                           ('ALIGN', (0, 0), (-1, -1), 'CENTER')])
 
-    table_row.setStyle(tblStyle)
-
-    total_row = Table(vp_total_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
-                                                2 * cm, 2 * cm, 2 * cm])
-    total_row.hAlign = 'CENTER'
     total_row_style = TableStyle([('BOX', (0, 0), (-1, -1), 1, colors.black),
                                   ('INNERGRID', (0, 0), (-1, -1), 1, colors.black),
                                   ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#02308C'))])
 
-    total_row.setStyle(total_row_style)
+    vp_table_row = Table(data, repeatRows=1, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
+                                                        2 * cm, 2 * cm, 2 * cm])
+    vp_table_row.hAlign = 'CENTER'
+    vp_table_row.setStyle(tblStyle)
+    vp_total_row = Table(vp_total_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
+                                                   2 * cm, 2 * cm, 2 * cm])
+    vp_total_row.hAlign = 'CENTER'
+    vp_total_row.setStyle(total_row_style)
+
+    mgr_table_row = Table(mgr_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
+                                               2 * cm, 2 * cm, 2 * cm])
+    mgr_table_row.hAlign = 'CENTER'
+    mgr_table_row.setStyle(tblStyle)
 
     elements.append(title)
     elements.append(subTitle)
     elements.append(period_text)
     spacer = Spacer(1, 20)
     elements.append(spacer)
-    elements.append(table_row)
-    elements.append(total_row)
+    elements.append(vp_table_row)
+    elements.append(vp_total_row)
+    elements.append(mgr_table_row)
 
     buffer = BytesIO()
     employeeHoursCompilationReportDoc = SimpleDocTemplate(buffer, pagesize=[A4[0], A4[1]], leftMargin=5, rightMargin=0,

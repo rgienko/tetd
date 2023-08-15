@@ -1,3 +1,4 @@
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from datetime import date
 from django.contrib.auth.models import User
@@ -83,6 +84,8 @@ class Engagement(models.Model):
     provider = models.ForeignKey(Provider, on_delete=models.CASCADE)
     time_code = models.ForeignKey(Timecode, on_delete=models.CASCADE)
     type = models.ForeignKey(BillingTypes, on_delete=models.CASCADE)
+    is_rac = models.BooleanField(default=False)
+    engagement_hourly_rate = models.IntegerField(null=True, blank=True, default=0, validators=[MinValueValidator(1), MaxValueValidator(1000)])
     notes = models.TextField(blank=True, null=True)
 
     def __str__(self):

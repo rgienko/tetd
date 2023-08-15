@@ -106,14 +106,99 @@
                         <div class="modal-body">
                             <form class="" method="POST">
                                 {% csrf_token %}
-                                {% for field in createEngagementForm %}
-                                    <div class="fieldWrapper mb-3">
-                                    {{ field.label_tag }}<br>{{ field }}
-                                    {% if field.help_text %}
-                                        <p class="help">{{ field.help_text|safe }}</p>
+
+                                <div class="fieldWrapper mb-3">
+                                    {{ createEngagementForm.provider.errors }}
+                                    <label for="{{ createEngagementForm.provider.id_for_label }}">Provider:</label>
+                                    {{ createEngagementForm.provider }}
+                                    {% if createEngagementForm.provider.help_text %}
+                                        <p class="help">{{ createEngagementForm.provider.help_text|safe }}</p>
                                     {% endif %}
+                                </div>
+
+                                <div class="fieldWrapper mb-3">
+                                    {{ createEngagementForm.parent.errors }}
+                                    <label for="{{ createEngagementForm.parent.id_for_label }}">Parent:</label><br>
+                                    {{ createEngagementForm.parent }}
+                                    {% if createEngagementForm.parent.help_text %}
+                                        <p class="help">{{ createEngagementForm.parent.help_text|safe }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div class="fieldWrapper mb-3">
+                                    {{ createEngagementForm.start_date.errors }}
+                                    <label for="{{ createEngagementForm.start_date.id_for_label }}">Start Date:</label><br>
+                                    {{ createEngagementForm.start_date }}
+                                    {% if createEngagementForm.start_date.help_text %}
+                                        <p class="help">{{ createEngagementForm.start_date.help_text|safe }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div class="fieldWrapper mb-3">
+                                    {{ createEngagementForm.time_code.errors }}
+                                    <label for="{{ createEngagementForm.time_code.id_for_label }}">Scope:</label><br>
+                                    {{ createEngagementForm.time_code }}
+                                    {% if createEngagementForm.time_code.help_text %}
+                                        <p class="help">{{ createEngagementForm.time_code.help_text|safe }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div class="fieldWrapper mb-3">
+                                    {{ createEngagementForm.fye.errors }}
+                                    <label for="{{ createEngagementForm.fye.id_for_label }}">FYE:</label><br>
+                                    {{ createEngagementForm.fye }}
+                                    {% if createEngagementForm.fye.help_text %}
+                                        <p class="help">{{ createEngagementForm.fye.help_text|safe }}</p>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    {{ createEngagementForm.type.errors }}
+                                    <label for="{{ createEngagementForm.type.id_for_label }}">Type:<br>
+                                    {{ createEngagementForm.type }}
+                                    </label>
+                                    {% if createEngagementForm.type.help_text %}
+                                        <p class="help">{{ createEngagementForm.type.help_text|safe }}</p>
+                                    {% endif %}
+
+                                    <div class="ms-3 my-3 hidden-fields" id="extraFields" style="display:None">
+                                        <div class="col-2">
+                                            {{ createEngagementForm.is_rac.errors }}
+                                            <label for="{{ createEngagementForm.is_rac.id_for_label }}">RAC Rate:<br>
+                                            {{ createEngagementForm.is_rac }}
+                                            </label>
+                                            {% if createEngagementForm.is_rac.help_text %}
+                                                <p class="help">{{ createEngagementForm.is_rac.help_text|safe }}</p>
+                                            {% endif %}
+                                        </div>
+
+                                        <div class="col-5 mt-2">
+                                            {{ createEngagementForm.engagement_hourly_rate.errors }}
+                                            <label for="{{ createEngagementForm.engagement_hourly_rate.id_for_label }}">Custom Rate:<br>
+                                            {{ createEngagementForm.engagement_hourly_rate }}
+                                            </label>
+                                            {% if createEngagementForm.engagement_hourly_rate.help_text %}
+                                                <p class="help">{{ createEngagementForm.engagement_hourly_rate.help_text|safe }}</p>
+                                            {% endif %}
+                                        </div>
+
                                     </div>
-                                {% endfor %}
+                                </div>
+
+
+
+                                <div class="fieldWrapper mb-3">
+                                    {{ createEngagementForm.budget_amount.errors }}
+                                    <label for="{{ createEngagementForm.budget_amount.id_for_label }}">Budget Amount:<br>
+                                    {{ createEngagementForm.budget_amount }}
+                                    </label>
+                                    {% if createEngagementForm.budget_amount.help_text %}
+                                        <p class="help">{{ createEngagementForm.budget_amount.help_text|safe }}</p>
+                                    {% endif %}
+                                </div>
+
+
+
                                 <button id="spinner-btn" class="srg-btn-primary my-2" type="submit">
                                     <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
                                     Create Engagement
@@ -164,6 +249,21 @@
             })
         })
         </script>
+
+        <script type="text/javascript">
+            $(document).ready(function () {
+                $('#id_type').on('change', function () {
+                    let selectedValue = $(this).val();
+                    console.log(selectedValue)
+                    if (selectedValue === 'H') {
+                        $('.hidden-fields').show()
+                    } else {
+                        $('.hidden-fields').hide();
+                    }
+                });
+            });
+        </script>
+
 
         <script>
 

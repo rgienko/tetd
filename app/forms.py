@@ -11,11 +11,14 @@ class CreateEngagementForm(forms.ModelForm):
     class Meta:
         model = Engagement
 
-        fields = ['provider', 'parent', 'start_date', 'time_code', 'fye', 'type', 'budget_amount']
+        fields = ['provider', 'parent', 'start_date', 'time_code', 'fye', 'type', 'is_rac',
+                  'engagement_hourly_rate', 'budget_amount']
 
         widgets = {
             'fye': DatePickerInput,
-            'start_date': DatePickerInput
+            'start_date': DatePickerInput,
+            'is_rac': forms.CheckboxInput(attrs={'size': 12}),
+            'engagement_hourly_rate': forms.NumberInput(attrs={'width': 5})
         }
 
 
