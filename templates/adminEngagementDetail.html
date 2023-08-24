@@ -207,7 +207,7 @@
                                     {% elif emp.td_hours is None %}
                                     {{ emp.ts_hours }}
                                     {% else %}
-                                        {{ emp.ts_hours|sub:emp.TD_HOURS }}
+                                        {{ emp.ts_hours|sub:emp.td_hours }}
                                 {% endif %}
                              </td>
                          </tr>

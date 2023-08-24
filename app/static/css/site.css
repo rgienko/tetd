@@ -1,6 +1,37 @@
 .custom-width {
     width: 150px;
 }
+/* SRG TABLE */
+.srg-table {
+    font-size: 11pt
+}
+
+#srg-table tr > td:last-child {
+    background-color: #ccd9cc;
+    color:black;
+}
+
+#srg-table tr > td:nth-last-child(2) {
+    background-color: #ccd6e8;
+    color:black;
+}
+
+#srg-table tr > td:nth-last-child(3) {
+    background-color: #d9d9d9;
+    color:black;
+}
+
+.srg-table th {
+    padding: 8px;
+    width: auto;
+    border: 1px solid #a9a9a9;
+}
+
+.srg-table td {
+    padding: 10px;
+    width: auto;
+    border: 1px solid #a9a9a9;
+}
 
 /* COLORS */
 .srg-bg-primary {

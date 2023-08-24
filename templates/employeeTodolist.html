@@ -1,160 +1,203 @@
 {% extends 'layout.html' %}
 
 {% block content %}
-    <div class="row border vh-100">
-        <div class="col-4 vh-100">
-            <div class="card vh-100">
-                <div class="card-header srg-header d-flex justify-content-between align-items-baseline">
-                    <h5>My Engagements</h5>
-                    <input class="search-box" type="text" id="searchBar" onkeyup="searchClients()" placeholder="Search for engagements.." title="Type in a name">
-                </div>
 
-                <div class="card-body px-2 py-2">
-                    <div class="list-group" role="tablist" id="clientList">
-                        {% for engagement in user_engagements %}
-                            <div class="srg-list-group-item my-2">
-                                <div class="row d-flex align-items-center">
-                                    <div class="col-10">
-                                        {{ engagement.getParentName }}<br>
-                                        {{ engagement.provider }}<br>
-                                        {{ engagement.time_code }}<br>
-                                        {{ engagement.fye|date:'m/d/Y' }}
-                                    </div>
-                                    <div class="col-2 p-0 m-0 d-flex justify-content-center">
-                                              <a type="button" class="srg-link" id="time-modal-{{ engagement.engagement }}-modal" data-bs-toggle="modal" data-toggle="tooltip" data-title="Yay"
-                                               data-bs-target="#time-modal-{{ forloop.counter }}" data-id="{{ engagement.engagement }}"
-                                               href="#time-modal-{{ forloop.counter }}-modal" aria-controls="{{ engagement.engagement }}"><i class="bi bi-plus-circle fs-4"></i></a>
-
-                                    </div>
-                                </div>
-                            </div>
-                            <!--
-                            <a class="srg-link srg-list-group-item text-decoration-none mb-2"
-                               id="modal-{{ engagement.engagement }}-modal" data-bs-toggle="modal"
-                                       data-bs-target="#modal-{{ forloop.counter }}" data-id="{{ engagement.engagement }}"
-                                       href="#modal-{{ forloop.counter }}-modal" aria-controls="{{ engagement.engagement }}">
-                                {{ engagement.getParentName }}<br>
-                                {{ engagement.provider }}<br>
-                                {{ engagement.time_code }} - {{ engagement.fye|date:'m/d/Y' }}
-                            </a>
-                            -->
-
-                            <div class="modal fade" id="time-modal-{{ forloop.counter }}" tabindex="-1" aria-labelledby="time-modal-{{ engagement.engagement }}-modal" aria-hidden="true">
-                                <div class="modal-dialog" id="modal">
-                                    <div class="modal-content">
-                                        <div class="modal-header srg-bg-primary text-light fs-5">
-                                            Add Item
-                                        </div>
-                                        <div class="modal-body">
-                                            <form class="" method="POST">
-                                                {% csrf_token %}
-                                                    <label for="my-input-{{ forloop.counter }}">Engagement:</label><br>
-                                                    <input name="todo-input" type="text" id="my-input-{{ forloop.counter }}" value="{{ engagement.engagement_srg_id }}"/><br>
-                                                {% for field in todo_form %}
-                                                    <div class="fieldWrapper my-3">
-                                                        {{ field.label_tag }} <br>{{ field }}
-                                                        {% if field.help_text %}
-                                                            <p class="help">{{ field.help_text|safe }}</p>
-                                                        {% endif %}
-                                                    </div>
-
-                                                {% endfor %}
-                                                <button class="srg-btn-primary my-2">Submit Time</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-8">
+    <div class="row vh-50">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header srg-header">
                     <h5>
                         My To-Do List <br>
                         Period: {{ week_beg|date:'m/d/Y' }} - {{ week_end|date:'m/d/Y' }}
                     </h5>
+
+
                 </div>
                 <div class="card-body">
-                    <div class="">
-                        <table class="table table-bordered">
-                            {% for dy in current_week %}
-                                {% if forloop.counter == 1 %}
-                                <thead>
-                                    <tr class="">
-                                        <th>Date</th>
-                                        <th class="">Provider</th>
-                                        <th class="">Scope</th>
-                                        <th class="">Exp. Hours</th>
-                                        <th class="text-center">Note</th>
-                                    </tr>
-                                </thead>
-                                {% else %}
+                    <div class="row d-flex justify-content-between gap-1">
+                        {% for dy in page_obj %}
+                            <div class="col-1 flex-grow-1 card text-center {% if dy == today %}srg-bg-secondary{% endif %}">
+                                <div class="card-header bg-transparent"><a href="#" class="text-decoration-none srg-link" id="day-modal-{{ dy }}-modal" data-bs-toggle="modal" data-toggle="tooltip" data-title="Yay"
+                                               data-bs-target="#day-modal-{{ forloop.counter }}" data-id="{{ dy }}"
+                                               href="#day-modal-{{ forloop.counter }}-modal" aria-controls="{{ dy }}">{{ dy|date:'D m/d/Y' }}</a></div>
+                                <div class="card-body text-start px-0">
+                                    <ul class="list-group">
+                                    {% for item in employee_td_entries %}
+                                        {% if item.todo_date == dy %}
+                                            <li class="list-group-item srg-bg-primary p-0 ps-1 text-white my-1 rounded-3" data-bs-html="true" data-toggle="popover" data-bs-title="{{ item.getProvider }}" data-bs-content="{{ item.getScope }}<br/>{{ item.getFYE|date:'m/d/Y' }}<br/> {{ item.anticipated_hours }} Hours">
+                                                {{ item.getProviderID }} -
+                                                {{ item.getParent }} -
+                                                {{ item.getTC }} -
+                                                {{ item.getFYE|date:'Y' }}
+                                        {% else %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="modal fade" id="day-modal-{{ forloop.counter }}" tabindex="-1" aria-labelledby="day-modal-{{ dy }}-modal" aria-hidden="true">
+                                <div class="modal-dialog modal-xl" id="modal">
+                                    <div class="modal-content">
+                                        <div class="modal-header srg-bg-primary text-light fs-5">
+                                            {{ dy|date:'m/d/Y' }} - Detail View
+                                        </div>
+                                        <div class="modal-body">
+                                            <table class="table table-sm">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Provider</th>
+                                                        <th>Parent</th>
+                                                        <th>Scope</th>
+                                                        <th>FY</th>
+                                                        <th>Hours</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for item in employee_td_entries %}
+                                                        {% if item.todo_date == dy %}
+                                                            <tr>
+                                                                <td>{{ item.getProvider }}</td>
+                                                                <td>{{ item.getParent }}</td>
+                                                                <td>{{ item.getScope }}</td>
+                                                                <td>{{ item.getFYE|date:'m/d/y' }}</td>
+                                                                <td>{{ item.anticipated_hours }}</td>
+                                                            </tr>
+                                                        {% else %}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                        {% endfor %}
+
+                        <style>
+                            .current {
+                                background: #02308C;
+                                color: #d9d9d9;
+                            }
+                        </style>
+
+                        <div class="pagination d-flex justify-content-center mt-2">
+                            <ul class="pagination">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item"><a class="d-flex align-items-center page-link srg-link" href="?page=1"><i class="bi bi-chevron-double-left"></i>First</a></li>
+                                    <li class="page-item"><a class="page-link srg-link" href="?page={{ page_obj.previous_page_number }}"><i class="bi bi-chevron-left"></i>Previous</a></li>
                                 {% endif %}
-
-                                {% for entry in employee_td_entries %}
-                                    {% if entry.todo_date == dy %}
-                                    <tr>
-                                        <th scope="row">{{ dy|date:'m/d/Y' }}</th>
-                                            <td>
-                                                {{ entry.getProvider }}
-                                            </td>
-                                            <td>
-
-                                                {{ entry.getScope }}
-                                            </td>
-                                            <td>
-                                                {{ entry.anticipated_hours }}
-                                            </td>
-                                            <td class="text-center">
-                                                {% if entry.note == '' %}
-                                                {% else %}
-                                                    <a type="button" class="srg-link" data-toggle="popover" data-bs-placement="left" data-bs-content="{{ entry.note|safe }}">
-                                                      <i class="bi bi-stickies-fill"></i>
-                                                    </a>
-                                                {% endif %}
-                                            </td>
-                                    </tr>
-                                    {% else %}
-                                    {% endif %}
+                                {% for p in page_obj.paginator.page_range %}
+                                    <li class="page-item"><a class="page-link srg-link {% if page_obj.number == p %}current{% endif %}" href="?page={{ p }}">{{ p }}</a></li>
                                 {% endfor %}
-                            {% endfor %}
-                        </table>
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item d-flex"><a class="d-flex align-items-center page-link srg-link" href="?page={{ page_obj.next_page_number }}">Next<i class="bi bi-chevron-right"></i></a></li>
+                                    <li class="page-item d-flex"><a class="page-link srg-link" href="?page={{ page_obj.paginator.num_pages }}">Last<i class="bi bi-chevron-double-right"></i></a></li>
+                                {% endif %}
+                            </ul>
+                        </div>
                     </div>
+
+
                 </div>
             </div>
 
         </div>
     </div>
+
+
+    <div class="row overflow-hidden vh-50 mt-2">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header srg-header d-flex justify-content-between align-items-baseline">
+                    <h5>My Engagements</h5>
+                    <input class="search-box" type="text" id="searchBar" onkeyup="searchClients()" placeholder="Search for engagements.." title="Type in a name">
+                </div>
+
+                <div class="card-body px-2 py-2">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Provider</th>
+                                <th>Parent</th>
+                                <th>Scope</th>
+                                <th>FYE</th>
+                                <th>Add</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientList">
+                            {% for engagement in user_engagements %}
+                                <tr>
+                                    <td>{{ engagement.provider }}</td>
+                                    <td>{{ engagement.parent }}</td>
+                                    <td>{{ engagement.time_code }}</td>
+                                    <td>{{ engagement.fye|date:'m/d/Y' }}</td>
+                                    <td><a type="button" class="srg-link" id="time-modal-{{ engagement.engagement }}-modal" data-bs-toggle="modal" data-toggle="tooltip" data-title="Yay"
+                                                   data-bs-target="#time-modal-{{ forloop.counter }}" data-id="{{ engagement.engagement }}"
+                                                   href="#time-modal-{{ forloop.counter }}-modal" aria-controls="{{ engagement.engagement }}"><i class="bi bi-plus-circle fs-4"></i></a>
+                                    </td>
+                                </tr>
+                                <div class="modal fade" id="time-modal-{{ forloop.counter }}" tabindex="-1" aria-labelledby="time-modal-{{ engagement.engagement }}-modal" aria-hidden="true">
+                                    <div class="modal-dialog" id="modal">
+                                        <div class="modal-content">
+                                            <div class="modal-header srg-bg-primary text-light fs-5">
+                                                Add Item
+                                            </div>
+                                            <div class="modal-body">
+                                                <form class="" method="POST">
+                                                    {% csrf_token %}
+                                                        <label for="my-input-{{ forloop.counter }}">Engagement:</label><br>
+                                                        <input name="todo-input" type="text" id="my-input-{{ forloop.counter }}" value="{{ engagement.engagement_srg_id }}"/><br>
+                                                    {% for field in todo_form %}
+                                                        <div class="fieldWrapper my-3">
+                                                            {{ field.label_tag }} <br>{{ field }}
+                                                            {% if field.help_text %}
+                                                                <p class="help">{{ field.help_text|safe }}</p>
+                                                            {% endif %}
+                                                        </div>
+
+                                                    {% endfor %}
+                                                    <button class="srg-btn-primary my-2">Submit Entry</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
 
         <script>
-
             function searchClients() {
                 // Declare Variables
-                let input, filter, ul, li, a, i, txtValue;
-                input = document.getElementById('searchBar')
+                let input, filter, table, tr, td, i, txtValue;
+                input = document.getElementById('searchBar');
                 filter = input.value.toUpperCase();
-                console.log(filter)
-                ul = document.getElementById('clientList')
-                li = ul.getElementsByClassName('srg-list-group-item');
+                table = document.getElementById('clientList');
+                tr = table.getElementsByTagName('tr');
 
-                // Loop through elements and display only matches
-                for (i = 0; i < li.length; i++) {
-                    a = li[i].getElementsByTagName("a")[0];
-                    txtValue = li[i].textContent || li[i].innerText;
-                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                        li[i].style.display = "block";
-                    } else {
-                        li[i].style.display = "none";
+                // Loop through rows and display only matching ones
+                for (i = 0; i < tr.length; i++) {
+                    td = tr[i].getElementsByTagName("td")[0]; // Assuming the name is in the first column
+                    if (td) {
+                        txtValue = td.textContent || td.innerText;
+                        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                            tr[i].style.display = "table-row";
+                        } else {
+                            tr[i].style.display = "none";
+                        }
                     }
                 }
-
             }
         </script>
 
@@ -165,9 +208,15 @@
           });
         </script>
 
-
-
-
-
-
+        <script>
+          $(function () {
+            $('[data-toggle="popover"]').popover({
+              placement: 'top', // Tooltip placement
+              delay: { show: 5000, hide: 100 }, // Delay in milliseconds
+              html: true, // Allow HTML content in tooltips
+              template: '<div class="popover custom-popover" role="popover">' +
+                  '<div class="arrow"></div><div class="popover-inner"></div></div>'
+            });
+          });
+        </script>
 {% endblock %}

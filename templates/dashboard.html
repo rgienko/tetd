@@ -14,65 +14,143 @@
             </div>
         </div>
     </div>
-    <div class="row d-flex justify-content-center">
-        <div class="col-6">
-            <div class="card shadow-sm">
-                <div class="card-header srg-link d-flex justify-content-between align-items-baseline">
-                    <h5>My Timesheet</h5>
+    <div class="row d-flex justify-content-center mb-4">
+        <div class="col-4">
+            <div class="card shadow-sm" style="min-height:400px;max-height:500px">
+                <div class="card-header srg-link d-flex justify-content-between align-items-baseline pb-0">
+                    <h4>My Time</h4>
                     <a href="{% url 'employee-timesheet' %}" class="srg-link">View Timesheet</a>
                 </div>
-                <div class="card-body overflow-auto" style="max-height: 350px; min-height: 300px">
-                    <table class="table">
-                            <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Engagement</th>
-                                <th>Hours</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for entry in timesheet_entries %}
-                                <tr>
-                                    <td>{{ entry.date|date:'m/d/Y' }}</td>
-                                    <td>{{ entry.engagement }} <a type="button" tabindex="0" class="srg-link" data-bs-container="body" data-toggle="popover"
-                                                                  data-bs-placement="right" data-bs-trigger="focus"
-                                                                  data-bs-content="{{ entry.getParent }}; {{ entry.getProvider }}; {{ entry.getScope }}">
-                                                              <i class="bi bi-info-circle"></i>
-                                                            </a></td>
-                                    <td>{{ entry.hours }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                <div class="card-body overflow-auto pt-0">
+                    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+                    <canvas class="my-4 w-100 text-light" height="275px" id="myChart"></canvas>
+            <script>
+                const config = {
+                    type: 'bar',
+                    data: {
+                        labels: ['Billable', 'Non-Billable', 'Total'],
+                        datasets: [{
+                            label: [],
+                            backgroundColor: ['rgb(2,48,140)', 'rgb(217,217,217)','rgb(0,64,0)' ],
+                            borderColor: ['rgb(2,48,140)', 'rgb(217,217,217)','rgb(0,64,0)' ],
+                            data: [{{ billable_hours_sum.amount }}, {{ non_billable_hours_sum.amount }}, {{ non_billable_hours_sum.amount|add:billable_hours_sum.amount }}],
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        indexAxis:'x',
+                        responsive: true,
+                        plugins: {
+                          legend: {
+                              display: false,
+                              position: 'bottom'
+                          }
+                        },
+                        scales: {
+                            x: {
+                                stacked:false,
+                                max:40
+                            },
+                            y: {
+                                stacked:false,
+                                max: 40,
+                                ticks: {
+                                    stepSize: 4
+                                }
+                            },
+                            yAxes: [{
+                                ticks: {
+                                    fontColor: "black",
+                                    beginAtZero: true,
+                                    stepSize: 5
+                                },
+                                gridLines: {
+                                    color:"rgb(56, 60, 74)"
+                                }
+                            }],
+                            xAxes: [{
+                                ticks: {
+                                    fontColor: "black"
+                                },
+                                gridLines: {
+                                    color:"rgb(56, 60, 74)"
+                                }
+                            }]
+                        }
+                    }
+                };
+                window.onload = function () {
+                    const ctx = document.getElementById('myChart').getContext('2d');
+                    window.myLine = new Chart(ctx, config);
+
+                }
+            </script>
                 </div>
             </div>
         </div>
 
-        <div class="col-6">
-            <div class="card shadow-sm">
-                <div class="card-header srg-link d-flex justify-content-between align-items-baseline">
-                    <h5>My To-Do List</h5>
+        <div class="col-8">
+            <div class="card shadow-sm" style="min-height:400px;max-height:500px">
+                <div class="card-header srg-link d-flex justify-content-between align-items-baseline pb-0">
+                    <h4>Today's Schedule</h4>
                     <a href="{% url 'employee-todolist' %}" class="srg-link">View To-Do List</a>
                 </div>
-                <div class="card-body overflow-auto" style="max-height: 350px; min-height: 300px">
-                    <table class="table">
+                <div class="card-body overflow-auto p-2">
+                    <table class="srg-table">
                             <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Engagement</th>
+                            <tr class="srg-bg-primary text-light">
+                                <th>Parent</th>
+                                <th>Provider</th>
+                                <th>Scope</th>
                                 <th>Hours</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for entry in employee_td_entries %}
                                 <tr>
-                                    <td>{{ entry.todo_date|date:'m/d/Y' }}</td>
-                                    <td>{{ entry.engagement }} <a type="button" tabindex="0" class="srg-link" data-bs-container="body" data-toggle="popover"
-                                                                  data-bs-placement="right" data-bs-trigger="focus"
-                                                                  data-bs-content="{{ entry.getParent }}; {{ entry.getProvider }}; {{ entry.getScope }}">
-                                                              <i class="bi bi-info-circle"></i>
-                                                            </a></td>
-                                    <td>{{ entry.anticipated_hours }}</td>
+                                    <td>{{ entry.engagement__parent_id }} - {{ entry.engagement__parent_id__parent_name }}</td>
+                                    <td>{{ entry.engagement__provider_id }} - {{ entry.engagement__provider_id__provider_name }}</td>
+                                    <td>{{ entry.engagement__time_code }} - {{ entry.engagement__time_code__time_code_desc }}</td>
+                                    <td class="text-center">{{ entry.hsum }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm" style="min-height:400px;max-height:500px">
+                <div class="card-header srg-header d-flex justify-content-between">
+                    <h4>My Engagements</h4>
+                    <input class="search-box" type="text" id="searchBar" onkeyup="searchEngagements()" placeholder="Search for engagements.." title="Type in a name">
+                </div>
+                <div class="card-body d-flex justify-content-center overflow-auto">
+                    <table class="srg-table" id="srg-table">
+                        <thead class="srg-bg-primary text-light">
+                            <tr>
+                                <th>Parent</th>
+                                <th>Provider</th>
+                                <th>Scope</th>
+                                <th>FYE</th>
+                                <th>HTD</th>
+                                <th>Budget</th>
+                                <th class="text-center">Variance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for engagement in user_engagements %}
+                                <tr>
+                                    <td>{{ engagement.parent_id }} - {{ engagement.parent__parent_name }}</td>
+                                    <td>{{ engagement.provider_id }} - {{ engagement.provider__provider_name }}</td>
+                                    <td>{{ engagement.time_code }}-{{ engagement.time_code__time_code_desc }}</td>
+                                    <td>{{ engagement.fye|date:'m/d/Y' }}</td>
+                                    <td class="text-center">{{ engagement.engagement_hours_sum }}</td>
+                                    <td class="text-center">{{ engagement.budget_calc }}</td>
+                                    <td class="text-center">{{ engagement.budget_calc|sub:engagement.engagement_hours_sum|floatformat:0 }}</td>
+
                                 </tr>
                             {% endfor %}
                         </tbody>
@@ -82,213 +160,9 @@
         </div>
     </div>
 
-    <div class="row d-flex justify-content-center my-4">
-        <div class="col-6">
-            <div class="card shadow-sm">
-                <div class="card-header srg-header d-flex justify-content-between align-items-baseline">
-                    <h5>My Engagements</h5>
-                    <input class="search-box" type="text" id="searchBar" onkeyup="searchClients()" placeholder="Search for engagements.." title="Type in a name">
-                </div>
-
-                <div class="card-body overflow-auto" style="max-height: 350px; min-height: 300px">
-                    <div class="list-group" role="tablist" id="clientList">
-                        {% for engagement in user_engagements %}
-                        <a href="#" class="srg-link srg-list-group-item text-decoration-none mb-2"
-                           id="{{ engagement.engagement_srg_id }}-tab" data-bs-toggle="tab" data-bs-target="#{{ engagement.engagement_srg_id }}-tab-pane" type="button" role="tab" aria-controls="{{ engagement.engagement_srg_id }}-tab-pane" aria-selected="true">
-                            {{ engagement.engagement_srg_id }}<br>
-                            {{ engagement.parent_id }}-{{ engagement.parent__parent_name }}<br>
-                            {{ engagement.provider_id }}-{{ engagement.provider__provider_name }}<br>
-                            {{ engagement.time_code }}-{{ engagement.time_code__time_code_desc }} - {{ engagement.fye|date:'m/d/Y' }}
-                        </a>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
 
 
-        <div class="col-6">
-            <div class="tab-content">
-                {% for engagement in user_engagements %}
-                    <div class="tab-pane" id="{{ engagement.engagement_srg_id }}-tab-pane" role="tabpanel" aria-labelledby="{{ engagement.engagement_srg_id }}-tab" tabindex="0">
-                        <div class="card shadow-sm">
-                            <div class="card-header srg-header">
-                                <h5>Engagement: {{ engagement.engagement_srg_id }}</h5>
-                            </div>
-                            <div class="card-body overflow-auto" style="max-height: 350px; min-height: 300px">
-                                {% if engagement.is_complete is False %}<h5><span class="badge rounded-pill srg-bg-success fw-normal">
-                                    Status: Open</span></h5>
-                                {% else %}
-                                    <h5><span class="badge rounded-pill srg-bg-danger fw-normal">Status: Closed</span></h5>
-                                {% endif %}
 
-                                <h5 class="srg-header">General Information</h5>
-                                <p>
-                                    {{ engagement.time_code }}-{{ engagement.time_code__time_code_desc }} - {{ engagement.fye|date:'m/d/Y' }}<br>
-                                    {{ engagement.parent_id }}-{{ engagement.parent__parent_name }}<br>
-                                    {{ engagement.provider_id }}-{{ engagement.provider__provider_name }}<br>
-
-                                </p>
-                                <h5 class="srg-header">Hours Breakdown</h5>
-                                <div class="row d-flex justify-content-center py-1">
-                                    <div class="col-3">
-                                        <div class="card square text-center fs-6">
-                                            <div class="card-header srg-bg-secondary srg-header">
-                                                Hours
-                                            </div>
-                                            <div class="card-body fs-3">
-                                                {{ engagement.engagement_hours_sum }}
-                                            </div>
-                                        </div>
-                                   </div>
-                                    <div class="col-3">
-                                        <div class="card square text-center fs-6">
-                                            <div class="card-header srg-bg-secondary srg-header">
-                                                Budget
-                                            </div>
-                                            <div class="card-body fs-3">
-                                                {{ engagement.budget_calc }}
-                                            </div>
-                                        </div>
-                                   </div>
-                                    <div class="col-3">
-                                        <div class="card square text-center fs-6">
-                                            <div class="card-header srg-bg-secondary srg-header">
-                                                Variance
-                                            </div>
-                                            <div class="card-body fs-3">
-                                                {{ engagement.budget_calc|sub:engagement.engagement_hours_sum }}
-                                            </div>
-                                        </div>
-                                   </div>
-                                </div>
-                                <!--
-                                <table class="table table-sm table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>Employee</th>
-                                            <th>Hours</th>
-                                            <th>Rate</th>
-                                        </tr>
-                                    </thead>
-                                    {% for emp in engagement.engagement_hours_by_employee %}
-                                        <tr>
-                                            <td>{{ emp.employee__user__username }}</td>
-                                            <td>{{ emp.engagement_employee_hours }}</td>
-                                            <td>{{ emp.employee__title__rate }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                </table>
-                                <a type="button" class="text-decoration-none open-modal-button srg-btn-primary"
-                                   id="time-modal-{{ engagement.engagement }}-modal" data-bs-toggle="modal"
-                                   data-bs-target="#time-modal-{{ forloop.counter }}" data-id="{{ engagement.engagement }}"
-                                   href="#time-modal-{{ forloop.counter }}-modal" aria-controls="{{ engagement.engagement }}">
-                                        <i class="bi bi-clock"></i> Record Time
-                                </a>
-
-                                <a type="button" class="text-decoration-none srg-btn-success mx-2"
-                                id="expense-modal-{{ engagement.engagement }}-modal" data-bs-toggle="modal"
-                                   data-bs-target="#expense-modal-{{ forloop.counter }}" data-id="{{ engagement.engagement }}"
-                                   href="#expense-modal-{{ forloop.counter }}-modal" aria-controls="{{ engagement.engagement }}">
-                                    <i class="bi bi-currency-dollar"></i> Record Expense
-                                </a>
-
-                                <a type="button" class="text-decoration-none srg-btn-secondary mx-2"
-                                id="todo-modal-{{ engagement.engagement }}-modal" data-bs-toggle="modal"
-                                   data-bs-target="#todo-modal-{{ forloop.counter }}" data-id="{{ engagement.engagement }}"
-                                   href="#todo-modal-{{ forloop.counter }}-modal" aria-controls="{{ engagement.engagement }}">
-                                    <i class="bi bi-plus-circle"></i> To-Do List
-                                </a>
-                                -->
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="modal fade" id="time-modal-{{ forloop.counter }}" tabindex="-1" aria-labelledby="time-modal-{{ engagement.engagement }}-modal" aria-hidden="true">
-                        <div class="modal-dialog" id="modal">
-                            <div class="modal-content">
-                                <div class="modal-header srg-bg-primary text-light fs-5">
-                                    Record Time
-                                </div>
-                                <div class="modal-body">
-                                    <form class="" method="POST">
-                                        {% csrf_token %}
-                                            <label for="my-input-{{ forloop.counter }}">Engagement:</label><br>
-                                            <input name="engagement-input" type="text" id="my-input-{{ forloop.counter }}" value="{{ engagement.engagement_srg_id }}"/><br>
-                                        {% for field in time_form %}
-                                            <div class="fieldWrapper my-3">
-                                                {{ field.label_tag }} <br>{{ field }}
-                                                {% if field.help_text %}
-                                                    <p class="help">{{ field.help_text|safe }}</p>
-                                                {% endif %}
-                                            </div>
-
-                                        {% endfor %}
-                                        <button class="srg-btn-primary my-2">Record Time</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="modal fade" id="expense-modal-{{ forloop.counter }}" tabindex="-1" aria-labelledby="expense-modal-{{ engagement.engagement }}-modal" aria-hidden="true">
-                        <div class="modal-dialog" id="modal">
-                            <div class="modal-content">
-                                <div class="modal-header srg-bg-success text-light fs-5">
-                                    Record Expense
-                                </div>
-                                <div class="modal-body">
-                                    <form class="" method="POST">
-                                        {% csrf_token %}
-                                            <label for="my-input-{{ forloop.counter }}">Engagement:</label><br>
-                                            <input name="expense-input" type="text" id="my-input-{{ forloop.counter }}" value="{{ engagement.engagement_srg_id }}"/><br>
-                                        {% for field in expense_form %}
-                                            <div class="fieldWrapper my-3">
-                                                {{ field.label_tag }} <br>{{ field }}
-                                                {% if field.help_text %}
-                                                    <p class="help">{{ field.help_text|safe }}</p>
-                                                {% endif %}
-                                            </div>
-
-                                        {% endfor %}
-                                        <button class="srg-btn-success my-2">Record Expense</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="modal fade" id="todo-modal-{{ forloop.counter }}" tabindex="-1" aria-labelledby="todo-modal-{{ engagement.engagement }}-modal" aria-hidden="true">
-                        <div class="modal-dialog" id="modal">
-                            <div class="modal-content">
-                                <div class="modal-header srg-bg-secondary srg-header fs-5">
-                                    Add Engagement to To-Do List
-                                </div>
-                                <div class="modal-body">
-                                    <form class="" method="POST">
-                                        {% csrf_token %}
-                                            <label for="my-input-{{ forloop.counter }}">Engagement:</label><br>
-                                            <input name="todo-input" type="text" id="my-input-{{ forloop.counter }}" value="{{ engagement.engagement_srg_id }}"/><br>
-                                        {% for field in todo_form %}
-                                            <div class="fieldWrapper my-3">
-                                                {{ field.label_tag }} <br>{{ field }}
-                                                {% if field.help_text %}
-                                                    <p class="help">{{ field.help_text|safe }}</p>
-                                                {% endif %}
-                                            </div>
-
-                                        {% endfor %}
-                                        <button class="srg-btn-secondary my-2"><i class="bi bi-plus-circle"></i> To-Do List</button>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                {% endfor %}
-            </div>
-        </div>
-    </div>
     </div>
 
 
@@ -315,28 +189,58 @@
         })
     </script>
     <script>
+        function searchEngagements() {
+            // Declare Variables
+            let input, filter, table, tr, td, i, txtValue, j;
+            input = document.getElementById('searchBar');
+            filter = input.value.toUpperCase();
+            table = document.getElementById('srg-table');
+            tr = table.getElementsByTagName('tr');
 
-            function searchClients() {
-                // Declare Variables
-                let input, filter, ul, li, a, i, txtValue;
-                input = document.getElementById('searchBar')
-                filter = input.value.toUpperCase();
-                console.log(filter)
-                ul = document.getElementById('clientList')
-                li = ul.getElementsByTagName('a');
+            // Loop through rows and display only matching ones
+            for (i = 1; i < tr.length; i++) { // Start from 1 to skip the header row
+            td = tr[i].getElementsByTagName("td");
+            let rowContainsMatch = false;
 
-                // Loop through elements and display only matches
-                for (i = 0; i < li.length; i++) {
-                    // a = li[i].getElementsByTagName("a")[0];
-                    txtValue = li[i].textContent || li[i].innerText;
-                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                        li[i].style.display = "block";
-                    } else {
-                        li[i].style.display = "none";
-                    }
+            for (j = 0; j < td.length; j++) {
+                txtValue = td[j].textContent || td[j].innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    rowContainsMatch = true;
+                    break; // No need to continue checking other cells in this row
                 }
-
             }
-        </script>
+
+            if (rowContainsMatch) {
+                tr[i].style.display = "table-row";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+        }
+    </script>
+    <script>
+        function searchClients() {
+            // Declare Variables
+            let input, filter, ul, li, a, i, txtValue;
+            input = document.getElementById('searchBar')
+            filter = input.value.toUpperCase();
+            console.log(filter)
+            ul = document.getElementById('clientList')
+            li = ul.getElementsByTagName('a');
+
+            // Loop through elements and display only matches
+            for (i = 0; i < li.length; i++) {
+                // a = li[i].getElementsByTagName("a")[0];
+                txtValue = li[i].textContent || li[i].innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    li[i].style.display = "block";
+                } else {
+                    li[i].style.display = "none";
+                }
+            }
+
+        }
+    </script>
+
 
 {% endblock %}

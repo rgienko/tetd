@@ -6,6 +6,7 @@ from io import BytesIO
 
 import pandas
 from django.contrib import auth, messages
+from django.core.paginator import Paginator
 from django.db.models import Sum, OuterRef, Subquery, Max, Count, ExpressionWrapper, CharField, FloatField, \
     IntegerField, Case, Value, When, Q, DecimalField
 from django.db.models.functions import Coalesce
@@ -81,7 +82,7 @@ def dashboard(request):
                                                  "provider_id", "provider__provider_name", "time_code",
                                                  "time_code__time_code_desc",
                                                  "is_complete", "fye", "budget_hours", "budget_amount").annotate(
-        engagement_hours_sum=Sum('time__hours'), budget_calc=Max('budget_amount') / 250).filter(
+        engagement_hours_sum=Coalesce(Sum('time__hours'), 0, output_field=DecimalField(0.00)), budget_calc=Max('budget_amount') / 250).filter(
         engagement_id__in=user_assignments).order_by('-fye', 'time_code',
                                                      'provider_id',
                                                      'engagement_hours_sum')
@@ -91,14 +92,28 @@ def dashboard(request):
     week_end = week_beg + timedelta(days=5)
 
     timesheet_entries = Time.objects.all().filter(employee__user__username=request.user.username).filter(
-        date__gte=week_beg).filter(date__lte=week_end).order_by('date')
+        date__gte=week_beg).filter(date__lte=week_end)
 
-    employee_td_entries = Todolist.objects.filter(employee__user__username=request.user.username).filter(
-        todo_date__gte=week_beg).filter(todo_date__lte=week_end).order_by('todo_date')
+    billable_hours_sum = timesheet_entries.exclude(Q(engagement__type_id='N') | Q(time_type_id_id='N')).aggregate(
+        amount=Coalesce(Sum('hours'), 0, output_field=DecimalField(0.00)))
+
+    non_billable_hours_sum = timesheet_entries.filter(Q(engagement__type_id='N') | Q(time_type_id_id='N')).aggregate(
+        amount=Coalesce(Sum('hours'), 0, output_field=DecimalField(0.00)))
+
+    employee_td_entries = Todolist.objects.values('todo_date',
+                                                  'engagement__parent_id',
+                                                  'engagement__parent_id__parent_name',
+                                                  'engagement__provider_id',
+                                                  'engagement__provider_id__provider_name',
+                                                  'engagement__time_code',
+                                                  'engagement__time_code__time_code_desc').filter(
+        employee__user__username=request.user.username).filter(todo_date=today).order_by('todo_date').annotate(
+        hsum=Sum('anticipated_hours'))
 
     context = {'user_engagements': user_engagements, 'today': today, 'week_beg': week_beg, 'week_end': week_end,
                'timesheet_entries': timesheet_entries, 'employee_td_entries': employee_td_entries,
-               'user_info': user_info, 'user_assignments': user_assignments}
+               'user_info': user_info, 'user_assignments': user_assignments, 'billable_hours_sum': billable_hours_sum,
+               'non_billable_hours_sum': non_billable_hours_sum}
     return render(request, 'dashboard.html', context)
 
 
@@ -191,16 +206,38 @@ def getCompilationData(mnth):
     vp_total_hours = vp_total_hours_by_employee.aggregate(
         amount=Coalesce(Sum('total_hours_sum'), 0, output_field=DecimalField(0.00)))
 
-    # MGRS HOURS #########
-    mgr_fixed_hours_by_employee = fixed_hours_by_employee.filter(Q(employee__title='M') | Q(employee__title='SM'))
-    mgr_hourly_hours_by_employee = hourly_hours_by_employee.filter(Q(employee__title='M') | Q(employee__title='SM'))
-    mgr_cgy_hours_by_employee = cgy_hours_by_employee.filter(Q(employee__title='M') | Q(employee__title='SM'))
-    mgr_non_billable_hours_by_employee = non_billable_hours_by_employee.filter(
-        Q(employee__title='M') | Q(employee__title='SM'))
-    mgr_pto_hours_by_employee = pto_hours_by_employee.filter(Q(employee__title='M') | Q(employee__title='SM'))
-    mgr_billable_hours_by_employee = billable_hours_by_employee.filter(
-        Q(employee__title='M') | Q(employee__title='SM'))
-    mgr_total_hours_by_employee = total_hours_by_employee.filter(Q(employee__title='M') | Q(employee__title='SM'))
+    # ####################################### SENIOR MANAGERS HOURS ###################################################
+    smgr_fixed_hours_by_employee = fixed_hours_by_employee.filter(employee__title='SM')
+    smgr_hourly_hours_by_employee = hourly_hours_by_employee.filter(employee__title='SM')
+    smgr_cgy_hours_by_employee = cgy_hours_by_employee.filter(employee__title='SM')
+    smgr_non_billable_hours_by_employee = non_billable_hours_by_employee.filter(employee__title='SM')
+    smgr_pto_hours_by_employee = pto_hours_by_employee.filter(employee__title='SM')
+    smgr_billable_hours_by_employee = billable_hours_by_employee.filter(employee__title='SM')
+    smgr_total_hours_by_employee = total_hours_by_employee.filter(employee__title='SM')
+
+    smgr_total_fixed_hours = smgr_fixed_hours_by_employee.aggregate(
+        amount=Coalesce(Sum('fixed_hours_by_employee_sum'), 0, output_field=DecimalField(0.00)))
+    smgr_total_hourly_hours = smgr_hourly_hours_by_employee.aggregate(
+        amount=Coalesce(Sum('hourly_hours_by_employee_sum'), 0, output_field=DecimalField(0.00)))
+    smgr_total_cgy_hours = smgr_cgy_hours_by_employee.aggregate(
+        amount=Coalesce(Sum('cgy_hours_by_employee_sum'), 0, output_field=DecimalField(0.00)))
+    smgr_total_non_billable_hours = smgr_non_billable_hours_by_employee.aggregate(
+        amount=Coalesce(Sum('non_billable_hours_sum'), 0, output_field=DecimalField(0.00)))
+    smgr_total_pto_hours = smgr_pto_hours_by_employee.aggregate(
+        amount=Coalesce(Sum('pto_hours_by_employee_sum'), 0, output_field=DecimalField(0.00)))
+    smgr_total_billable_hours = smgr_billable_hours_by_employee.aggregate(
+        amount=Coalesce(Sum('billable_hours_sum'), 0, output_field=DecimalField(0.00)))
+    smgr_total_hours = smgr_total_hours_by_employee.aggregate(
+        amount=Coalesce(Sum('total_hours_sum'), 0, output_field=DecimalField(0.00)))
+
+    # ####################################### MGRS HOURS ##############################################################
+    mgr_fixed_hours_by_employee = fixed_hours_by_employee.filter(employee__title='M')
+    mgr_hourly_hours_by_employee = hourly_hours_by_employee.filter(employee__title='M')
+    mgr_cgy_hours_by_employee = cgy_hours_by_employee.filter(employee__title='M')
+    mgr_non_billable_hours_by_employee = non_billable_hours_by_employee.filter(employee__title='M')
+    mgr_pto_hours_by_employee = pto_hours_by_employee.filter(employee__title='M')
+    mgr_billable_hours_by_employee = billable_hours_by_employee.filter(employee__title='M')
+    mgr_total_hours_by_employee = total_hours_by_employee.filter(employee__title='M')
 
     mgr_total_fixed_hours = mgr_fixed_hours_by_employee.aggregate(
         amount=Coalesce(Sum('fixed_hours_by_employee_sum'), 0, output_field=DecimalField(0.00)))
@@ -217,7 +254,7 @@ def getCompilationData(mnth):
     mgr_total_hours = mgr_total_hours_by_employee.aggregate(
         amount=Coalesce(Sum('total_hours_sum'), 0, output_field=DecimalField(0.00)))
 
-    # CONSULTANT HOURS ############
+    # ####################################### CONSULTANT HOURS ########################################################
     c_fixed_hours_by_employee = fixed_hours_by_employee.filter(Q(employee__title_id='C') | Q(employee__title='SC'))
     c_hourly_hours_by_employee = hourly_hours_by_employee.filter(Q(employee__title='C') | Q(employee__title='SC'))
     c_cgy_hours_by_employee = cgy_hours_by_employee.filter(Q(employee__title='C') | Q(employee__title='SC'))
@@ -258,7 +295,8 @@ def getCompilationData(mnth):
         'amount']
 
     vp_loss_rev = vp_total_non_billable_hours['amount'] * 300
-    mgr_lost_rev = mgr_total_non_billable_hours['amount'] * 237
+    smgr_lost_rev = smgr_total_non_billable_hours['amount'] * 250
+    mgr_lost_rev = mgr_total_non_billable_hours['amount'] * 225
     c_lost_rev = c_total_non_billable_hours['amount'] * 200
 
     srg_total_lost_revenue = vp_loss_rev + mgr_lost_rev + c_lost_rev
@@ -267,6 +305,10 @@ def getCompilationData(mnth):
         vp_non_billable_hours_by_employee, vp_pto_hours_by_employee, vp_billable_hours_by_employee, \
         vp_total_hours_by_employee, vp_total_fixed_hours, vp_total_hourly_hours, vp_total_cgy_hours, \
         vp_total_non_billable_hours, vp_total_pto_hours, vp_total_billable_hours, vp_total_hours, \
+        smgr_fixed_hours_by_employee, smgr_hourly_hours_by_employee, smgr_cgy_hours_by_employee, \
+        smgr_non_billable_hours_by_employee, smgr_pto_hours_by_employee, smgr_billable_hours_by_employee, \
+        smgr_total_hours_by_employee, smgr_total_fixed_hours, smgr_total_hourly_hours, smgr_total_cgy_hours, \
+        smgr_total_non_billable_hours, smgr_total_pto_hours, smgr_total_billable_hours, smgr_total_hours, \
         mgr_fixed_hours_by_employee, mgr_hourly_hours_by_employee, mgr_cgy_hours_by_employee, \
         mgr_non_billable_hours_by_employee, mgr_pto_hours_by_employee, mgr_billable_hours_by_employee, \
         mgr_total_hours_by_employee, mgr_total_fixed_hours, mgr_total_hourly_hours, mgr_total_cgy_hours, \
@@ -277,7 +319,7 @@ def getCompilationData(mnth):
         c_total_non_billable_hours, c_total_pto_hours, c_total_billable_hours, c_total_hours, \
         srg_total_fixed_hours, srg_total_hourly_hours, srg_total_cgy_hours, \
         srg_total_non_billable_hours, srg_total_pto_hours, srg_total_billable_hours, srg_total_hours, \
-        vp_loss_rev, mgr_lost_rev, c_lost_rev, srg_total_lost_revenue
+        vp_loss_rev, smgr_lost_rev, mgr_lost_rev, c_lost_rev, srg_total_lost_revenue
 
 
 def AdminDashboard(request):
@@ -288,7 +330,8 @@ def AdminDashboard(request):
     week_end = week_beg + timedelta(days=5)
     employees = Employee.objects.all().order_by('title', 'user__last_name')
     vps = employees.filter(title='VP')
-    mgrs = employees.filter(Q(title='M') | Q(title='SM'))
+    smgrs = employees.filter(title='SM')
+    mgrs = employees.filter(title='M')
     consultants = employees.filter(Q(title='C') | Q(title='SC'))
     current_month = today.month
 
@@ -300,10 +343,10 @@ def AdminDashboard(request):
             if selected_month == 'YTD':
                 pass
             else:
-                selected_month = datetime.datetime(today.year, int(selected_month), 1)
+                selected_month = datetime.date(today.year, int(selected_month), 1)
             context = {'user_info': user_info, 'today': today, 'week_beg': week_beg,
                        'week_end': week_end, 'employees': employees, 'vps': vps,
-                       'mgrs': mgrs, 'consultants': consultants,
+                       'smgrs': smgrs, 'mgrs': mgrs, 'consultants': consultants,
                        'vp_fixed_hours_by_employee': new_data[0],
                        'vp_hourly_hours_by_employee': new_data[1],
                        'vp_cgy_hours_by_employee': new_data[2],
@@ -318,45 +361,60 @@ def AdminDashboard(request):
                        'vp_total_pto_hours': new_data[11],
                        'vp_total_billable_hours': new_data[12],
                        'vp_total_hours': new_data[13],
-                       'mgr_fixed_hours_by_employee': new_data[14],
-                       'mgr_hourly_hours_by_employee': new_data[15],
-                       'mgr_cgy_hours_by_employee': new_data[16],
-                       'mgr_non_billable_hours_by_employee': new_data[17],
-                       'mgr_pto_hours_by_employee': new_data[18],
-                       'mgr_billable_hours_by_employee': new_data[19],
-                       'mgr_total_hours_by_employee': new_data[20],
-                       'mgr_total_fixed_hours': new_data[21],
-                       'mgr_total_hourly_hours': new_data[22],
-                       'mgr_total_cgy_hours': new_data[23],
-                       'mgr_total_non_billable_hours': new_data[24],
-                       'mgr_total_pto_hours': new_data[25],
-                       'mgr_total_billable_hours': new_data[26],
-                       'mgr_total_hours': new_data[27],
-                       'c_fixed_hours_by_employee': new_data[28],
-                       'c_hourly_hours_by_employee': new_data[29],
-                       'c_cgy_hours_by_employee': new_data[30],
-                       'c_non_billable_hours_by_employee': new_data[31],
-                       'c_pto_hours_by_employee': new_data[32],
-                       'c_billable_hours_by_employee': new_data[33],
-                       'c_total_hours_by_employee': new_data[34],
-                       'c_total_fixed_hours': new_data[35],
-                       'c_total_hourly_hours': new_data[36],
-                       'c_total_cgy_hours': new_data[37],
-                       'c_total_non_billable_hours': new_data[38],
-                       'c_total_pto_hours': new_data[39],
-                       'c_total_billable_hours': new_data[40],
-                       'c_total_hours': new_data[41],
-                       'srg_total_fixed_hours': new_data[42],
-                       'srg_total_hourly_hours': new_data[43],
-                       'srg_total_cgy_hours': new_data[44],
-                       'srg_total_non_billable_hours': new_data[45],
-                       'srg_total_pto_hours': new_data[46],
-                       'srg_total_billable_hours': new_data[47],
-                       'srg_total_hours': new_data[48],
-                       'vp_loss_rev': new_data[49],
-                       'mgr_lost_rev': new_data[50],
-                       'c_lost_rev': new_data[51],
-                       'srg_total_lost_revenue': new_data[52],
+                       'smgr_fixed_hours_by_employee': new_data[14],
+                       'smgr_hourly_hours_by_employee': new_data[15],
+                       'smgr_cgy_hours_by_employee': new_data[16],
+                       'smgr_non_billable_hours_by_employee': new_data[17],
+                       'smgr_pto_hours_by_employee': new_data[18],
+                       'smgr_billable_hours_by_employee': new_data[19],
+                       'smgr_total_hours_by_employee': new_data[20],
+                       'smgr_total_fixed_hours': new_data[21],
+                       'smgr_total_hourly_hours': new_data[22],
+                       'smgr_total_cgy_hours': new_data[23],
+                       'smgr_total_non_billable_hours': new_data[24],
+                       'smgr_total_pto_hours': new_data[25],
+                       'smgr_total_billable_hours': new_data[26],
+                       'smgr_total_hours': new_data[27],
+                       'mgr_fixed_hours_by_employee': new_data[28],
+                       'mgr_hourly_hours_by_employee': new_data[29],
+                       'mgr_cgy_hours_by_employee': new_data[30],
+                       'mgr_non_billable_hours_by_employee': new_data[31],
+                       'mgr_pto_hours_by_employee': new_data[32],
+                       'mgr_billable_hours_by_employee': new_data[33],
+                       'mgr_total_hours_by_employee': new_data[34],
+                       'mgr_total_fixed_hours': new_data[35],
+                       'mgr_total_hourly_hours': new_data[36],
+                       'mgr_total_cgy_hours': new_data[37],
+                       'mgr_total_non_billable_hours': new_data[38],
+                       'mgr_total_pto_hours': new_data[39],
+                       'mgr_total_billable_hours': new_data[40],
+                       'mgr_total_hours': new_data[41],
+                       'c_fixed_hours_by_employee': new_data[42],
+                       'c_hourly_hours_by_employee': new_data[43],
+                       'c_cgy_hours_by_employee': new_data[44],
+                       'c_non_billable_hours_by_employee': new_data[45],
+                       'c_pto_hours_by_employee': new_data[46],
+                       'c_billable_hours_by_employee': new_data[47],
+                       'c_total_hours_by_employee': new_data[48],
+                       'c_total_fixed_hours': new_data[49],
+                       'c_total_hourly_hours': new_data[50],
+                       'c_total_cgy_hours': new_data[51],
+                       'c_total_non_billable_hours': new_data[52],
+                       'c_total_pto_hours': new_data[53],
+                       'c_total_billable_hours': new_data[54],
+                       'c_total_hours': new_data[55],
+                       'srg_total_fixed_hours': new_data[56],
+                       'srg_total_hourly_hours': new_data[57],
+                       'srg_total_cgy_hours': new_data[58],
+                       'srg_total_non_billable_hours': new_data[59],
+                       'srg_total_pto_hours': new_data[60],
+                       'srg_total_billable_hours': new_data[61],
+                       'srg_total_hours': new_data[62],
+                       'vp_loss_rev': new_data[63],
+                       'smgr_lost_rev': new_data[64],
+                       'mgr_lost_rev': new_data[65],
+                       'c_lost_rev': new_data[66],
+                       'srg_total_lost_revenue': new_data[67],
                        'selected_month': selected_month,
                        'month_form': month_form}
 
@@ -365,10 +423,9 @@ def AdminDashboard(request):
     else:
         month_form = MonthSelectForm(initial={'month': current_month})
         current_month_data = getCompilationData(current_month)
-
         context = {'user_info': user_info, 'today': today, 'week_beg': week_beg,
                    'week_end': week_end, 'employees': employees, 'vps': vps,
-                   'mgrs': mgrs, 'consultants': consultants,
+                   'smgrs': smgrs, 'mgrs': mgrs, 'consultants': consultants,
                    'vp_fixed_hours_by_employee': current_month_data[0],
                    'vp_hourly_hours_by_employee': current_month_data[1],
                    'vp_cgy_hours_by_employee': current_month_data[2],
@@ -383,46 +440,61 @@ def AdminDashboard(request):
                    'vp_total_pto_hours': current_month_data[11],
                    'vp_total_billable_hours': current_month_data[12],
                    'vp_total_hours': current_month_data[13],
-                   'mgr_fixed_hours_by_employee': current_month_data[14],
-                   'mgr_hourly_hours_by_employee': current_month_data[15],
-                   'mgr_cgy_hours_by_employee': current_month_data[16],
-                   'mgr_non_billable_hours_by_employee': current_month_data[17],
-                   'mgr_pto_hours_by_employee': current_month_data[18],
-                   'mgr_billable_hours_by_employee': current_month_data[19],
-                   'mgr_total_hours_by_employee': current_month_data[20],
-                   'mgr_total_fixed_hours': current_month_data[21],
-                   'mgr_total_hourly_hours': current_month_data[22],
-                   'mgr_total_cgy_hours': current_month_data[23],
-                   'mgr_total_non_billable_hours': current_month_data[24],
-                   'mgr_total_pto_hours': current_month_data[25],
-                   'mgr_total_billable_hours': current_month_data[26],
-                   'mgr_total_hours': current_month_data[27],
-                   'c_fixed_hours_by_employee': current_month_data[28],
-                   'c_hourly_hours_by_employee': current_month_data[29],
-                   'c_cgy_hours_by_employee': current_month_data[30],
-                   'c_non_billable_hours_by_employee': current_month_data[31],
-                   'c_pto_hours_by_employee': current_month_data[32],
-                   'c_billable_hours_by_employee': current_month_data[33],
-                   'c_total_hours_by_employee': current_month_data[34],
-                   'c_total_fixed_hours': current_month_data[35],
-                   'c_total_hourly_hours': current_month_data[36],
-                   'c_total_cgy_hours': current_month_data[37],
-                   'c_total_non_billable_hours': current_month_data[38],
-                   'c_total_pto_hours': current_month_data[39],
-                   'c_total_billable_hours': current_month_data[40],
-                   'c_total_hours': current_month_data[41],
-                   'srg_total_fixed_hours': current_month_data[42],
-                   'srg_total_hourly_hours': current_month_data[43],
-                   'srg_total_cgy_hours': current_month_data[44],
-                   'srg_total_non_billable_hours': current_month_data[45],
-                   'srg_total_pto_hours': current_month_data[46],
-                   'srg_total_billable_hours': current_month_data[47],
-                   'srg_total_hours': current_month_data[48],
-                   'vp_loss_rev': current_month_data[49],
-                   'mgr_lost_rev': current_month_data[50],
-                   'c_lost_rev': current_month_data[51],
-                   'srg_total_lost_revenue': current_month_data[52],
-                   'selected_month': today_time,
+                   'smgr_fixed_hours_by_employee': current_month_data[14],
+                   'smgr_hourly_hours_by_employee': current_month_data[15],
+                   'smgr_cgy_hours_by_employee': current_month_data[16],
+                   'smgr_non_billable_hours_by_employee': current_month_data[17],
+                   'smgr_pto_hours_by_employee': current_month_data[18],
+                   'smgr_billable_hours_by_employee': current_month_data[19],
+                   'smgr_total_hours_by_employee': current_month_data[20],
+                   'smgr_total_fixed_hours': current_month_data[21],
+                   'smgr_total_hourly_hours': current_month_data[22],
+                   'smgr_total_cgy_hours': current_month_data[23],
+                   'smgr_total_non_billable_hours': current_month_data[24],
+                   'smgr_total_pto_hours': current_month_data[25],
+                   'smgr_total_billable_hours': current_month_data[26],
+                   'smgr_total_hours': current_month_data[27],
+                   'mgr_fixed_hours_by_employee': current_month_data[28],
+                   'mgr_hourly_hours_by_employee': current_month_data[29],
+                   'mgr_cgy_hours_by_employee': current_month_data[30],
+                   'mgr_non_billable_hours_by_employee': current_month_data[31],
+                   'mgr_pto_hours_by_employee': current_month_data[32],
+                   'mgr_billable_hours_by_employee': current_month_data[33],
+                   'mgr_total_hours_by_employee': current_month_data[34],
+                   'mgr_total_fixed_hours': current_month_data[35],
+                   'mgr_total_hourly_hours': current_month_data[36],
+                   'mgr_total_cgy_hours': current_month_data[37],
+                   'mgr_total_non_billable_hours': current_month_data[38],
+                   'mgr_total_pto_hours': current_month_data[39],
+                   'mgr_total_billable_hours': current_month_data[40],
+                   'mgr_total_hours': current_month_data[41],
+                   'c_fixed_hours_by_employee': current_month_data[42],
+                   'c_hourly_hours_by_employee': current_month_data[43],
+                   'c_cgy_hours_by_employee': current_month_data[44],
+                   'c_non_billable_hours_by_employee': current_month_data[45],
+                   'c_pto_hours_by_employee': current_month_data[46],
+                   'c_billable_hours_by_employee': current_month_data[47],
+                   'c_total_hours_by_employee': current_month_data[48],
+                   'c_total_fixed_hours': current_month_data[49],
+                   'c_total_hourly_hours': current_month_data[50],
+                   'c_total_cgy_hours': current_month_data[51],
+                   'c_total_non_billable_hours': current_month_data[52],
+                   'c_total_pto_hours': current_month_data[53],
+                   'c_total_billable_hours': current_month_data[54],
+                   'c_total_hours': current_month_data[55],
+                   'srg_total_fixed_hours': current_month_data[56],
+                   'srg_total_hourly_hours': current_month_data[57],
+                   'srg_total_cgy_hours': current_month_data[58],
+                   'srg_total_non_billable_hours': current_month_data[59],
+                   'srg_total_pto_hours': current_month_data[60],
+                   'srg_total_billable_hours': current_month_data[61],
+                   'srg_total_hours': current_month_data[62],
+                   'vp_loss_rev': current_month_data[63],
+                   'smgr_lost_rev': current_month_data[64],
+                   'mgr_lost_rev': current_month_data[65],
+                   'c_lost_rev': current_month_data[66],
+                   'srg_total_lost_revenue': current_month_data[67],
+                   'selected_month': today,
                    'month_form': month_form}
 
         return render(request, 'adminDashboard.html', context)
@@ -544,10 +616,21 @@ def AdminTimesheet(request):
     week_beg = today - timedelta(days=today.weekday())
     week_end = week_beg + timedelta(days=5)
 
-    queryset = Time.objects.values('date', 'employee__user__username', 'engagement__engagement_srg_id',
-                                   'engagement__parent__parent_name', 'engagement__provider',
-                                   'engagement__provider__provider_name', 'engagement__time_code',
-                                   'engagement__time_code__time_code_desc', 'hours', 'note').order_by('date')
+    queryset = Time.objects.values('date',
+                                   'employee__user__username',
+                                   'engagement__engagement_srg_id',
+                                   'engagement__parent__parent_name',
+                                   'engagement__provider',
+                                   'engagement__provider__provider_name',
+                                   'engagement__time_code',
+                                   'engagement__time_code__time_code_desc',
+                                   'engagement__fye',
+                                   'engagement__type_id',
+                                   'engagement__is_rac',
+                                   'engagement__engagement_hourly_rate',
+                                   'hours',
+                                   'note').order_by('date', 'engagement__parent__parent_name', 'engagement__provider',
+                                                    'engagement__fye')
 
     expense_queryset = Expense.objects.values('date', 'employee__user__username', 'engagement__engagement_srg_id',
                                               'expense_category', 'expense_amount').order_by('date')
@@ -623,7 +706,7 @@ def EmployeeTimesheet(request):
 
     current_employee = get_object_or_404(Employee, user_id=request.user.id)
     employee_ts_entries = Time.objects.filter(employee__user__username=request.user.username).filter(
-        date__gte=week_beg).filter(date__lte=week_end).order_by('date')
+        date__gte=week_beg).filter(date__lte=week_end).order_by('date', 'engagement__provider_id')
 
     total_weekly_hours = employee_ts_entries.aggregate(Sum('hours'))
 
@@ -703,19 +786,19 @@ def EmployeeTimesheet(request):
 def EmployeeTodolist(request):
     user_info = get_object_or_404(User, pk=request.user.id)
     today = date.today()
-    week_beg = today - timedelta(days=today.weekday())
+    week_beg = today - timedelta(days=today.weekday()) - timedelta(days=1)
     week_end = week_beg + timedelta(days=5)
     user_assignments = Assignments.objects.filter(employee_id=request.user.employee.employee_id).values('engagement_id')
     user_engagements = Engagement.objects.filter(engagement_id__in=user_assignments)
 
     current_employee = get_object_or_404(Employee, user_id=request.user.id)
     employee_td_entries = Todolist.objects.filter(employee__user__username=request.user.username).filter(
-        todo_date__gte=week_beg).filter(todo_date__lte=week_end).order_by('todo_date')
+        todo_date__gte=week_beg).order_by('todo_date')
 
     current_week = []
     current_week_ts = {}
 
-    for i in range(5):
+    for i in range(20):
         current_week.append(week_beg + timedelta(days=i))
         # current_week_ts['dow0'] = employee_ts_entries.filter(date=week_beg + timedelta(days=0))
         # current_week_ts['dow1'] = employee_ts_entries.filter(date=week_beg + timedelta(days=1))
@@ -723,25 +806,57 @@ def EmployeeTodolist(request):
         # current_week_ts['dow3'] = employee_ts_entries.filter(date=week_beg + timedelta(days=3))
         # current_week_ts['dow4'] = employee_ts_entries.filter(date=week_beg + timedelta(days=4))
 
+    paginator = Paginator(current_week, 7)
+
+    page_number = request.GET.get("page")
+    page_obj = paginator.get_page(page_number)
+
     if request.method == 'POST':
         todo_form = TodoForm(request.POST)
         if todo_form.is_valid():
+
             engagement_id = request.POST.get('todo-input')
             engagement_instance = get_object_or_404(Engagement, engagement_srg_id=engagement_id)
-
             employee_instance = get_object_or_404(Employee, user=request.user.id)
 
-            new_entry = todo_form.save(commit=False)
-            new_entry.employee_id = employee_instance.employee_id
-            new_entry.engagement = engagement_instance
-            new_entry.save()
+            start_date = request.POST.get('todo_date')
+            start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+            end_date = request.POST.get('todo_date_end')
+            if end_date is '':
+                end_date = start_date
+            else:
+                end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+
+            number_of_days = end_date - start_date
+
+            if number_of_days.days == 0:
+                new_entry = todo_form.save(commit=False)
+                new_entry.employee_id = employee_instance.employee_id
+                new_entry.engagement = engagement_instance
+                new_entry.save()
+            else:
+                number_of_days = number_of_days + timedelta(days=1)
+                for i in range(0, number_of_days.days):
+                    new_entry = Todolist(
+                        employee=employee_instance,
+                        engagement=engagement_instance,
+                        todo_date=start_date + timedelta(days=i),
+                        todo_date_end=start_date + timedelta(days=1),
+                        anticipated_hours=request.POST.get('anticipated_hours'),
+                        note=request.POST.get('note')
+                    )
+                    # new_entry.todo_date = start_date + timedelta(days=i)
+                    # new_entry.todo_date_end = start_date + timedelta(days=i)
+                    # new_entry.employee_id = employee_instance.employee_id
+                    # new_entry.engagement = engagement_instance
+                    new_entry.save()
 
             return redirect('employee-todolist')
     else:
         todo_form = TodoForm()
 
-    context = {'employee_td_entries': employee_td_entries, 'week_beg': week_beg, 'week_end': week_end,
-               'todo_form': todo_form, 'user_info': user_info,
+    context = {'employee_td_entries': employee_td_entries, 'week_beg': week_beg, 'week_end': week_end, 'today': today,
+               'todo_form': todo_form, 'user_info': user_info, 'page_obj': page_obj, 'paginator': paginator,
                'current_week': current_week, 'current_week_ts': current_week_ts, 'user_engagements': user_engagements}
 
     return render(request, 'employeeTodolist.html', context)
@@ -917,18 +1032,20 @@ def createEmployeeHoursCompilationReport(request, mnth):
     global period
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle(name='Justify', alignment=TA_JUSTIFY))
-    title = Paragraph('<para color=#02308C>Strategic Reimbursement Group, LLC</para>', styles['Normal'])
+    title = Paragraph('<para>Strategic Reimbursement Group, LLC</para>', styles['Normal'])
     subTitle = Paragraph('<para>Employee Hours Compilation Report</para>', styles['Normal'])
     if mnth == "YTD":
         period_text = Paragraph('<para>Year To Date</para>', styles['Normal'])
         period = "YTD"
     else:
-        period_date = datetime.datetime.strptime(mnth, "%Y-%m-%d %H:%M:%S")
+        period_date = datetime.datetime.strptime(mnth, "%Y-%m-%d")
         period_text = Paragraph('<para>' + str(period_date.strftime("%B")) + " " + str(period_date.year) + '</para>')
         period = period_date.month
         print(period)
     vps = Employee.objects.filter(title='VP').values('employee_id', 'user__username')
-    mgrs = Employee.objects.filter(Q(title='M') | Q(title='SM')).values('employee_id', 'user__username')
+    smgrs = Employee.objects.filter(title='SM').values('employee_id', 'user__username')
+    mgrs = Employee.objects.filter(title='M').values('employee_id', 'user__username')
+    cs = Employee.objects.filter(Q(title='SC') | Q(title='C')).values('employee_id', 'user__username')
 
     elements = []
 
@@ -1020,15 +1137,89 @@ def createEmployeeHoursCompilationReport(request, mnth):
     vp_total_data.append(
         [vp_total_text, vp_fixed_total_column, vp_hourly_total, vp_cgy_total, vp_nb_total, vp_pto_total,
          vp_billable_total, vp_total_total, vp_percent_billable_total])
+    # ################################################# SR MANAGERS TABLE ##############################################
+    smgr_fixed = compilationData[14]
+    smgr_hourly = compilationData[15]
+    smgr_cgy = compilationData[16]
+    smgr_nb = compilationData[17]
+    smgr_pto = compilationData[18]
+    smgr_billable = compilationData[19]
+    smgr_total = compilationData[20]
+
+    smgrEmployeeFixedColumn = 0
+    smgrEmployeeHourlyColumn = 0
+    smgrEmployeeCGYColumn = 0
+    smgrEmployeeNBColumn = 0
+    smgrEmployeePTOColumn = 0
+    smgrEmployeeBillableColumn = 0
+    smgrEmployeeTotalColumn = 0
+    smgrPercentBillable = 0
+
+    smgr_data = []
+    smgr_total_data = []
+
+    smgr_total_text = Paragraph('<para align=center color=white>Sr. Manager Total:</para>')
+    smgr_fixed_total_column = Paragraph(
+        '<para align=center color=white>' + str(compilationData[35]['amount']) + '</para>')
+    smgr_hourly_total = Paragraph('<para align=center color=white>' + str(compilationData[21]['amount']) + '</para>')
+    smgr_cgy_total = Paragraph('<para align=center color=white>' + str(compilationData[22]['amount']) + '</para>')
+    smgr_nb_total = Paragraph('<para align=center color=white>' + str(compilationData[23]['amount']) + '</para>')
+    smgr_pto_total = Paragraph('<para align=center color=white>' + str(compilationData[24]['amount']) + '</para>')
+    smgr_billable_total = Paragraph('<para align=center color=white>' + str(compilationData[25]['amount']) + '</para>')
+    smgr_total_total = Paragraph('<para align=center color=white>' + str(compilationData[26]['amount']) + '</para>')
+    smgr_percent_billable_total = Paragraph(
+        '<para align=center color=white>' + str(compilationData[25]['amount'] / 200 * 100) + ' %</para>')
+
+    smgr_total_data.append(
+        [smgr_total_text, smgr_fixed_total_column, smgr_hourly_total, smgr_cgy_total, smgr_nb_total, smgr_pto_total,
+         smgr_billable_total, smgr_total_total, smgr_percent_billable_total])
+
+    for emp in smgrs:
+        employeeColumn = Paragraph('<para align=left>' + str(emp['user__username']) + '</para>', styles['Normal'])
+        for item in smgr_fixed:
+            if item['employee_id'] == emp['employee_id']:
+                smgrEmployeeFixedColumn = str(item['fixed_hours_by_employee_sum'])
+        for item in smgr_hourly:
+            if item['employee_id'] == emp['employee_id']:
+                smgrEmployeeHourlyColumn = Paragraph(
+                    '<para align=center>' + str(item['hourly_hours_by_employee_sum']) + '</para>', styles['Normal'])
+                # data.append([employeeHourlyColumn])
+        for item in smgr_cgy:
+            if item['employee_id'] == emp['employee_id']:
+                smgrEmployeeCGYColumn = Paragraph(
+                    '<para align=center>' + str(item['cgy_hours_by_employee_sum']) + '</para>')
+        for item in smgr_nb:
+            if item['employee_id'] == emp['employee_id']:
+                smgrEmployeeNBColumn = Paragraph(
+                    '<para align=center>' + str(item['non_billable_hours_sum']) + '</para>', styles['Normal'])
+        for item in smgr_pto:
+            if item['employee_id'] == emp['employee_id']:
+                smgrEmployeePTOColumn = Paragraph(
+                    '<para align=center>' + str(item['pto_hours_by_employee_sum']) + '</para>', styles['Normal'])
+        for item in smgr_billable:
+            if item['employee_id'] == emp['employee_id']:
+                smgrPercentBillable = (item['billable_hours_sum'] / 200) * 100
+                smgrEmployeeBillableColumn = Paragraph(
+                    '<para align=center>' + str(item['billable_hours_sum']) + '</para>', styles['Normal'])
+        for item in smgr_total:
+            if item['employee_id'] == emp['employee_id']:
+                smgrEmployeeTotalColumn = Paragraph(
+                    '<para align=center>' + str(item['total_hours_sum']) + '</para>', styles['Normal'])
+        smgrEmployeePercentBillableColumn = Paragraph('<para align=center>' + str(smgrPercentBillable) + ' %</para>',
+                                                      styles['Normal'])
+
+        smgr_data.append([employeeColumn, smgrEmployeeFixedColumn, smgrEmployeeHourlyColumn, smgrEmployeeCGYColumn,
+                          smgrEmployeeNBColumn, smgrEmployeePTOColumn, smgrEmployeeBillableColumn,
+                          smgrEmployeeTotalColumn, smgrEmployeePercentBillableColumn])
 
     # ################################################# MANAGERS TABLE #################################################
-    mgr_fixed = compilationData[14]
-    mgr_hourly = compilationData[15]
-    mgr_cgy = compilationData[16]
-    mgr_nb = compilationData[17]
-    mgr_pto = compilationData[18]
-    mgr_billable = compilationData[19]
-    mgr_total = compilationData[20]
+    mgr_fixed = compilationData[28]
+    mgr_hourly = compilationData[29]
+    mgr_cgy = compilationData[30]
+    mgr_nb = compilationData[31]
+    mgr_pto = compilationData[32]
+    mgr_billable = compilationData[33]
+    mgr_total = compilationData[34]
 
     mgrEmployeeFixedColumn = 0
     mgrEmployeeHourlyColumn = 0
@@ -1041,6 +1232,22 @@ def createEmployeeHoursCompilationReport(request, mnth):
 
     mgr_data = []
     mgr_total_data = []
+
+    mgr_total_text = Paragraph('<para align=center color=white>Manager Total:</para>')
+    mgr_fixed_total_column = Paragraph(
+        '<para align=center color=white>' + str(compilationData[35]['amount']) + '</para>')
+    mgr_hourly_total = Paragraph('<para align=center color=white>' + str(compilationData[36]['amount']) + '</para>')
+    mgr_cgy_total = Paragraph('<para align=center color=white>' + str(compilationData[37]['amount']) + '</para>')
+    mgr_nb_total = Paragraph('<para align=center color=white>' + str(compilationData[38]['amount']) + '</para>')
+    mgr_pto_total = Paragraph('<para align=center color=white>' + str(compilationData[39]['amount']) + '</para>')
+    mgr_billable_total = Paragraph('<para align=center color=white>' + str(compilationData[40]['amount']) + '</para>')
+    mgr_total_total = Paragraph('<para align=center color=white>' + str(compilationData[41]['amount']) + '</para>')
+    mgr_percent_billable_total = Paragraph(
+        '<para align=center color=white>' + str(compilationData[40]['amount'] / 200 * 100) + ' %</para>')
+
+    mgr_total_data.append(
+        [mgr_total_text, mgr_fixed_total_column, mgr_hourly_total, mgr_cgy_total, mgr_nb_total, mgr_pto_total,
+         mgr_billable_total, mgr_total_total, mgr_percent_billable_total])
 
     for emp in mgrs:
         employeeColumn = Paragraph('<para align=left>' + str(emp['user__username']) + '</para>', styles['Normal'])
@@ -1080,6 +1287,110 @@ def createEmployeeHoursCompilationReport(request, mnth):
                          mgrEmployeeNBColumn, mgrEmployeePTOColumn, mgrEmployeeBillableColumn,
                          mgrEmployeeTotalColumn, mgrEmployeePercentBillableColumn])
 
+    # ##################################### CONSULTANT TABLE ######################################################
+    c_fixed = compilationData[42]
+    c_hourly = compilationData[43]
+    c_cgy = compilationData[44]
+    c_nb = compilationData[45]
+    c_pto = compilationData[46]
+    c_billable = compilationData[47]
+    c_total = compilationData[48]
+
+    cEmployeeFixedColumn = 0
+    cEmployeeHourlyColumn = 0
+    cEmployeeCGYColumn = 0
+    cEmployeeNBColumn = 0
+    cEmployeePTOColumn = 0
+    cEmployeeBillableColumn = 0
+    cEmployeeTotalColumn = 0
+    cPercentBillable = 0
+
+    c_data = []
+    c_total_data = []
+
+    c_total_text = Paragraph('<para align=center color=white>Consultant Total:</para>')
+    c_fixed_total_column = Paragraph(
+        '<para align=center color=white>' + str(compilationData[49]['amount']) + '</para>')
+    c_hourly_total = Paragraph('<para align=center color=white>' + str(compilationData[50]['amount']) + '</para>')
+    c_cgy_total = Paragraph('<para align=center color=white>' + str(compilationData[51]['amount']) + '</para>')
+    c_nb_total = Paragraph('<para align=center color=white>' + str(compilationData[52]['amount']) + '</para>')
+    c_pto_total = Paragraph('<para align=center color=white>' + str(compilationData[53]['amount']) + '</para>')
+    c_billable_total = Paragraph('<para align=center color=white>' + str(compilationData[54]['amount']) + '</para>')
+    c_total_total = Paragraph('<para align=center color=white>' + str(compilationData[55]['amount']) + '</para>')
+    c_percent_billable_total = Paragraph(
+        '<para align=center color=white>' + str(compilationData[54]['amount'] / 200 * 100) + ' %</para>')
+
+    c_total_data.append(
+        [c_total_text, c_fixed_total_column, c_hourly_total, c_cgy_total, c_nb_total, c_pto_total,
+         c_billable_total, c_total_total, c_percent_billable_total])
+
+    for emp in cs:
+        employeeColumn = Paragraph('<para align=left>' + str(emp['user__username']) + '</para>', styles['Normal'])
+        for item in c_fixed:
+            if item['employee_id'] == emp['employee_id']:
+                cEmployeeFixedColumn = str(item['fixed_hours_by_employee_sum'])
+        for item in c_hourly:
+            if item['employee_id'] == emp['employee_id']:
+                cEmployeeHourlyColumn = Paragraph(
+                    '<para align=center>' + str(item['hourly_hours_by_employee_sum']) + '</para>', styles['Normal'])
+                # data.append([employeeHourlyColumn])
+        for item in c_cgy:
+            if item['employee_id'] == emp['employee_id']:
+                cEmployeeCGYColumn = Paragraph(
+                    '<para align=center>' + str(item['cgy_hours_by_employee_sum']) + '</para>')
+        for item in c_nb:
+            if item['employee_id'] == emp['employee_id']:
+                cEmployeeNBColumn = Paragraph(
+                    '<para align=center>' + str(item['non_billable_hours_sum']) + '</para>', styles['Normal'])
+        for item in c_pto:
+            if item['employee_id'] == emp['employee_id']:
+                cEmployeePTOColumn = Paragraph(
+                    '<para align=center>' + str(item['pto_hours_by_employee_sum']) + '</para>', styles['Normal'])
+        for item in c_billable:
+            if item['employee_id'] == emp['employee_id']:
+                cPercentBillable = (item['billable_hours_sum'] / 200) * 100
+                cEmployeeBillableColumn = Paragraph(
+                    '<para align=center>' + str(item['billable_hours_sum']) + '</para>', styles['Normal'])
+        for item in c_total:
+            if item['employee_id'] == emp['employee_id']:
+                cEmployeeTotalColumn = Paragraph(
+                    '<para align=center>' + str(item['total_hours_sum']) + '</para>', styles['Normal'])
+        cEmployeePercentBillableColumn = Paragraph('<para align=center>' + str(cPercentBillable) + ' %</para>',
+                                                   styles['Normal'])
+
+        c_data.append([employeeColumn, cEmployeeFixedColumn, cEmployeeHourlyColumn, cEmployeeCGYColumn,
+                       cEmployeeNBColumn, cEmployeePTOColumn, cEmployeeBillableColumn,
+                       cEmployeeTotalColumn, cEmployeePercentBillableColumn])
+
+    # ##################################### GRAND TOTAL CREATE ###################################################
+
+    total_total_data = []
+
+    total_total_text = Paragraph('<para align=center color=white>Grand Total:</para>')
+    total_fixed_total_column = Paragraph(
+        '<para align=center color=white>' + str(compilationData[56]) + '</para>')
+    total_hourly_total = Paragraph('<para align=center color=white>' + str(compilationData[57]) + '</para>')
+    total_cgy_total = Paragraph('<para align=center color=white>' + str(compilationData[58]) + '</para>')
+    total_nb_total = Paragraph('<para align=center color=white>' + str(compilationData[59]) + '</para>')
+    total_pto_total = Paragraph('<para align=center color=white>' + str(compilationData[60]) + '</para>')
+    total_billable_total = Paragraph('<para align=center color=white>' + str(compilationData[61]) + '</para>')
+    total_total_total = Paragraph('<para align=center color=white>' + str(compilationData[62]) + '</para>')
+    total_percent_billable_total = Paragraph(
+        '<para align=center color=white>' + str(compilationData[61] / 200 * 100) + ' %</para>')
+
+    total_total_data.append(
+        [total_total_text, total_fixed_total_column, total_hourly_total, total_cgy_total, total_nb_total, total_pto_total,
+         total_billable_total, total_total_total, total_percent_billable_total])
+
+    # ##################################### METRICS CREATION #####################################################
+    vp_loss_rev = 0
+    smgr_lost_rev = 0
+    mgr_lost_rev = 0
+    c_lost_rev = 0
+    srg_total_lost_revenue = 0
+
+    # ##################################### TABLE CREATION ########################################################    
+
     tblStyle = TableStyle([('BOX', (0, 0), (-1, -1), 1, colors.black),
                            ('INNERGRID', (0, 0), (-1, -1), 1, colors.black),
                            ('ALIGN', (0, 0), (-1, -1), 'CENTER')])
@@ -1097,10 +1408,44 @@ def createEmployeeHoursCompilationReport(request, mnth):
     vp_total_row.hAlign = 'CENTER'
     vp_total_row.setStyle(total_row_style)
 
+    smgr_table_row = Table(smgr_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
+                                                 2 * cm, 2 * cm, 2 * cm])
+    smgr_table_row.hAlign = 'CENTER'
+    smgr_table_row.setStyle(tblStyle)
+
+    smgr_total_row = Table(smgr_total_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
+                                                       2 * cm, 2 * cm, 2 * cm])
+
+    smgr_total_row.hAlign = 'CENTER'
+    smgr_total_row.setStyle(total_row_style)
+
     mgr_table_row = Table(mgr_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
                                                2 * cm, 2 * cm, 2 * cm])
     mgr_table_row.hAlign = 'CENTER'
     mgr_table_row.setStyle(tblStyle)
+
+    mgr_total_row = Table(mgr_total_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
+                                                     2 * cm, 2 * cm, 2 * cm])
+
+    mgr_total_row.hAlign = 'CENTER'
+    mgr_total_row.setStyle(total_row_style)
+
+    c_table_row = Table(c_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
+                                               2 * cm, 2 * cm, 2 * cm])
+    c_table_row.hAlign = 'CENTER'
+    c_table_row.setStyle(tblStyle)
+
+    c_total_row = Table(c_total_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
+                                                     2 * cm, 2 * cm, 2 * cm])
+
+    c_total_row.hAlign = 'CENTER'
+    c_total_row.setStyle(total_row_style)
+
+    total_total_row = Table(total_total_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
+                                                 2 * cm, 2 * cm, 2 * cm])
+
+    total_total_row.hAlign = 'CENTER'
+    total_total_row.setStyle(total_row_style)
 
     elements.append(title)
     elements.append(subTitle)
@@ -1109,10 +1454,18 @@ def createEmployeeHoursCompilationReport(request, mnth):
     elements.append(spacer)
     elements.append(vp_table_row)
     elements.append(vp_total_row)
+    elements.append(smgr_table_row)
+    elements.append(smgr_total_row)
     elements.append(mgr_table_row)
+    elements.append(mgr_total_row)
+    elements.append(c_table_row)
+    elements.append(c_total_row)
+    spacer = Spacer(width=1, height=10)
+    elements.append(spacer)
+    elements.append(total_total_row)
 
     buffer = BytesIO()
-    employeeHoursCompilationReportDoc = SimpleDocTemplate(buffer, pagesize=[A4[0], A4[1]], leftMargin=5, rightMargin=0,
+    employeeHoursCompilationReportDoc = SimpleDocTemplate(buffer, pagesize=[A4[0], A4[1]], leftMargin=15, rightMargin=15,
                                                           topMargin=15, bottomMargin=5)
     employeeHoursCompilationReportDoc.build(elements)
     pdf_value = buffer.getvalue()

@@ -144,6 +144,89 @@
                             <th class="srg-bg-secondary" style="color:#02308C">{{ vp_total_billable_hours.amount|div:200|mul:100|floatformat:2 }} %</th>
                         </tr>
                         <tr><td colspan="10" class="border-0"></td></tr>
+                        {% for emp in smgrs %}
+                            <tr>
+                                <td class="text-start">{{ emp }}</td>
+                                <td>
+                                    {% for item in smgr_fixed_hours_by_employee %}
+                                        {% if item.employee_id == emp.employee_id %}
+                                            {{ item.fixed_hours_by_employee_sum }}
+                                        {% else %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for item in smgr_hourly_hours_by_employee %}
+                                        {% if item.employee_id == emp.employee_id %}
+                                            {{ item.hourly_hours_by_employee_sum }}
+                                        {% else %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for item in smgr_cgy_hours_by_employee %}
+                                        {% if item.employee_id == emp.employee_id %}
+                                            {{ item.cgy_hours_by_employee_sum }}
+                                        {% else %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for item in smgr_non_billable_hours_by_employee %}
+                                        {% if item.employee_id == emp.employee_id %}
+                                            {{ item.non_billable_hours_sum }}
+                                        {% else %}
+                                        {% endif %}
+
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for item in smgr_pto_hours_by_employee %}
+                                        {% if item.employee_id == emp.employee_id %}
+                                            {{ item.pto_hours_by_employee_sum }}
+                                        {% else %}
+                                        {% endif %}
+
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for item in smgr_billable_hours_by_employee %}
+                                        {% if item.employee_id == emp.employee_id %}
+                                            {{ item.billable_hours_sum }}
+                                        {% else %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for item in smgr_total_hours_by_employee %}
+                                        {% if item.employee_id == emp.employee_id %}
+                                            {{ item.total_hours_sum }}
+                                        {% else %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for item in smgr_billable_hours_by_employee %}
+                                        {% if item.employee_id == emp.employee_id %}
+                                            {{ item.billable_hours_sum|div:200|mul:100|floatformat:2 }} %
+                                        {% else %}
+                                        {% endif %}
+                                    {% endfor %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        <tr class="srg-link">
+                            <th class="srg-bg-secondary" style="color:#02308C"> Sr. Managers Total</th>
+                            <th class="srg-bg-secondary" style="color:#02308C">{{ smgr_total_fixed_hours.amount }}</th>
+                            <th class="srg-bg-secondary" style="color:#02308C">{{ smgr_total_hourly_hours.amount }}</th>
+                            <th class="srg-bg-secondary" style="color:#02308C">{{ smgr_total_cgy_hours.amount }}</th>
+                            <th class="srg-bg-secondary" style="color:#02308C">{{ smgr_total_non_billable_hours.amount }}</th>
+                            <th class="srg-bg-secondary" style="color:#02308C">{{ smgr_total_pto_hours.amount }}</th>
+                            <th class="srg-bg-secondary" style="color:#02308C">{{ smgr_total_billable_hours.amount }}</th>
+                            <th class="srg-bg-secondary" style="color:#02308C">{{ smgr_total_hours.amount }}</th>
+                            <th class="srg-bg-secondary" style="color:#02308C">{{ smgr_total_billable_hours.amount|div:200|mul:100|floatformat:2 }} %</th>
+                        </tr>
+                        <tr><td colspan="10" class="border-0"></td></tr>
                         {% for emp in mgrs %}
                             <tr>
                                 <td class="text-start">{{ emp }}</td>
@@ -346,6 +429,14 @@
                             </div>
                             <div class="card-body fs-5">
                                 ${{ vp_loss_rev|floatformat:0|intcomma }}
+                            </div>
+                        </div>
+                        <div class="col-2 card p-0">
+                            <div class="card-header fs-5 srg-header" style="">
+                                Sr. Mangers<br>Non-Bill
+                            </div>
+                            <div class="card-body fs-5">
+                                ${{ smgr_lost_rev|floatformat:0|intcomma }}
                             </div>
                         </div>
                         <div class="col-2 card p-0">

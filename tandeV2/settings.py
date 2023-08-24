@@ -51,7 +51,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'mathfilters',
-    'django_filters'
+    'django_filters',
+    'rest_framework',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [

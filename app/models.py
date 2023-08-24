@@ -84,8 +84,8 @@ class Engagement(models.Model):
     provider = models.ForeignKey(Provider, on_delete=models.CASCADE)
     time_code = models.ForeignKey(Timecode, on_delete=models.CASCADE)
     type = models.ForeignKey(BillingTypes, on_delete=models.CASCADE)
-    is_rac = models.BooleanField(default=False)
-    engagement_hourly_rate = models.IntegerField(null=True, blank=True, default=0, validators=[MinValueValidator(1), MaxValueValidator(1000)])
+    is_rac = models.BooleanField(default=True)
+    engagement_hourly_rate = models.IntegerField(null=True, blank=True, default=0, validators=[MinValueValidator(0), MaxValueValidator(1000)])
     notes = models.TextField(blank=True, null=True)
 
     def __str__(self):
@@ -199,6 +199,7 @@ class Todolist(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
     engagement = models.ForeignKey(Engagement, db_column='srg_id', on_delete=models.CASCADE)
     todo_date = models.DateField(default=date.today())
+    todo_date_end = models.DateField(blank=True, null=True)
     anticipated_hours = models.DecimalField(max_digits=4, decimal_places=2)
     note = models.TextField(max_length=250, null=True, blank=True)
 
@@ -209,13 +210,19 @@ class Todolist(models.Model):
         return self.employee.user
 
     def getParent(self):
-        return self.engagement.provider.parent
+        return self.engagement.provider.parent_id
 
     def getProvider(self):
         return self.engagement.provider
 
+    def getProviderID(self):
+        return self.engagement.provider_id
+
     def getScope(self):
         return self.engagement.time_code
+
+    def getTC(self):
+        return self.engagement.time_code_id
 
     def getFYE(self):
         return self.engagement.fye

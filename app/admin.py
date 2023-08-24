@@ -11,3 +11,5 @@ admin.site.register(Provider)
 admin.site.register(Timecode)
 
 admin.site.register(EmployeeTitles)
+
+admin.site.register(Engagement)
