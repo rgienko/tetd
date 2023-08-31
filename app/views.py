@@ -82,7 +82,8 @@ def dashboard(request):
                                                  "provider_id", "provider__provider_name", "time_code",
                                                  "time_code__time_code_desc",
                                                  "is_complete", "fye", "budget_hours", "budget_amount").annotate(
-        engagement_hours_sum=Coalesce(Sum('time__hours'), 0, output_field=DecimalField(0.00)), budget_calc=Max('budget_amount') / 250).filter(
+        engagement_hours_sum=Coalesce(Sum('time__hours'), 0, output_field=DecimalField(0.00)),
+        budget_calc=Max('budget_amount') / 250).filter(
         engagement_id__in=user_assignments).order_by('-fye', 'time_code',
                                                      'provider_id',
                                                      'engagement_hours_sum')
@@ -659,20 +660,103 @@ def AdminTimesheet(request):
     return render(request, 'adminTimesheet.html', context)
 
 
+def getStaffBillableWeekHours(per_beg, per_end):
+    data_main = Todolist.objects.filter(todo_date__gte=per_beg).filter(
+        todo_date__lte=per_end).values('employee__user__username')
+
+    data = data_main.exclude(engagement__type_id='N').annotate(bill_hours_sum=Sum('anticipated_hours'))
+
+    return data
+
+
+def getStaffNonBillableWeekHours(per_beg, per_end):
+    td_objects = Todolist.objects.filter(todo_date__gte=per_beg).filter(
+        todo_date__lte=per_end).filter(engagement__type_id='N').values()
+
+    data = td_objects.values('employee__user__username').annotate(non_bill_hours_sum=Sum('anticipated_hours'))
+
+    return data
+
+
+def getStaffTotalWeekHours(per_beg, per_end):
+    data_main = Todolist.objects.filter(todo_date__gte=per_beg).filter(
+        todo_date__lte=per_end).values('employee__user__username')
+
+    data = data_main.annotate(hours_sum=Sum('anticipated_hours'))
+
+    return data
+
+
+def getStaffWeekHours(per_beg, per_end):
+    data = Todolist.objects.values('employee__user__username').filter(todo_date__gte=per_beg).filter(
+        todo_date__lte=per_end).annotate(
+        total_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()
+                                 ),
+        non_billable_hours_sum=Coalesce(
+            Sum(Case(When(engagement__type_id='N', then=F('anticipated_hours')))), 0,
+            output_field=DecimalField()),
+        billable_hours_sum=Coalesce(
+            Sum(
+                Case(
+                    When(
+                        Q(engagement__type_id='H') | Q(engagement__type_id='F') | Q(engagement__type_id='C'),
+                        then=F('anticipated_hours')
+                    )
+                )
+            ), 0, output_field=DecimalField()
+        )
+    )
+    return data
+
+
+def getStaffNotInTodoList(per_beg, per_end):
+    data = Todolist.objects.values('employee__user__username').filter(todo_date__gte=per_beg).filter(
+        todo_date__lte=per_end)
+
+    data_none = Employee.objects.exclude(user__username__in=data)
+
+    return data_none
+
+
 def AdminPlanning(request):
     user_info = get_object_or_404(User, pk=request.user.id)
     period_beg = date.today()
     today = date.today()
-    week_beg = today - timedelta(days=today.weekday())
-    week_end = week_beg + timedelta(days=5)
+    week_beg = today - timedelta(days=today.weekday()) - timedelta(days=1)
+    week_end = week_beg + timedelta(days=6)
     period_days = []
     for i in range(180):
         period_days.append(period_beg + timedelta(days=i))
-    employees = Employee.objects.all()
+    employees = Employee.objects.values('user__username')
     todolists = Todolist.objects.values('employee__user__username', 'engagement__provider',
                                         'engagement__provider__provider_name', 'todo_date',
                                         'engagement__engagement_srg_id', 'anticipated_hours').order_by('todo_date',
                                                                                                        'employee__user__username')
+
+    current_employees = User.objects.values('username')
+
+    current_week_hours = getStaffWeekHours(week_beg, week_end)
+    current_week_no_hours = getStaffNotInTodoList(week_beg, week_end)
+
+    next_week_beg = week_beg + timedelta(days=7)
+    next_week_end = week_end + timedelta(days=7)
+
+    next_week_hours = getStaffWeekHours(next_week_beg, next_week_end)
+    next_week_no_hours = getStaffNotInTodoList(next_week_beg, next_week_end)
+
+    two_week_beg = next_week_beg + timedelta(days=7)
+    two_week_end = next_week_end + timedelta(days=7)
+
+    two_week_hours = getStaffWeekHours(two_week_beg, two_week_end)
+    two_week_no_hours = getStaffNotInTodoList(two_week_beg, two_week_end)
+
+    three_week_beg = two_week_beg + timedelta(days=7)
+    three_week_end = two_week_end + timedelta(days=7)
+
+    three_week_hours = getStaffWeekHours(three_week_beg, three_week_end)
+    three_week_no_hours = getStaffNotInTodoList(three_week_beg, three_week_end)
+
+
 
     todo_filter = AdminTodoListFilter(request.GET, queryset=todolists)
 
@@ -692,8 +776,51 @@ def AdminPlanning(request):
 
     context = {'todolists': todolists, 'employees': employees, 'period_days': period_days,
                'todo_filter': todo_filter, 'week_beg': week_beg, 'week_end': week_end,
-               'today': today, 'user_info': user_info}
+               'current_week_no_hours': current_week_no_hours,
+               'current_week_hours': current_week_hours,
+               'next_week_beg': next_week_beg, 'next_week_end': next_week_end,
+               'next_week_no_hours': next_week_no_hours,
+               'next_week_hours': next_week_hours,
+               'two_week_beg': two_week_beg,
+               'two_week_end': two_week_end,
+               'two_week_no_hours': two_week_no_hours,
+               'two_week_hours': two_week_hours,
+               'three_week_beg': three_week_beg,
+               'three_week_end': three_week_end,
+               'three_week_no_hours': three_week_no_hours,
+               'three_week_hours': three_week_hours,
+               'current_employees': current_employees, 'today': today, 'user_info': user_info
+               }
     return render(request, 'adminPlanning.html', context)
+
+
+def AdminEmployeeDashboard(request, pk, per_beg, per_end):
+    user_info = get_object_or_404(User, pk=request.user.id)
+    today = date.today()
+
+    timesheet_entries = Time.objects.all().filter(employee__user__username=request.user.username).filter(
+        date__gte=per_beg).filter(date__lte=per_end)
+
+    billable_hours_sum = timesheet_entries.exclude(Q(engagement__type_id='N') | Q(time_type_id_id='N')).aggregate(
+        amount=Coalesce(Sum('hours'), 0, output_field=DecimalField(0.00)))
+
+    non_billable_hours_sum = timesheet_entries.filter(Q(engagement__type_id='N') | Q(time_type_id_id='N')).aggregate(
+        amount=Coalesce(Sum('hours'), 0, output_field=DecimalField(0.00)))
+
+    employee_td_entries = Todolist.objects.values('todo_date',
+                                                  'engagement__parent_id',
+                                                  'engagement__parent_id__parent_name',
+                                                  'engagement__provider_id',
+                                                  'engagement__provider_id__provider_name',
+                                                  'engagement__time_code',
+                                                  'engagement__time_code__time_code_desc').filter(
+        employee__user__username=request.user.username).filter(todo_date=today).order_by('todo_date').annotate(
+        hsum=Sum('anticipated_hours'))
+
+    context = {'user_info': user_info, 'timesheet_entries': timesheet_entries, 'today': today,
+               'billable_hours_sum': billable_hours_sum, 'non_billable_hours_sum': non_billable_hours_sum,
+               'employee_td_entries': employee_td_entries}
+    return render(request, 'adminEmployeeDashboard.html', context)
 
 
 def EmployeeTimesheet(request):
@@ -1379,7 +1506,8 @@ def createEmployeeHoursCompilationReport(request, mnth):
         '<para align=center color=white>' + str(compilationData[61] / 200 * 100) + ' %</para>')
 
     total_total_data.append(
-        [total_total_text, total_fixed_total_column, total_hourly_total, total_cgy_total, total_nb_total, total_pto_total,
+        [total_total_text, total_fixed_total_column, total_hourly_total, total_cgy_total, total_nb_total,
+         total_pto_total,
          total_billable_total, total_total_total, total_percent_billable_total])
 
     # ##################################### METRICS CREATION #####################################################
@@ -1431,18 +1559,18 @@ def createEmployeeHoursCompilationReport(request, mnth):
     mgr_total_row.setStyle(total_row_style)
 
     c_table_row = Table(c_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
-                                               2 * cm, 2 * cm, 2 * cm])
+                                           2 * cm, 2 * cm, 2 * cm])
     c_table_row.hAlign = 'CENTER'
     c_table_row.setStyle(tblStyle)
 
     c_total_row = Table(c_total_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
-                                                     2 * cm, 2 * cm, 2 * cm])
+                                                 2 * cm, 2 * cm, 2 * cm])
 
     c_total_row.hAlign = 'CENTER'
     c_total_row.setStyle(total_row_style)
 
     total_total_row = Table(total_total_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
-                                                 2 * cm, 2 * cm, 2 * cm])
+                                                         2 * cm, 2 * cm, 2 * cm])
 
     total_total_row.hAlign = 'CENTER'
     total_total_row.setStyle(total_row_style)
@@ -1465,7 +1593,8 @@ def createEmployeeHoursCompilationReport(request, mnth):
     elements.append(total_total_row)
 
     buffer = BytesIO()
-    employeeHoursCompilationReportDoc = SimpleDocTemplate(buffer, pagesize=[A4[0], A4[1]], leftMargin=15, rightMargin=15,
+    employeeHoursCompilationReportDoc = SimpleDocTemplate(buffer, pagesize=[A4[0], A4[1]], leftMargin=15,
+                                                          rightMargin=15,
                                                           topMargin=15, bottomMargin=5)
     employeeHoursCompilationReportDoc.build(elements)
     pdf_value = buffer.getvalue()

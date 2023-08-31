@@ -1,4 +1,5 @@
 {% extends 'layout.html' %}
+{% load mathfilters %}
 
 {% block content %}
     <div class="container-xxl">
@@ -9,6 +10,216 @@
                 <h5 class="fw-normal">Week: {{ week_beg|date:'D m/d/Y' }} - {{ week_end|date:'D m/d/Y' }}</h5>
             </div>
         </div>
+        <div class="row d-flex justify-content-center">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header srg-bg-secondary srg-header d-flex justify-content-between align-items-baseline pb-0">
+                        <h4>Staff Availability</h4>
+                    </div>
+                    <div class="card-body px-0">
+                        <div class="carousel slide d-flex justify-content-between" id="carouselExample">
+                            <button class="border-0 bg-transparent srg-link" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
+                                <span class="srg-link" aria-hidden="true"><i class="bi bi-arrow-left"></i></span>
+                                <span class="">Previous</span>
+                            </button>
+
+                            <div class="carousel-inner">
+                                <div class="carousel-item active">
+                                    <div class="d-flex justify-content-between gap-2">
+                                        <div class="card border-0">
+                                            <div class="card-header srg-bg-primary-light fw-bolder d-flex justify-content-between">
+                                                <span>Current Week</span> <span>{{ week_beg }} - {{ week_end }}</span>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <table class="srg-table" id="currentTable">
+                                                    <thead>
+                                                        <tr>
+                                                            <th class="srg-bg-primary-light" onclick="sortTable(0, 'currentTable')">Employee</th>
+                                                            <th class="text-center srg-bg-primary-light" onclick="sortTable(1, 'currentTable')">Billable <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center srg-bg-primary-light" onclick="sortTable(2, 'currentTable')">Non-Billable <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center srg-bg-primary-light" onclick="sortTable(3, 'currentTable')">Total <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center srg-bg-primary-light" onclick="sortTable(4, 'currentTable')">HPW</th>
+                                                            <th class="text-center srg-bg-primary-light" onclick="sortTable(5, 'currentTable')">Avail. <i class="bi bi-arrow-down-up"></i></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    {% for emp in current_week_hours %}
+                                                        <tr>
+                                                            <td><a href="{% url 'admin-employee-dashboard' emp.employee__user__username week_beg week_end %}" class="srg-link">{{ emp.employee__user__username }}</a></td>
+                                                            <td>{{ emp.billable_hours_sum }}</td>
+                                                            <td>{{ emp.non_billable_hours_sum }}</td>
+                                                            <td>{{ emp.total_hours_sum }}</td>
+                                                            <td>40</td>
+                                                            <td>{{ 40|sub:emp.billable_hours_sum }}</td>
+                                                        </tr>
+                                                    {% endfor %}
+
+                                                    {% for e in current_week_no_hours %}
+                                                        <tr>
+                                                            <td><a href="{% url 'admin-employee-dashboard' e week_beg week_end %}" class="srg-link">{{ e }}</a></td>
+                                                        <td>0</td>
+                                                        <td>0</td>
+                                                        <td>0</td>
+                                                        <td>40</td>
+                                                        <td>40</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+
+                                        <div class="card border-0">
+                                            <div class="card-header srg-bg-secondary fw-bolder d-flex justify-content-between">
+                                                <span>Next Week</span> <span>{{ next_week_beg }} - {{ next_week_end }}</span>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <table class="srg-table" id="nextWeekTable">
+                                                    <thead>
+                                                        <tr>
+                                                            <th class="srg-bg-secondary" onclick="sortTable(0, 'nextWeekTable')">Employee</th>
+                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(1, 'nextWeekTable')">Billable <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(2, 'nextWeekTable')">Non-Billable <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(3, 'nextWeekTable')">Total <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(4, 'nextWeekTable')">HPW</th>
+                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(5, 'nextWeekTable')">Avail. <i class="bi bi-arrow-down-up"></i></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    {% for emp in next_week_hours %}
+                                                        <tr>
+                                                            <td><a href="{% url 'admin-employee-dashboard' emp.employee__user__username next_week_beg next_week_end %}" class="srg-link">{{ emp.employee__user__username }}</a></td>
+                                                            <td>{{ emp.billable_hours_sum }}</td>
+                                                            <td>{{ emp.non_billable_hours_sum }}</td>
+                                                            <td>{{ emp.total_hours_sum }}</td>
+                                                            <td>40</td>
+                                                            <td>{{ 40|sub:emp.billable_hours_sum }}</td>
+                                                        </tr>
+                                                    {% endfor %}
+
+                                                    {% for e in next_week_no_hours %}
+                                                        <tr>
+                                                            <td><a href="{% url 'admin-employee-dashboard' e next_week_beg next_week_end %}" class="srg-link">{{ e }}</a></td>
+                                                        <td>0</td>
+                                                        <td>0</td>
+                                                        <td>0</td>
+                                                        <td>40</td>
+                                                        <td>40</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="carousel-item">
+                                    <div class="d-flex justify-content-between gap-2">
+                                        <div class="card">
+                                            <div class="card-header srg-bg-primary-light fw-bolder d-flex justify-content-between">
+                                                <span>Two Weeks Out</span> <span>{{ two_week_beg }} - {{ two_week_end }}</span>
+                                            </div>
+
+                                            <div class="card-body p-0">
+                                                <table class="srg-table" id="twoWeekTable">
+                                                    <thead>
+                                                        <tr>
+                                                            <th class="srg-bg-secondary" onclick="sortTable(0, 'twoWeekTable')">Employee</th>
+                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(1, 'twoWeekTable')">Billable <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(2, 'twoWeekTable')">Non-Billable <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(3, 'twoWeekTable')">Total <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(4, 'twoWeekTable')">HPW</th>
+                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(5, 'twoWeekTable')">Avail. <i class="bi bi-arrow-down-up"></i></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    {% for emp in two_week_hours %}
+                                                        <tr>
+                                                            <td><a href="{% url 'admin-employee-dashboard' emp.employee__user__username two_week_beg two_week_end %}" class="srg-link">{{ emp.employee__user__username }}</a></td>
+                                                            <td>{{ emp.billable_hours_sum }}</td>
+                                                            <td>{{ emp.non_billable_hours_sum }}</td>
+                                                            <td>{{ emp.total_hours_sum }}</td>
+                                                            <td>40</td>
+                                                            <td>{{ 40|sub:emp.billable_hours_sum }}</td>
+                                                        </tr>
+                                                    {% endfor %}
+
+                                                    {% for e in two_week_no_hours %}
+                                                        <tr>
+                                                            <td><a href="{% url 'admin-employee-dashboard' e two_week_beg two_week_end %}" class="srg-link">{{ e }}</a></td>
+                                                        <td>0</td>
+                                                        <td>0</td>
+                                                        <td>0</td>
+                                                        <td>40</td>
+                                                        <td>40</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                        </div>
+                                        <div class="card">
+                                            <div class="card-header srg-bg-primary-light fw-bolder d-flex justify-content-between">
+                                                <span>Three Weeks Out</span> <span>{{ three_week_beg }} - {{ three_week_end }}</span>
+                                            </div>
+
+                                            <div class="card-body p-0">
+                                                <table class="srg-table" id="threeWeekTable">
+                                                    <thead>
+                                                        <tr>
+                                                            <th class="srg-bg-secondary" onclick="sortTable(0, 'threeWeekTable')">Employee</th>
+                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(1, 'threeWeekTable')">Billable <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(2, 'threeWeekTable')">Non-Billable <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(3, 'threeWeekTable')">Total <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(4, 'threeWeekTable')">HPW</th>
+                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(5, 'threeWeekTable')">Avail. <i class="bi bi-arrow-down-up"></i></th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                    {% for emp in three_week_hours %}
+                                                        <tr>
+                                                            <td><a href="{% url 'admin-employee-dashboard' emp.employee__user__username three_week_beg three_week_end %}" class="srg-link">{{ emp.employee__user__username }}</a></td>
+                                                            <td>{{ emp.billable_hours_sum }}</td>
+                                                            <td>{{ emp.non_billable_hours_sum }}</td>
+                                                            <td>{{ emp.total_hours_sum }}</td>
+                                                            <td>40</td>
+                                                            <td>{{ 40|sub:emp.billable_hours_sum }}</td>
+                                                        </tr>
+                                                    {% endfor %}
+
+                                                    {% for e in two_week_no_hours %}
+                                                        <tr>
+                                                            <td><a href="{% url 'admin-employee-dashboard' e three_week_beg three_week_end %}" class="srg-link">{{ e }}</a></td>
+                                                        <td>0</td>
+                                                        <td>0</td>
+                                                        <td>0</td>
+                                                        <td>40</td>
+                                                        <td>40</td>
+                                                        </tr>
+                                                    {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                              <button class="border-0 bg-transparent srg-link" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
+                                <span class="srg-link" aria-hidden="true"><i class="bi bi-arrow-right"></i></span>
+                                <span class="">Next</span>
+                              </button>
+                        </div>
+
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
         <div class="row d-flex justify-content-center">
             <div class="col-6">
                 <div class="card">
@@ -104,7 +315,50 @@
           });
         </script>
 
+        <script>
+            let sortingOrder = 1
+            function sortTable(columnIndex, table_id) {
+                let table, rows, switching, i, x, y, shouldSwitch;
+                table = document.getElementById(table_id);
+                switching = true;
+                while (switching) {
+                    switching = false;
+                    rows = table.getElementsByTagName("tr");
 
+                    for (i=1; i < (rows.length - 1); i++) {
+                        shouldSwitch = false;
+
+                        x = parseFloat(rows[i].getElementsByTagName("td")[columnIndex].textContent);
+                        y = parseFloat(rows[i + 1].getElementsByTagName("td")[columnIndex].textContent);
+
+                        if (!isNaN(x) && !isNaN(y) && sortingOrder * x < sortingOrder * y) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+
+                    if (shouldSwitch) {
+                        rows[i].parentNode.insertBefore(rows[i+1], rows[i]);
+                        switching = true;
+                    }
+                }
+                sortingOrder *= -1
+
+            }
+        </script>
+
+        <script>
+            let toggleButton = document.getElementById("toggleButton")
+            let myDiv = document.getElementById("myDiv")
+
+            toggleButton.addEventListener("click", function () {
+                if (myDiv.style.display === 'none') {
+                    myDiv.style.display = 'block'
+                } else {
+                    myDiv.style.display= 'none'
+                }
+            })
+        </script>
 
 
 

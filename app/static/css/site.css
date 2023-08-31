@@ -22,20 +22,31 @@
 }
 
 .srg-table th {
-    padding: 8px;
+    padding: 10px;
     width: auto;
     border: 1px solid #a9a9a9;
+    cursor: pointer;
 }
 
 .srg-table td {
     padding: 10px;
     width: auto;
     border: 1px solid #a9a9a9;
+
+}
+
+.srg-table tbody > tr:hover {
+    color: #02308C;
+    font-weight: bolder;
 }
 
 /* COLORS */
 .srg-bg-primary {
     background: #02308C
+}
+
+.srg-bg-primary-light {
+    background: #afc0df;
 }
 
 .srg-bg-secondary {
@@ -46,8 +57,16 @@
     background: #004000
 }
 
+.srg-bg-success-light {
+    background: #b1c2af;
+}
+
 .srg-bg-danger {
     background: #8B0000;
+}
+
+.srg-bg-danger-light {
+    background: #e2b9b2;
 }
 
 

@@ -32,6 +32,7 @@ urlpatterns = [
     path('engagement-detail/<pk>/', views.AdminEngagementDetail, name='engagement-detail'),
     path('admin-timesheet/', views.AdminTimesheet, name='admin-timesheet'),
     path('admin-planning/', views.AdminPlanning, name='admin-planning'),
+    path('admin-employee-dashboard/<pk>/<per_beg>/<per_end>/', views.AdminEmployeeDashboard, name='admin-employee-dashboard'),
     path('assign/<pk>', views.AssignmentProjects, name='admin-assign'),
     path('extract-engagement-ts/<pk>', views.ExtractEngagementTimesheet, name='extract-engagement-entries'),
     path('update-engagement-status/<pk>', views.UpdateEngagementStatus, name='update-engagement-status'),
