@@ -115,8 +115,8 @@
                                 </div>
                                 <div class="carousel-item">
                                     <div class="d-flex justify-content-between gap-2">
-                                        <div class="card">
-                                            <div class="card-header srg-bg-primary-light fw-bolder d-flex justify-content-between">
+                                        <div class="card border-0">
+                                            <div class="card-header srg-bg-success-light fw-bolder d-flex justify-content-between">
                                                 <span>Two Weeks Out</span> <span>{{ two_week_beg }} - {{ two_week_end }}</span>
                                             </div>
 
@@ -124,12 +124,12 @@
                                                 <table class="srg-table" id="twoWeekTable">
                                                     <thead>
                                                         <tr>
-                                                            <th class="srg-bg-secondary" onclick="sortTable(0, 'twoWeekTable')">Employee</th>
-                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(1, 'twoWeekTable')">Billable <i class="bi bi-arrow-down-up"></i></th>
-                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(2, 'twoWeekTable')">Non-Billable <i class="bi bi-arrow-down-up"></i></th>
-                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(3, 'twoWeekTable')">Total <i class="bi bi-arrow-down-up"></i></th>
-                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(4, 'twoWeekTable')">HPW</th>
-                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(5, 'twoWeekTable')">Avail. <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="srg-bg-success-light" onclick="sortTable(0, 'twoWeekTable')">Employee</th>
+                                                            <th class="text-center srg-bg-success-light" onclick="sortTable(1, 'twoWeekTable')">Billable <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center srg-bg-success-light" onclick="sortTable(2, 'twoWeekTable')">Non-Billable <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center srg-bg-success-light" onclick="sortTable(3, 'twoWeekTable')">Total <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center srg-bg-success-light" onclick="sortTable(4, 'twoWeekTable')">HPW</th>
+                                                            <th class="text-center srg-bg-success-light" onclick="sortTable(5, 'twoWeekTable')">Avail. <i class="bi bi-arrow-down-up"></i></th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -159,8 +159,8 @@
                                             </div>
 
                                         </div>
-                                        <div class="card">
-                                            <div class="card-header srg-bg-primary-light fw-bolder d-flex justify-content-between">
+                                        <div class="card border-0">
+                                            <div class="card-header srg-bg-danger-light fw-bolder d-flex justify-content-between">
                                                 <span>Three Weeks Out</span> <span>{{ three_week_beg }} - {{ three_week_end }}</span>
                                             </div>
 
@@ -168,12 +168,12 @@
                                                 <table class="srg-table" id="threeWeekTable">
                                                     <thead>
                                                         <tr>
-                                                            <th class="srg-bg-secondary" onclick="sortTable(0, 'threeWeekTable')">Employee</th>
-                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(1, 'threeWeekTable')">Billable <i class="bi bi-arrow-down-up"></i></th>
-                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(2, 'threeWeekTable')">Non-Billable <i class="bi bi-arrow-down-up"></i></th>
-                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(3, 'threeWeekTable')">Total <i class="bi bi-arrow-down-up"></i></th>
-                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(4, 'threeWeekTable')">HPW</th>
-                                                            <th class="text-center srg-bg-secondary" onclick="sortTable(5, 'threeWeekTable')">Avail. <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="srg-bg-danger-light" onclick="sortTable(0, 'threeWeekTable')">Employee</th>
+                                                            <th class="text-center srg-bg-danger-light" onclick="sortTable(1, 'threeWeekTable')">Billable <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center srg-bg-danger-light" onclick="sortTable(2, 'threeWeekTable')">Non-Billable <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center srg-bg-danger-light" onclick="sortTable(3, 'threeWeekTable')">Total <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center srg-bg-danger-light" onclick="sortTable(4, 'threeWeekTable')">HPW</th>
+                                                            <th class="text-center srg-bg-danger-light" onclick="sortTable(5, 'threeWeekTable')">Avail. <i class="bi bi-arrow-down-up"></i></th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -188,7 +188,7 @@
                                                         </tr>
                                                     {% endfor %}
 
-                                                    {% for e in two_week_no_hours %}
+                                                    {% for e in three_week_no_hours %}
                                                         <tr>
                                                             <td><a href="{% url 'admin-employee-dashboard' e three_week_beg three_week_end %}" class="srg-link">{{ e }}</a></td>
                                                         <td>0</td>
@@ -219,7 +219,7 @@
             </div>
         </div>
 
-
+        <!--
         <div class="row d-flex justify-content-center">
             <div class="col-6">
                 <div class="card">
@@ -277,7 +277,7 @@
                 </table>
             </div>
         </div>
-
+        -->
 
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>

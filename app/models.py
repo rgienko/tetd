@@ -143,7 +143,7 @@ class Time(models.Model):
     timesheet_id = models.AutoField(primary_key=True)
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
     engagement = models.ForeignKey(Engagement, db_column='srg_id', on_delete=models.CASCADE)
-    date = models.DateField(default=date.today())
+    ts_date = models.DateField(default=date.today())
     hours = models.DecimalField(max_digits=4, decimal_places=2)
     time_type_id = models.ForeignKey(TimeType, on_delete=models.CASCADE, default='B')
     note = models.TextField(max_length=500, null=True, blank=True)
@@ -211,6 +211,9 @@ class Todolist(models.Model):
 
     def getParent(self):
         return self.engagement.provider.parent_id
+
+    def getParentFull(self):
+        return self.engagement.provider.parent
 
     def getProvider(self):
         return self.engagement.provider

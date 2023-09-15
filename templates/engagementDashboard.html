@@ -3,6 +3,14 @@
 
 {% block content %}
 
+    <div id="loading-screen">
+        <div class="">
+            <div class="spinner"></div><br>
+            <p>Loading...</p>
+        </div>
+
+    </div>
+
     <div class="row border">
         <div class="col-3 px-1">
             <div class="card srg-border vh-100 overflow-auto">
@@ -40,7 +48,6 @@
                                     let input, filter, table, rows, a, i, txtValue;
                                     input = document.getElementById("search{{ parent.parent_id }}");
                                     filter = input.value.toUpperCase();
-                                    console.log(filter)
                                     table = document.getElementById('table{{ parent.parent_id }}');
                                     rows = table.getElementsByTagName("tr");
 
@@ -288,5 +295,31 @@
                 }
 
             }
+        </script>
+
+        <script>
+            // Hide the spinner when the page is fully loaded
+            window.onload = function () {
+                  // Hide the loading screen when the entire page is loaded
+                const loadingScreen = document.getElementById("loading-screen");
+                loadingScreen.style.display = "none";
+                const scrollToElement = document.getElementById("today");
+
+                if (scrollToElement) {
+                   scrollToElement.scrollIntoView({
+                       behavior: "smooth",
+                       block: "start"
+                   })
+                }
+            };
+
+            </script>
+
+            <script>
+                // Hide the spinner when the page is fully loaded
+                window.addEventListener("beforeunload", function() {
+                    const spinner = document.getElementById("loading-screen");
+                    spinner.style.display = ""; // Change to "none" if you want it to hide initially
+                });
         </script>
 {% endblock %}

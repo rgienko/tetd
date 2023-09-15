@@ -2,24 +2,26 @@
 {% load mathfilters %}
 
 {% block content %}
-    <div class="container-xxl">
-    <div class="row my-4">
-        <div class="col-12">
-            <div class="card srg-bg-secondary px-4 shadow-sm">
-                <span class="srg-link display-5 fs-1">Hello, {{ user_info.first_name }}</span>
+    <div class="row p-0">
+        <div class="col-12 p-0">
+            <div class="srg-bg-primary px-4 py-2 shadow-sm d-flex justify-content-between">
+                <span class="srg-text-secondary display-5 fs-1">Hello, {{ user_info.first_name }}</span>
 
-                <span class="srg-link display-6 fs-2 lh-base">{{ today|date:'l, F d, Y' }} </span>
+                <span class="srg-text-secondary display-6 fs-2 lh-base">{{ today|date:'l, F d, Y' }} </span>
 
-                <span class="srg-link display-6 fs-2 lh-base">Period: {{ week_beg|date:"m/d/y" }} - {{ week_end|date:"m/d/y" }}</span>
+                <span class="srg-text-secondary display-6 fs-2 lh-base">Period: {{ week_beg|date:"m/d/y" }} - {{ week_end|date:"m/d/y" }}</span>
             </div>
         </div>
     </div>
+
+    <div class="container-xxl mt-4">
+
     <div class="row d-flex justify-content-center mb-4">
         <div class="col-4">
             <div class="card shadow-sm" style="min-height:400px;max-height:500px">
-                <div class="card-header srg-link d-flex justify-content-between align-items-baseline pb-0">
-                    <h4>My Time</h4>
-                    <a href="{% url 'employee-timesheet' %}" class="srg-link">View Timesheet</a>
+                <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline">
+                    <span class="fs-3">My Time</span>
+                    <a href="{% url 'employee-timesheet' %}" class="srg-link-light">View Timesheet</a>
                 </div>
                 <div class="card-body overflow-auto pt-0">
                     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
@@ -91,14 +93,14 @@
 
         <div class="col-8">
             <div class="card shadow-sm" style="min-height:400px;max-height:500px">
-                <div class="card-header srg-link d-flex justify-content-between align-items-baseline pb-0">
-                    <h4>Today's Schedule</h4>
-                    <a href="{% url 'employee-todolist' %}" class="srg-link">View To-Do List</a>
+                <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline">
+                    <span class="fs-3">Today's Schedule</span>
+                    <a href="{% url 'employee-todolist' %}" class="srg-link-light">View To-Do List</a>
                 </div>
                 <div class="card-body overflow-auto p-2">
                     <table class="srg-table">
                             <thead>
-                            <tr class="srg-bg-primary text-light">
+                            <tr class="srg-bg-secondary srg-header">
                                 <th>Parent</th>
                                 <th>Provider</th>
                                 <th>Scope</th>
@@ -123,13 +125,13 @@
     <div class="row">
         <div class="col-12">
             <div class="card shadow-sm" style="min-height:400px;max-height:500px">
-                <div class="card-header srg-header d-flex justify-content-between">
-                    <h4>My Engagements</h4>
+                <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center">
+                    <span class="fs-3">My Engagements</span>
                     <input class="search-box" type="text" id="searchBar" onkeyup="searchEngagements()" placeholder="Search for engagements.." title="Type in a name">
                 </div>
                 <div class="card-body d-flex justify-content-center overflow-auto">
                     <table class="srg-table" id="srg-table">
-                        <thead class="srg-bg-primary text-light">
+                        <thead class="srg-bg-secondary srg-header">
                             <tr>
                                 <th>Parent</th>
                                 <th>Provider</th>

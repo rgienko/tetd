@@ -2,16 +2,18 @@
 {% load mathfilters %}
 
 {% block content %}
+
+
     <div class="container-xxl">
     <div class="row my-4">
         <div class="col-12">
-            <div class="card srg-bg-secondary px-4 shadow-sm">
+            <div class="card srg-bg-secondary px-4 pb-2 shadow-sm">
                 <span class="srg-link display-5 fs-1">Admin Employee Dashboard</span>
-                <span class="srg-link display-5 fs-1">Employee: {{ user_info.first_name }}</span>
+                <span class="srg-link display-5 fs-3">Employee: {{ user_info.first_name }}</span>
 
-                <span class="srg-link display-6 fs-2 lh-base">{{ today|date:'l, F d, Y' }} </span>
+                <span class="srg-link display-6 fs-4">{{ today|date:'l, F d, Y' }} </span>
 
-                <span class="srg-link display-6 fs-2 lh-base">Period: {{ week_beg|date:"m/d/y" }} - {{ week_end|date:"m/d/y" }}</span>
+                <span class="srg-link display-6 fs-4">Period: {{ per_beg_object|date:"m/d/y" }} - {{ per_end_object|date:"m/d/y" }}</span>
             </div>
         </div>
     </div>
@@ -123,9 +125,25 @@
     </div>
     <div class="row">
         <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header srg-header d-flex justify-content-between pb-0 d-flex align-items-baseline">
+                    <h4>{{ user_info.first_name }}'s Calendar</h4>
+                </div>
+                <div class="card-body">
+
+                    <div id="myCalendar">
+                    </div>
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row mt-4">
+        <div class="col-12">
             <div class="card shadow-sm" style="min-height:400px;max-height:500px">
-                <div class="card-header srg-header d-flex justify-content-between">
-                    <h4>My Engagements</h4>
+                <div class="card-header srg-header d-flex justify-content-between pb-0 align-items-baseline">
+                    <h4>{{ user_info.first_name }}'s Engagements</h4>
                     <input class="search-box" type="text" id="searchBar" onkeyup="searchEngagements()" placeholder="Search for engagements.." title="Type in a name">
                 </div>
                 <div class="card-body d-flex justify-content-center overflow-auto">
@@ -165,7 +183,6 @@
 
 
     </div>
-
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
@@ -242,6 +259,32 @@
 
         }
     </script>
+
+
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+
+    <script>
+
+      document.addEventListener('DOMContentLoaded', function() {
+          const calendarEl = document.getElementById('myCalendar');
+          const calendar = new FullCalendar.Calendar(calendarEl, {
+              initialView: 'dayGridMonth',
+              height:650,
+              events: [
+                  {% for event in employee_td_entries_all %}
+                      {
+                          title: '{{ event.engagement__provider_id|safe }} - {{ event.engagement__time_code }} - {{ event.hsum }} Hours',
+                          start: '{{ event.todo_date|date:'Y-m-d' }}',
+                          end: '{{ event.todo_date|date:'Y-m-d' }}'
+                      },
+                  {% endfor %}
+              ]
+          });
+          calendar.render();
+      });
+
+    </script>
+
 
 
 {% endblock %}

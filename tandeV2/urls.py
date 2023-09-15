@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from app import views
 import uuid
 
@@ -40,4 +40,5 @@ urlpatterns = [
     path('add-engagement-assign/<int:eng>/<emp>/', views.AddAssignment, name='add-engagement-assign'),
     path('remove-engagement-assign/<int:eng>/<emp>/', views.RemoveAssignment, name='remove-engagement-assign'),
     path('admin/', admin.site.urls),
+    path('__debug__/', include('debug_toolbar.urls'))
 ]

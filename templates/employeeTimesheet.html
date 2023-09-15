@@ -1,31 +1,38 @@
 {% extends 'layout.html' %}
 
 {% block content %}
+    <div id="loading-screen">
+        <div class="">
+            <div class="spinner"></div><br>
+            <p>Loading...</p>
+        </div>
+
+    </div>
     <div class="row border vh-100">
         <div class="col-xxl-4 col-xl-6 vh-100">
             <div class="card vh-100 flex-shrink-1">
-                <div class="card-header srg-header d-flex justify-content-between align-items-baseline">
-                    <h5>My Engagements</h5>
+                <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center">
+                    <span class="fs-3">My Engagements</span>
                     <input class="search-box" type="text" id="searchBar" onkeyup="searchClients()" placeholder="Search for engagements.." title="Type in a name">
                 </div>
 
-                <div class="card-body px-2 py-2">
+                <div class="card-body px-2 py-2 overflow-auto">
 
                     <div class="list-group" role="tablist" id="clientList">
                         {% for engagement in user_engagements %}
                             <div class="srg-list-group-item shadow-sm my-2">
                                 <div class="row d-flex align-items-center">
                                     <div class="col-10">
-                                        {{ engagement.getParentName }}<br>
+                                        {{ engagement.parent }}<br>
                                         {{ engagement.provider }}<br>
                                         {{ engagement.time_code }}<br>
                                         {{ engagement.fye|date:'m/d/Y' }}
                                     </div>
                                     <div class="col-2 p-0 m-0 d-flex justify-content-center">
                                         <div class="btn-group-vertical" role="group" aria-label="Vertical button group">
-                                              <a type="button" class="btn srg-btn-ol-primary" id="time-modal-{{ engagement.engagement }}-modal" data-bs-toggle="modal"
-                                                       data-bs-target="#time-modal-{{ forloop.counter }}" data-id="{{ engagement.engagement }}"
-                                                       href="#time-modal-{{ forloop.counter }}-modal" aria-controls="{{ engagement.engagement }}"><i class="bi bi-clock"></i></a>
+                                              <button type="button" class="btn srg-btn-ol-primary" data-bs-toggle="modal"
+                                                       data-bs-target="#time-modal" data-engagement-id="{{ engagement.engagement_srg_id }}"
+                                                       href="#time-modal" aria-controls="{{ engagement.engagement }}"><i class="bi bi-clock"></i></button>
                                               <a type="button" class="btn srg-btn-ol-success" id="expense-modal-{{ engagement.engagement }}-modal" data-bs-toggle="modal"
                                                        data-bs-target="#expense-modal-{{ forloop.counter }}" data-id="{{ engagement.engagement }}"
                                                        href="#expense-modal-{{ forloop.counter }}-modal" aria-controls="{{ engagement.engagement }}"><i class="bi bi-currency-dollar"></i></a>
@@ -34,18 +41,10 @@
                                     </div>
                                 </div>
                             </div>
-                            <!--
-                            <a class="srg-link srg-list-group-item text-decoration-none mb-2"
-                               id="modal-{{ engagement.engagement }}-modal" data-bs-toggle="modal"
-                                       data-bs-target="#modal-{{ forloop.counter }}" data-id="{{ engagement.engagement }}"
-                                       href="#modal-{{ forloop.counter }}-modal" aria-controls="{{ engagement.engagement }}">
-                                {{ engagement.getParentName }}<br>
-                                {{ engagement.provider }}<br>
-                                {{ engagement.time_code }} - {{ engagement.fye|date:'m/d/Y' }}
-                            </a>
-                            -->
 
-                            <div class="modal fade" id="time-modal-{{ forloop.counter }}" tabindex="-1" aria-labelledby="time-modal-{{ engagement.engagement }}-modal" aria-hidden="true">
+                        {% endfor %}
+
+                         <div class="modal fade" id="time-modal" tabindex="-1" aria-labelledby="time-modal" aria-hidden="true">
                                 <div class="modal-dialog" id="modal">
                                     <div class="modal-content">
                                         <div class="modal-header srg-bg-primary text-light fs-5">
@@ -54,8 +53,8 @@
                                         <div class="modal-body">
                                             <form class="" method="POST">
                                                 {% csrf_token %}
-                                                            <label for="my-input-{{ forloop.counter }}">Engagement:</label><br>
-                                                    <input name="engagement-input" type="text" id="my-input-{{ forloop.counter }}" value="{{ engagement.engagement_srg_id }}"/><br>
+                                                    <label for="my-input">Engagement:</label><br>
+                                                    <input name="engagement-input" type="text" id="my-input" /><br>
                                                 {% for field in time_form %}
                                                     <div class="fieldWrapper my-3">
                                                         {{ field.label_tag }} <br>{{ field }}
@@ -65,117 +64,112 @@
                                                     </div>
 
                                                 {% endfor %}
-                                                <button class="srg-btn-primary my-2">Record Time</button>
+                                                <button name="time_button" class="srg-btn-primary my-2">Record Time</button>
                                             </form>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-
-                            <div class="modal fade" id="expense-modal-{{ forloop.counter }}" tabindex="-1" aria-labelledby="expense-modal-{{ engagement.engagement }}-modal" aria-hidden="true">
-                                <div class="modal-dialog" id="modal">
-                                    <div class="modal-content">
-                                        <div class="modal-header srg-bg-success text-light fs-5">
-                                            Record Expense
-                                        </div>
-                                        <div class="modal-body">
-                                            <form class="" method="POST">
-                                                {% csrf_token %}
-                                                    <label for="my-input-{{ forloop.counter }}">Engagement:</label><br>
-                                                    <input name="expense-input" type="text" id="my-input-{{ forloop.counter }}" value="{{ engagement.engagement_srg_id }}"/><br>
-                                                {% for field in expense_form %}
-                                                    <div class="fieldWrapper my-3">
-                                                        {{ field.label_tag }} <br>{{ field }}
-                                                        {% if field.help_text %}
-                                                            <p class="help">{{ field.help_text|safe }}</p>
-                                                        {% endif %}
-                                                    </div>
-
-                                                {% endfor %}
-                                                <button class="srg-btn-success my-2">Record Expense</button>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-8">
-            <div class="card">
-                <div class="card-header srg-header">
-                    <h5>
-                        My Timesheet <br>
-                        Period: {{ week_beg|date:'m/d/Y' }} - {{ week_end|date:'m/d/Y' }}
-                    </h5>
+        <div class="col-8 vh-100">
+            <div class="card vh-100">
+                <div class="card-header srg-text-secondary srg-bg-primary d-flex justify-content-between align-items-baseline">
+                    <span class="fs-3">My Timesheet </span>
+                    <span class="fs-3">{{ total_available_hours }} hrs. avail</span>
+                    <span class="fs-3">{{ week_beg|date:'m/d/Y' }} - {{ week_end|date:'m/d/Y' }}</span>
                 </div>
-                <div class="card-body">
-                    <div class="">
-                        <table class="table table-bordered">
-                            {% for dy in current_week %}
-                                {% if forloop.counter == 1 %}
-                                <thead>
-                                    <tr class="">
-                                        <th>Date</th>
-                                        <th class="">Provider</th>
-                                        <th class="">Scope</th>
-                                        <th class="">Hours</th>
-                                        <th class="text-center">Note</th>
-                                    </tr>
-                                </thead>
-                                {% else %}
-                                {% endif %}
+                <div class="card-body overflow-auto">
+                    {% for dy in current_week %}
+                        <div class="row mb-4 shadow" style="border-bottom-left-radius:12px; border-top-left-radius: 12px;"
+                        {% if dy == today %}id="today"{% endif %}>
+                            <div class="col-2 p-0 d-flex justify-content-center align-items-center {% if dy == today %}srg-bg-primary srg-text-secondary{% else %}srg-bg-secondary srg-header {% endif %}"
+                            style="border-bottom-left-radius:12px; border-top-left-radius: 12px;">
+                                <p class="fs-4 text-center">
+                                    {{ dy|date:'l' }}<br>
+                                    {{ dy|date:'m/d/y' }}
+                                </p>
+                            </div>
+                            <div class="col-10 p-0">
+                                <div class="card-body p-0">
+                                    <table class="srg-table">
+                                        <thead>
+                                            <tr class="">
+                                                <th>Date</th>
+                                                <th class="">Provider</th>
+                                                <th class="">Scope</th>
+                                                <th class="">Hours</th>
+                                                <th class="text-center">Note</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for entry in employee_ts_entries %}
+                                                {% if entry.ts_date == dy %}
+                                                    <tr>
+                                                        <th scope="row">{{ dy|date:'m/d/Y' }}</th>
+                                                            <td>
+                                                                {{ entry.getProvider }}
+                                                            </td>
+                                                            <td>
 
-                                {% for entry in employee_ts_entries %}
-                                    {% if entry.date == dy %}
-                                    <tr>
-                                        <th scope="row">{{ dy|date:'m/d/Y' }}</th>
-                                            <td>
-                                                {{ entry.getProvider }}
-                                            </td>
-                                            <td>
+                                                                {{ entry.getScope }}
+                                                            </td>
+                                                            <td>
+                                                                {{ entry.hours }}
+                                                            </td>
+                                                            <td class="text-center">
+                                                                {% if entry.note == '' %}
+                                                                {% else %}
+                                                                    <a type="button" class="srg-link" data-toggle="popover" data-bs-placement="left" data-bs-content="{{ entry.note|safe }}">
+                                                                      <i class="bi bi-stickies-fill"></i>
+                                                                    </a>
+                                                                {% endif %}
+                                                            </td>
+                                                    </tr>
+                                                    {% else %}
+                                                    {% endif %}
+                                            {% endfor %}
+                                        </tbody>
+                                        {% for total in employee_hours_by_day %}
+                                            {% if total.ts_date == dy %}
+                                                <tfoot>
+                                                    <tr>
+                                                        <td></td>
+                                                        <td></td>
+                                                        <td></td>
+                                                        <td>Total:</td>
+                                                        <td>{{ total.ts_hours }}</td>
+                                                    </tr>
+                                                </tfoot>
+                                            {% else %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
 
-                                                {{ entry.getScope }}
-                                            </td>
-                                            <td>
-                                                {{ entry.hours }}
-                                            </td>
-                                            <td class="text-center">
-                                                {% if entry.note == '' %}
-                                                {% else %}
-                                                    <a type="button" class="srg-link" data-toggle="popover" data-bs-placement="left" data-bs-content="{{ entry.note|safe }}">
-                                                      <i class="bi bi-stickies-fill"></i>
-                                                    </a>
-                                                {% endif %}
-                                            </td>
-                                    </tr>
-                                    {% else %}
-                                    {% endif %}
-                                {% endfor %}
-                            {% endfor %}
-                            <tfoot>
-                                <tr>
-                                    <th></th>
-                                    <th></th>
-                                    <th>Total Hours:</th>
-                                    <th>{{ total_weekly_hours.hours__sum }}</th>
-                                    <th></th>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+
+
                 </div>
             </div>
-
         </div>
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $('#time-modal').on('show.bs.modal', function (e) {
 
+            //get data-id attribute of clicked event
+            let engagementID = $(e.relatedTarget).data('engagement-id')
 
+            //populate the input field
+            $(e.currentTarget).find('input[name="engagement-input"]').val(engagementID)
+        });
+    </script>
         <script>
-
             function searchClients() {
                 // Declare Variables
                 let input, filter, ul, li, a, i, txtValue;
@@ -206,7 +200,31 @@
           });
         </script>
 
+        <script>
+        // Hide the spinner when the page is fully loaded
+       window.onload = function () {
+              // Hide the loading screen when the entire page is loaded
+           const loadingScreen = document.getElementById("loading-screen");
+           loadingScreen.style.display = "none";
+           const scrollToElement = document.getElementById("today");
 
+           if (scrollToElement) {
+               scrollToElement.scrollIntoView({
+                   behavior: "smooth",
+                   block: "start"
+               })
+           }
+            };
+
+        </script>
+
+        <script>
+            // Hide the spinner when the page is fully loaded
+            window.addEventListener("beforeunload", function() {
+                const spinner = document.getElementById("loading-screen");
+                spinner.style.display = ""; // Change to "none" if you want it to hide initially
+            });
+        </script>
 
 
 

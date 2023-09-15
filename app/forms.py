@@ -26,10 +26,10 @@ class TimeForm(forms.ModelForm):
     class Meta:
         model = Time
 
-        fields = ['date', 'hours', 'time_type_id', 'note']
+        fields = ['ts_date', 'hours', 'time_type_id', 'note']
 
         labels = {
-            'date': _('Date'),
+            'ts_date': _('Date'),
             'hours': _('Hours'),
             'time_type_id': _('Type'),
             'note': _('Note')
@@ -37,7 +37,7 @@ class TimeForm(forms.ModelForm):
 
         widgets = {
             'note': forms.Textarea(attrs={'rows': 5, 'cols': 40}),
-            'date': DatePickerInput
+            'ts_date': DatePickerInput
         }
 
 
