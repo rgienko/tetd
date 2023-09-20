@@ -24,6 +24,7 @@ urlpatterns = [
     path('register/', views.register, name='register'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('timesheet/', views.EmployeeTimesheet, name='employee-timesheet'),
+    path('timesheet/review/', views.EmployeeTimesheetReview, name='employee-timesheet-review'),
     path('todolist/', views.EmployeeTodolist, name='employee-todolist'),
     path('expenses/', views.EmployeeExpense, name='employee-expenses'),
     path('admin-dashboard/', views.AdminDashboard, name='admin-dashboard'),

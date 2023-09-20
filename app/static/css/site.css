@@ -56,7 +56,7 @@
 .srg-table th {
     padding: 10px;
     width: auto;
-    border: 1px solid #a9a9a9;
+    border: 0.5pt solid #a9a9a9;
     cursor: pointer;
 }
 
@@ -69,8 +69,9 @@
 }
 
 .srg-table tbody > tr:hover {
-    color: #02308C;
-    font-weight: bolder;
+
+    background: #afc0df;
+
 }
 
 /* COLORS */
@@ -143,6 +144,7 @@
     padding:8px;
     border: 1px solid #a9a9a9;
     border-radius: 12px;
+    font-size: 11pt;
 }
 
 .srg-list-group-item:hover {

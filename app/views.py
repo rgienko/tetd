@@ -68,6 +68,7 @@ def register(request):
 
 def dashboard(request):
     user_info = get_object_or_404(User, pk=request.user.id)
+    ts_is_submitted = user_info.employee.ts_is_submitted
     user_assignments = Assignments.objects.filter(employee_id=user_info.employee.employee_id).values('engagement_id')
     # user_engagements = Engagement.objects.filter(engagement_id__in=user_assignments)
 
@@ -108,7 +109,7 @@ def dashboard(request):
     context = {'user_engagements': user_engagements, 'today': today, 'week_beg': week_beg, 'week_end': week_end,
                'timesheet_entries': timesheet_entries, 'employee_td_entries': employee_td_entries,
                'user_info': user_info, 'user_assignments': user_assignments, 'billable_hours_sum': billable_hours_sum,
-               'non_billable_hours_sum': non_billable_hours_sum}
+               'non_billable_hours_sum': non_billable_hours_sum, 'ts_is_submitted': ts_is_submitted}
     return render(request, 'dashboard.html', context)
 
 
@@ -419,7 +420,7 @@ def AdminDashboard(request):
     else:
         month_form = MonthSelectForm(initial={'month': current_month})
         current_month_data = getCompilationData(current_month)
-        context = { 'employee_info': employee_info,'user_info': user_info, 'today': today, 'week_beg': week_beg,
+        context = {'employee_info': employee_info, 'user_info': user_info, 'today': today, 'week_beg': week_beg,
                    'week_end': week_end, 'employees': employees, 'vps': vps,
                    'smgrs': smgrs, 'mgrs': mgrs, 'consultants': consultants,
                    'vp_fixed_hours_by_employee': current_month_data[0],
@@ -795,20 +796,99 @@ def AdminEmployeeDashboard(request, pk, per_beg, per_end):
     return render(request, 'adminEmployeeDashboard.html', context)
 
 
+def EmployeeTimesheetReview(request):
+    user_info = get_object_or_404(User, pk=request.user.id)
+    last_week_beg = date.today() - timedelta(days=7) - timedelta(days=date.today().weekday()) - timedelta(days=1)
+    last_week_end = last_week_beg + timedelta(days=6)
+
+    current_week = []
+    current_week_ts = {}
+
+    for i in range(7):
+        current_week.append(last_week_beg + timedelta(days=i))
+
+    employee_ts_entries = Time.objects.filter(employee__user__username=request.user.username).filter(
+        ts_date__gte=last_week_beg).filter(ts_date__lte=last_week_end).order_by('ts_date')
+
+    user_engagements = Engagement.objects.select_related().filter(
+        assignments__employee__employee_id=user_info.employee.employee_id)
+
+    employee_hours_by_day = employee_ts_entries.values('ts_date').annotate(ts_hours=Sum('hours'))
+
+    total_weekly_hours = employee_ts_entries.aggregate(hours_sum=Coalesce(Sum('hours'), 0, output_field=DecimalField()))
+
+    total_available_hours = 40 - total_weekly_hours['hours_sum']
+
+    if request.method == 'POST':
+        if 'submit_button' in request.POST:
+            employee_instance = get_object_or_404(Employee, user=request.user.id)
+            employee_instance.ts_is_submitted = True
+            employee_instance.save()
+            return redirect('dashboard')
+        if 'time_button' in request.POST:
+            time_form = TimeForm(request.POST)
+            if time_form.is_valid():
+                engagement_id = request.POST.get('engagement-input')
+                engagement_instance = get_object_or_404(Engagement, engagement_srg_id=engagement_id)
+
+                employee_instance = get_object_or_404(Employee, user=request.user.id)
+
+                new_entry = time_form.save(commit=False)
+                new_entry.employee_id = employee_instance.employee_id
+                new_entry.engagement = engagement_instance
+                new_entry.save()
+
+                engagement_hours = Time.objects.filter(engagement=engagement_instance.engagement_id).aggregate(
+                    ehours=Sum('hours')
+                )
+
+                if engagement_instance.budget_hours - engagement_hours['ehours'] <= 0:
+                    overBudgetAlert(engagement_instance.engagement_id)
+
+                return redirect('employee-timesheet-review')
+        elif 'expense_button' in request.POST:
+            expense_form = ExpenseForm()
+            if expense_form.is_valid():
+                employee_instance = get_object_or_404(Employee, user=request.user.id)
+                engagement_id = request.POST.get('expense-input')
+                engagement_instance = get_object_or_404(Engagement, engagement_srg_id=engagement_id)
+
+                new_expense = expense_form.save(commit=False)
+                new_expense.employee = employee_instance
+                new_expense.engagement = engagement_instance
+
+                new_expense.save()
+
+                return redirect('employee-timesheet')
+        else:
+            expense_form = ExpenseForm()
+            time_form = TimeForm()
+    else:
+        time_form = TimeForm()
+        expense_form = ExpenseForm()
+
+    context = {'user_info': user_info, 'last_week_beg': last_week_beg, 'last_week_end': last_week_end,
+               'current_week': current_week, 'employee_ts_entries': employee_ts_entries,
+               'employee_hours_by_day': employee_hours_by_day,
+               'user_engagements': user_engagements, 'total_weekly_hours': total_weekly_hours,
+               'time_form': time_form, 'total_available_hours': total_available_hours}
+
+    return render(request, 'employeeTimesheetReview.html', context)
+
+
 def EmployeeTimesheet(request):
     user_info = get_object_or_404(User, pk=request.user.id)
     today = date.today()
     week_beg = today - timedelta(days=today.weekday()) - timedelta(days=1)
     week_end = week_beg + timedelta(days=6)
-    user_engagements = Assignments.objects.select_related('engagement').filter(
-        employee_id=user_info.employee.employee_id)
     # user_engagements = user_assignments.filter(employee_id=request.user.employee.employee_id)
 
     # user_assignments = Assignments.objects.filter(employee_id=user_info.employee.employee_id).values(
     # 'engagement_id') user_engagements = Engagement.objects.filter(engagement_id__in=user_assignments).order_by(
     # '-fye', 'time_code', 'parent_id')
 
-    user_engagements = Engagement.objects.select_related().filter(assignments__employee__employee_id=user_info.employee.employee_id)
+    user_engagements = Engagement.objects.select_related().filter(
+        assignments__employee__employee_id=user_info.employee.employee_id)
     # user_engagements = user_engagements.filter(assignments__employee__employee_id=user_info.employee.employee_id)
 
     employee_ts_entries = Time.objects.filter(employee__user__username=request.user.username).filter(
@@ -884,11 +964,13 @@ def EmployeeTodolist(request):
     today = date.today()
     week_beg = today - timedelta(days=today.weekday()) - timedelta(days=1)
     week_end = week_beg + timedelta(days=5)
-    user_assignments = Assignments.objects.filter(employee_id=request.user.employee.employee_id).values('engagement_id')
-    user_engagements = Engagement.objects.filter(engagement_id__in=user_assignments)
+    # user_assignments = Assignments.objects.filter(employee_id=user_info.employee.employee_id).values('engagement_id')
+    # user_engagements = Engagement.objects.filter(engagement_id__in=user_assignments)
+    user_engagements = Engagement.objects.select_related().filter(
+        assignments__employee__employee_id=user_info.employee.employee_id)
 
     employee_td_entries = Todolist.objects.select_related('engagement').filter(
-        employee__user__username=request.user.username).filter(
+        employee__user__username=user_info.username).filter(
         todo_date__gte=week_beg).order_by('todo_date')
 
     employee_td_hours_by_day = employee_td_entries.values('todo_date').annotate(
@@ -960,8 +1042,8 @@ def EmployeeTodolist(request):
 def EmployeeExpense(request):
     user_info = get_object_or_404(User, pk=request.user.id)
     today = date.today()
-    week_beg = today - timedelta(days=today.weekday())
-    week_end = week_beg + timedelta(days=5)
+    week_beg = today - timedelta(days=today.weekday()) - timedelta(days=1)
+    week_end = week_beg + timedelta(days=6)
 
     current_employee = get_object_or_404(Employee, user_id=request.user.id)
     employee_expenses = Expense.objects.filter(employee__user__username=request.user.username).filter(

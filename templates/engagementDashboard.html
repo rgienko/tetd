@@ -14,10 +14,10 @@
     <div class="row border">
         <div class="col-3 px-1">
             <div class="card srg-border vh-100 overflow-auto">
-                <div class="card-header srg-bg-secondary srg-header d-flex justify-content-between align-items-baseline sticky-top">
-                    <h5>Clients</h5>
+                <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline sticky-top">
+                    <span class="fs-5 srg-text-secondary">Clients</span>
                     <input class="search-box" type="text" id="searchBar" onkeyup="searchClients()" placeholder="Search for clients.." title="Type in a name">
-                    <button type="button" class="btn srg-link" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><i class="bi bi-plus-circle"></i></button>
+                    <button type="button" class="btn srg-text-secondary" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><i class="bi bi-plus-circle"></i></button>
                 </div>
 
                 <div class="card-body">
@@ -37,10 +37,10 @@
                 {% for parent in parents %}
                     <div class="tab-pane" id="list-{{ parent.parent_id }}" role="tabpanel" aria-labelledby="list-{{ parent.parent_id }}-list">
                         <div class="card pt-0 rounded-3 vh-100 overflow-auto">
-                            <div class="card-header srg-bg-secondary d-flex justify-content-between align-items-baseline px-4 sticky-top">
-                                <h5 class="srg-header">{{ parent.parent_name }} Engagements</h5>
+                            <div class="card-header srg-bg-primary d-flex justify-content-between align-items-baseline px-4 sticky-top">
+                                <span class="fs-5 srg-text-secondary">{{ parent.parent_name }} Engagements</span>
                                 <input class="search-box" type="text" id="search{{ parent.parent_id }}" onkeyup="searchEngagement{{ parent.parent_id }}()" placeholder="Search for engagements.." title="Type in a name">
-                                <button type="button" class="btn srg-link" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><i class="bi bi-plus-circle"></i> Add Engagement</button>
+                                <button type="button" class="btn srg-text-secondary" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><i class="bi bi-plus-circle"></i> Add Engagement</button>
                             </div>
 
                             <script>
@@ -66,7 +66,7 @@
                                 }
                             </script>
                             <div class="card-body">
-                                <table class="table" id="table{{ parent.parent_id }}">
+                                <table class="srg-table" id="table{{ parent.parent_id }}">
                                     <thead>
                                         <tr>
                                             <th>Engagement ID</th>
@@ -107,8 +107,8 @@
             <div class="modal fade" tabindex="-1" id="createEngagementModal" aria-labelledby="createEngagementModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
-                        <div class="modal-header srg-bg-secondary pb-0">
-                            <h4 class="srg-header">Create Engagement Form</h4>
+                        <div class="modal-header srg-bg-primary pb-0">
+                            <h4 class="srg-text-secondary">Create Engagement Form</h4>
                         </div>
                         <div class="modal-body">
                             <form class="" method="POST">
@@ -192,8 +192,6 @@
                                     </div>
                                 </div>
 
-
-
                                 <div class="fieldWrapper mb-3">
                                     {{ createEngagementForm.budget_amount.errors }}
                                     <label for="{{ createEngagementForm.budget_amount.id_for_label }}">Budget Amount:<br>
@@ -220,29 +218,6 @@
 
     </div>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-
-        <!--
-        <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-        <script>
-          $(document).ready(function() {
-            // When the button is clicked
-            $("#spinner-btn").on("click", function() {
-              // Disable the button to prevent multiple clicks
-              $(this).prop("disabled", true);
-              // Show the spinner
-              $(this).find(".spinner-border").removeClass("d-none");
-
-              // Simulate some async task (e.g., API call) to demonstrate the spinner
-              setTimeout(function() {
-                // Re-enable the button after the task is completed
-                $("#spinner-btn").prop("disabled", false);
-                // Hide the spinner
-                $("#spinner-btn .spinner-border").addClass("visually-hidden");
-              }, 8000); // Simulated 2 seconds delay, replace this with your actual task
-            });
-          });
-        </script>
-        -->
 
         <script type="text/javascript">
             $(document).ready(function () {

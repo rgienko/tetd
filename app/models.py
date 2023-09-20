@@ -22,6 +22,7 @@ class Employee(models.Model):
     employee_id = models.UUIDField(primary_key=True, default=uuid.uuid4)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     title = models.ForeignKey(EmployeeTitles, on_delete=models.CASCADE)
+    ts_is_submitted = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.username

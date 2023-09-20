@@ -1,6 +1,13 @@
 {% extends 'layout.html' %}
 
 {% block content %}
+    <div id="loading-screen">
+        <div class="">
+            <div class="spinner"></div><br>
+            <p>Loading...</p>
+        </div>
+
+    </div>
 
     <div class="row vh-100">
         <div class="col-4 vh-100">
@@ -11,49 +18,53 @@
                 </div>
 
                 <div class="card-body px-2 py-2 overflow-auto">
-                    <table class="srg-table" id="engagementList">
-                        <tbody id="clientList">
-                            {% for engagement in user_engagements %}
-                                <tr>
-                                    <td>{{ engagement.parent }}<br>
+                    {% for engagement in user_engagements %}
+                        <div class="srg-list-group-item shadow-sm my-2">
+                            <div class="row d-flex align-items-center">
+                                <div class="col-10" style="font-size:11pt;">
+                                    {{ engagement.parent }}<br>
                                     {{ engagement.provider }}<br>
                                     {{ engagement.time_code }}<br>
-                                    {{ engagement.fye|date:'m/d/Y' }}</td>
-                                    <td class="text-center"><a type="button" class="srg-link" id="time-modal-{{ engagement.engagement }}-modal" data-bs-toggle="modal" data-toggle="tooltip" data-title="Yay"
-                                                   data-bs-target="#time-modal-{{ forloop.counter }}" data-id="{{ engagement.engagement }}"
-                                                   href="#time-modal-{{ forloop.counter }}-modal" aria-controls="{{ engagement.engagement }}"><i class="bi bi-plus-circle fs-4"></i></a>
-                                    </td>
-                                </tr>
-                                <div class="modal fade" id="time-modal-{{ forloop.counter }}" tabindex="-1" aria-labelledby="time-modal-{{ engagement.engagement }}-modal" aria-hidden="true">
-                                    <div class="modal-dialog" id="modal">
-                                        <div class="modal-content">
-                                            <div class="modal-header srg-bg-primary text-light fs-5">
-                                                Add Item
-                                            </div>
-                                            <div class="modal-body">
-                                                <form class="" method="POST">
-                                                    {% csrf_token %}
-                                                        <label for="my-input-{{ forloop.counter }}">Engagement:</label><br>
-                                                        <input name="todo-input" type="text" id="my-input-{{ forloop.counter }}" value="{{ engagement.engagement_srg_id }}"/><br>
-                                                    {% for field in todo_form %}
-                                                        <div class="fieldWrapper my-3">
-                                                            {{ field.label_tag }} <br>{{ field }}
-                                                            {% if field.help_text %}
-                                                                <p class="help">{{ field.help_text|safe }}</p>
-                                                            {% endif %}
-                                                        </div>
-
-                                                    {% endfor %}
-                                                    <button class="srg-btn-primary my-2">Submit Entry</button>
-                                                </form>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    {{ engagement.fye|date:'m/d/Y' }}
                                 </div>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                <div class="col-2 p-0 m-0 d-flex justify-content-center">
+                                    <div class="btn-group-vertical" role="group" aria-label="Vertical button group">
+                                          <a type="button" class="srg-link" data-bs-toggle="modal" data-toggle="tooltip" data-title="Yay"
+                                                   data-bs-target="#todo-modal" data-engagement-id="{{ engagement.engagement_srg_id }}"
+                                                   href="#todo-modal" aria-controls="todo-modal"><i class="bi bi-plus-circle fs-4"></i></a>
+                                        </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
                 </div>
+                    <div class="modal fade" id="todo-modal" tabindex="-1" aria-labelledby="todo-modal" aria-hidden="true">
+                        <div class="modal-dialog" id="modal">
+                            <div class="modal-content">
+                                <div class="modal-header srg-bg-primary text-light fs-5">
+                                    Add Item
+                                </div>
+                                <div class="modal-body">
+                                    <form class="" method="POST">
+                                        {% csrf_token %}
+                                            <label for="engagement-input">Engagement:</label><br>
+                                            <input name="engagement-input" type="text" id="engagement-input"/><br>
+                                        {% for field in todo_form %}
+                                            <div class="fieldWrapper my-3">
+                                                {{ field.label_tag }} <br>{{ field }}
+                                                {% if field.help_text %}
+                                                    <p class="help">{{ field.help_text|safe }}</p>
+                                                {% endif %}
+                                            </div>
+
+                                        {% endfor %}
+                                        <button class="srg-btn-primary my-2">Add Item</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
             </div>
         </div>
 
@@ -66,7 +77,7 @@
                 </div>
                 <div class="card-body overflow-auto">
                     {% for dy in page_obj %}
-                        <div class="row mb-4 shadow" {% if dy == today %}id="today"{% endif %} style="border-bottom-left-radius:12px; border-top-left-radius: 12px;">
+                        <div class="row mb-4 shadow-sm" {% if dy == today %}id="today"{% endif %} style="border-bottom-left-radius:12px; border-top-left-radius: 12px;">
                             <div class="col-2 p-0 d-flex justify-content-center align-items-center {% if dy == today %}srg-bg-primary srg-text-secondary{% else %}srg-bg-secondary srg-header {% endif %}"
                             style="border-bottom-left-radius:12px; border-top-left-radius: 12px;">
                                 <div class="card-body text-start">
@@ -150,6 +161,17 @@
     </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+        <script>
+        const myModal = document.getElementById('todo-modal')
+        myModal.addEventListener('show.bs.modal', event => {
+            //get data-id attribute of clicked event
+            let engagementID = $(event.relatedTarget).data("engagement-id")
+            console.log(engagementID)
+            //populate the input field
+            $(event.currentTarget).find('input[name="engagement-input"]').val(engagementID)
+        });
+    </script>
 
         <script>
             let sortingOrder = 1
@@ -249,15 +271,17 @@
                 }
             };
 
-            </script>
-
-            <script>
-                // Hide the spinner when the page is fully loaded
-                window.addEventListener("beforeunload", function() {
-                    const spinner = document.getElementById("loading-screen");
-                    spinner.style.display = ""; // Change to "none" if you want it to hide initially
-                });
         </script>
+
+        <script>
+            // Hide the spinner when the page is fully loaded
+            window.addEventListener("beforeunload", function() {
+                const spinner = document.getElementById("loading-screen");
+                spinner.style.display = ""; // Change to "none" if you want it to hide initially
+            });
+        </script>
+
+
 
 
 {% endblock %}
