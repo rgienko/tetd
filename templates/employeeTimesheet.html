@@ -81,7 +81,7 @@
                                         <form class="" method="POST">
                                             {% csrf_token %}
                                                 <label for="my-input">Engagement:</label><br>
-                                                <input name="engagement-input" type="text" id="my-input" /><br>
+                                                <input name="expense-input" type="text" id="my-input" /><br>
                                             {% for field in expense_form %}
                                                 <div class="fieldWrapper my-3">
                                                     {{ field.label_tag }} <br>{{ field }}
@@ -195,7 +195,7 @@
         const expenseModal = document.getElementById('expense-modal')
         expenseModal.addEventListener('show.bs.modal', event => {
             let engagementID = $(event.relatedTarget).data("engagement-id")
-            $(event.currentTarget).find('input[name="engagement-input"]').val(engagementID)
+            $(event.currentTarget).find('input[name="expense-input"]').val(engagementID)
         })
     </script>
         <script>

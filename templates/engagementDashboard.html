@@ -8,16 +8,15 @@
             <div class="spinner"></div><br>
             <p>Loading...</p>
         </div>
-
     </div>
 
     <div class="row border">
         <div class="col-3 px-1">
             <div class="card srg-border vh-100 overflow-auto">
                 <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline sticky-top">
-                    <span class="fs-5 srg-text-secondary">Clients</span>
+                    <span class="fs-4 srg-text-secondary">Clients</span>
                     <input class="search-box" type="text" id="searchBar" onkeyup="searchClients()" placeholder="Search for clients.." title="Type in a name">
-                    <button type="button" class="btn srg-text-secondary" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><i class="bi bi-plus-circle"></i></button>
+                    <button type="button" class="btn srg-text-secondary" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><i class="fs-4 bi bi-plus-circle"></i></button>
                 </div>
 
                 <div class="card-body">
@@ -38,9 +37,9 @@
                     <div class="tab-pane" id="list-{{ parent.parent_id }}" role="tabpanel" aria-labelledby="list-{{ parent.parent_id }}-list">
                         <div class="card pt-0 rounded-3 vh-100 overflow-auto">
                             <div class="card-header srg-bg-primary d-flex justify-content-between align-items-baseline px-4 sticky-top">
-                                <span class="fs-5 srg-text-secondary">{{ parent.parent_name }} Engagements</span>
+                                <span class="fs-4 srg-text-secondary">{{ parent.parent_name }} Engagements</span>
                                 <input class="search-box" type="text" id="search{{ parent.parent_id }}" onkeyup="searchEngagement{{ parent.parent_id }}()" placeholder="Search for engagements.." title="Type in a name">
-                                <button type="button" class="btn srg-text-secondary" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><i class="bi bi-plus-circle"></i> Add Engagement</button>
+                                <button type="button" class="btn srg-text-secondary" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><i class="fs-4 bi bi-plus-circle"></i> Add Engagement</button>
                             </div>
 
                             <script>
@@ -204,9 +203,13 @@
 
 
 
-                                <button id="spinner-btn" class="srg-btn-primary my-2" type="submit">
+                                <button id="spinner-btn" class="srg-btn-primary my-2" type="submit" name="createEngagement">
                                     <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
                                     Create Engagement
+                                </button>
+
+                                <button class="srg-btn-ol-primary my-2" type="submit" name="createEngagementAssign">
+                                    Create & Assign
                                 </button>
                             </form>
                         </div>

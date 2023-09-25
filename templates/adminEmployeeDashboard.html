@@ -2,106 +2,110 @@
 {% load mathfilters %}
 
 {% block content %}
-
-
-    <div class="container-xxl">
-    <div class="row my-4">
-        <div class="col-12">
-            <div class="card srg-bg-secondary px-4 pb-2 shadow-sm">
-                <span class="srg-link display-5 fs-1">Admin Employee Dashboard</span>
-                <span class="srg-link display-5 fs-3">Employee: {{ user_info.first_name }}</span>
-
-                <span class="srg-link display-6 fs-4">{{ today|date:'l, F d, Y' }} </span>
-
-                <span class="srg-link display-6 fs-4">Period: {{ per_beg_object|date:"m/d/y" }} - {{ per_end_object|date:"m/d/y" }}</span>
+    <div class="row p-0">
+        <div class="col-12 p-0">
+            <div class="srg-bg-primary srg-text-secondary px-4 py-2 shadow-sm d-flex justify-content-between">
+                <div>
+                    <span class="display-5 fs-1">Admin Employee Dashboard</span><br>
+                    <span class="display-5 fs-2">Employee: {{ first_name }} {{ last_name }}</span>
+                </div>
+                <div class="d-flex align-items-end">
+                    <span class="display-5 fs-2">{{ today|date:'l, F d, Y' }} </span>
+                </div>
+                <div class="d-flex align-items-end">
+                    <span class="display-5 fs-2">Period: {{ per_beg_object|date:"m/d/y" }} - {{ per_end_object|date:"m/d/y" }}</span>
+                </div>
             </div>
         </div>
     </div>
-    <div class="row d-flex justify-content-center mb-4">
+
+    <div class="container-xxl">
+
+    <div class="row d-flex justify-content-center my-4">
         <div class="col-4">
             <div class="card shadow-sm" style="min-height:400px;max-height:500px">
-                <div class="card-header srg-link d-flex justify-content-between align-items-baseline pb-0">
-                    <h4>My Time</h4>
-                    <a href="{% url 'employee-timesheet' %}" class="srg-link">View Timesheet</a>
+                <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline pb-0">
+                    <h4>{{ first_name }}'s Time</h4>
+                    <!--<a href="{% url 'employee-timesheet' %}" class="srg-link">View Timesheet</a>-->
                 </div>
                 <div class="card-body overflow-auto pt-0">
                     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
                     <canvas class="my-4 w-100 text-light" height="275px" id="myChart"></canvas>
-            <script>
-                const config = {
-                    type: 'bar',
-                    data: {
-                        labels: ['Billable', 'Non-Billable', 'Total'],
-                        datasets: [{
-                            label: [],
-                            backgroundColor: ['rgb(2,48,140)', 'rgb(217,217,217)','rgb(0,64,0)' ],
-                            borderColor: ['rgb(2,48,140)', 'rgb(217,217,217)','rgb(0,64,0)' ],
-                            data: [{{ billable_hours_sum.amount }}, {{ non_billable_hours_sum.amount }}, {{ non_billable_hours_sum.amount|add:billable_hours_sum.amount }}],
-                            fill: false
-                        }]
-                    },
-                    options: {
-                        indexAxis:'x',
-                        responsive: true,
-                        plugins: {
-                          legend: {
-                              display: false,
-                              position: 'bottom'
-                          }
-                        },
-                        scales: {
-                            x: {
-                                stacked:false,
-                                max:40
+                    <script>
+                        const config = {
+                            type: 'bar',
+                            data: {
+                                labels: ['Billable', 'Non-Billable', 'Total'],
+                                datasets: [{
+                                    label: [],
+                                    backgroundColor: ['rgb(2,48,140)', 'rgb(217,217,217)','rgb(0,64,0)' ],
+                                    borderColor: ['rgb(2,48,140)', 'rgb(217,217,217)','rgb(0,64,0)' ],
+                                    data: [{{ billable_hours_sum.amount }}, {{ non_billable_hours_sum.amount }}, {{ non_billable_hours_sum.amount|add:billable_hours_sum.amount }}],
+                                    fill: false
+                                }]
                             },
-                            y: {
-                                stacked:false,
-                                max: 40,
-                                ticks: {
-                                    stepSize: 4
-                                }
-                            },
-                            yAxes: [{
-                                ticks: {
-                                    fontColor: "black",
-                                    beginAtZero: true,
-                                    stepSize: 5
+                            options: {
+                                indexAxis:'x',
+                                responsive: true,
+                                plugins: {
+                                  legend: {
+                                      display: false,
+                                      position: 'bottom'
+                                  }
                                 },
-                                gridLines: {
-                                    color:"rgb(56, 60, 74)"
+                                scales: {
+                                    x: {
+                                        stacked:false,
+                                        max:40
+                                    },
+                                    y: {
+                                        stacked:false,
+                                        max: 40,
+                                        ticks: {
+                                            stepSize: 4
+                                        }
+                                    },
+                                    yAxes: [{
+                                        ticks: {
+                                            fontColor: "black",
+                                            beginAtZero: true,
+                                            stepSize: 5
+                                        },
+                                        gridLines: {
+                                            color:"rgb(56, 60, 74)"
+                                        }
+                                    }],
+                                    xAxes: [{
+                                        ticks: {
+                                            fontColor: "black"
+                                        },
+                                        gridLines: {
+                                            color:"rgb(56, 60, 74)"
+                                        }
+                                    }]
                                 }
-                            }],
-                            xAxes: [{
-                                ticks: {
-                                    fontColor: "black"
-                                },
-                                gridLines: {
-                                    color:"rgb(56, 60, 74)"
-                                }
-                            }]
-                        }
-                    }
-                };
-                window.onload = function () {
-                    const ctx = document.getElementById('myChart').getContext('2d');
-                    window.myLine = new Chart(ctx, config);
+                            }
+                        };
+                        window.onload = function () {
+                            const ctx = document.getElementById('myChart').getContext('2d');
+                            window.myLine = new Chart(ctx, config);
 
-                }
-            </script>
+                        }
+                    </script>
                 </div>
             </div>
         </div>
 
         <div class="col-8">
             <div class="card shadow-sm" style="min-height:400px;max-height:500px">
-                <div class="card-header srg-link d-flex justify-content-between align-items-baseline pb-0">
-                    <h4>Today's Schedule</h4>
-                    <a href="{% url 'employee-todolist' %}" class="srg-link">View To-Do List</a>
+                <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline pb-0">
+                    <h4>{{ first_name }}'s Schedule</h4>
+                    <!--<a href="{% url 'employee-todolist' %}" class="srg-link">View To-Do List</a>-->
                 </div>
                 <div class="card-body overflow-auto p-2">
                     <table class="srg-table">
                             <thead>
-                            <tr class="srg-bg-primary text-light">
+                            <tr class="">
                                 <th>Parent</th>
                                 <th>Provider</th>
                                 <th>Scope</th>
@@ -126,8 +130,8 @@
     <div class="row">
         <div class="col-12">
             <div class="card shadow-sm">
-                <div class="card-header srg-header d-flex justify-content-between pb-0 d-flex align-items-baseline">
-                    <h4>{{ user_info.first_name }}'s Calendar</h4>
+                <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between pb-0 d-flex align-items-baseline">
+                    <h4>{{ first_name }}'s Calendar</h4>
                 </div>
                 <div class="card-body">
 
@@ -142,13 +146,13 @@
     <div class="row mt-4">
         <div class="col-12">
             <div class="card shadow-sm" style="min-height:400px;max-height:500px">
-                <div class="card-header srg-header d-flex justify-content-between pb-0 align-items-baseline">
-                    <h4>{{ user_info.first_name }}'s Engagements</h4>
+                <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center">
+                    <h4>{{ first_name }}'s Engagements</h4>
                     <input class="search-box" type="text" id="searchBar" onkeyup="searchEngagements()" placeholder="Search for engagements.." title="Type in a name">
                 </div>
                 <div class="card-body d-flex justify-content-center overflow-auto">
                     <table class="srg-table" id="srg-table">
-                        <thead class="srg-bg-primary text-light">
+                        <thead>
                             <tr>
                                 <th>Parent</th>
                                 <th>Provider</th>

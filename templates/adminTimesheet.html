@@ -1,33 +1,44 @@
 {% extends 'layout.html' %}
 
 {% block content %}
-    <div class="row d-flex justify-content-between srg-bg-secondary">
-        <div class="col-12 srg-header text-center">
-            <h3 class="fw-normal">Extract Billing Report</h3>
-            <h5 class="fw-normal">Today: {{ today|date:'D m/d/Y' }}</h5>
-            <h5 class="fw-normal">Week: {{ week_beg|date:'D m/d/Y' }} - {{ week_end|date:'D m/d/Y' }}</h5>
+    <!--
+    <div id="loading-screen">
+        <div class="">
+            <div class="spinner"></div><br>
+            <p>Loading...</p>
         </div>
     </div>
+    -->
+    <div class="row p-0 d-print-none">
+        <div class="col-12 p-0">
+            <div class="srg-bg-primary px-4 py-2 shadow-sm d-flex justify-content-between">
+                <span class="srg-text-secondary display-6 fs-2 lh-base">Admin Billing Report</span>
 
-    <div class="row p-3 mt-2 d-flex justify-content-evenly">
-        <div class="col-6">
+                <span class="srg-text-secondary display-6 fs-2 lh-base">{{ today|date:'l, F d, Y' }} </span>
+
+                <!--<span class="srg-text-secondary display-6 fs-2 lh-base">Period: {{ week_beg|date:"m/d/y" }} - {{ week_end|date:"m/d/y" }}</span>-->
+            </div>
+        </div>
+    </div>
+    <div class="row mt-2 d-flex justify-content-evenly">
+        <div class="col-3">
             <div class="card">
-                <div class="card-header srg-bg-secondary">
-                    <h4 class="fw-normal srg-header">Filter Form</h4>
+                <div class="card-header srg-bg-primary srg-text-secondary pb-0">
+                    <h3 class="fw-normal">Filter Form</h3>
                 </div>
                 <div class="card-body">
                     <form method="get">
                         {% for field in filter.form %}
                             <div class="fieldWrapper mb-3">
-                                {{ field.label_tag }} <br> {{ field }}
+                                <p>{{ field.label_tag }} <br> {{ field }}
                                 {% if field.help_text %}
                                 <p class="help">{{ field.help_text|safe }}</p>
                                 {% endif %}
                             </div>
                         {% endfor %}
                         <div class="card-footer bg-transparent d-flex justify-content-start align-items-center gap-3 px-0 py-2 m-0">
-                                <input class="srg-btn-primary" type="submit" value="Search">
-                                <input class="srg-btn-secondary" name='extract_button' type="submit" value="Extract">
+                            <button class="srg-btn-primary" type="submit"><i class="bi bi-search"></i> Search</button>
+                            <button class="srg-btn-secondary" name='extract_button' type="submit"><i class="bi bi-download"></i> Extract</button>
                             <a class="srg-link" href="{% url 'admin-timesheet' %}">Clear Form</a>
                         </div>
                     </form>
@@ -35,17 +46,13 @@
             </div>
         </div>
 
-    </div>
-
-
-    <div class="row mt-2">
-        <div class="col-12 overflow-auto">
+        <div class="col-9 overflow-auto">
             <div class="card">
-                <div class="card-header srg-header srg-bg-secondary">
-                    <h4 class="fw-normal srg-header">Timesheet Entries</h4>
+                <div class="card-header srg-text-secondary srg-bg-primary pb-0">
+                    <h3 class="fw-normal">Timesheet Entries</h3>
                 </div>
                 <div class="card-body">
-                    <table class="table table-bordered">
+                    <table class="srg-table">
                         <thead>
                             <tr class="text-center">
                                 <th>Date</th>
@@ -55,19 +62,17 @@
                                 <th>Provider</th>
                                 <th>Scope</th>
                                 <th>Hours</th>
-                                <th>Note</th>
                             </tr>
                         </thead>
                         {% for entry in filter.qs %}
                             <tr class="text-center align-middle">
-                                <td class="">{{ entry.date|date:'m/d/Y' }}</td>
+                                <td class="">{{ entry.ts_date|date:'m/d/Y' }}</td>
                                 <td class="text-start">{{ entry.employee__user__username }}</td>
                                 <td class="text-start">{{ entry.engagement__engagement_srg_id }}</td>
                                 <td class="text-start">{{ entry.engagement__parent__parent_name }}</td>
                                 <td class="text-start">{{ entry.engagement__provider }} - {{ entry.engagement__provider__provider_name }}</td>
                                 <td class="text-start">{{ entry.engagement__time_code }} - {{ entry.engagement__time_code__time_code_desc }}</td>
                                 <td>{{ entry.hours }}</td>
-                                <td class="text-start">{{ entry.note }}</td>
                             </tr>
                         {% endfor %}
                     </table>
@@ -75,4 +80,23 @@
             </div>
         </div>
     </div>
+
+    <script>
+            // Hide the spinner when the page is fully loaded
+            window.onload = function () {
+                  // Hide the loading screen when the entire page is loaded
+                const loadingScreen = document.getElementById("loading-screen");
+                loadingScreen.style.display = "none";
+
+            };
+
+            </script>
+
+            <script>
+                // Hide the spinner when the page is fully loaded
+                window.addEventListener("beforeunload", function() {
+                    const spinner = document.getElementById("loading-screen");
+                    spinner.style.display = ""; // Change to "none" if you want it to hide initially
+                });
+        </script>
 {% endblock %}

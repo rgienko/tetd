@@ -11,19 +11,26 @@
         }
     </style>
 
-    <div class="container-xxl">
-        <div class="row my-4 d-print-none">
-            <div class="col-12">
-                <div class="card srg-bg-secondary px-4 shadow-sm">
-                    <span class="srg-link display-5 fs-1">Hello, {{ user_info.first_name }}</span>
+    <div id="loading-screen">
+        <div class="">
+            <div class="spinner"></div><br>
+            <p>Loading...</p>
+        </div>
+    </div>
 
-                    <span class="srg-link display-6 fs-2 lh-base">{{ today|date:'l, F d, Y' }} </span>
+    <div class="row p-0 d-print-none">
+        <div class="col-12 p-0">
+            <div class="srg-bg-primary px-4 py-2 shadow-sm d-flex justify-content-between">
+                <span class="srg-text-secondary display-6 fs-2 lh-base">Admin Dashboard</span>
 
-                    <span class="srg-link display-6 fs-2 lh-base">Period: {{ week_beg|date:"m/d/y" }} - {{ week_end|date:"m/d/y" }}</span>
-                </div>
+                <span class="srg-text-secondary display-6 fs-2 lh-base">{{ today|date:'l, F d, Y' }} </span>
+
+                <span class="srg-text-secondary display-6 fs-2 lh-base">Period: {{ week_beg|date:"m/d/y" }} - {{ week_end|date:"m/d/y" }}</span>
             </div>
         </div>
+    </div>
 
+    <div class="container-xxl">
         <div class="row my-4">
             <div class="card col-12 px-4 shadow-sm text-center">
                 <div class="card-header bg-transparent srg-header d-flex justify-content-between align-items-baseline">
@@ -473,6 +480,32 @@
                // document.getElementById("grandTotalHeader").style.backgroundColor = "#02308C"
                 window.print();
             });
+        </script>
+
+        <script>
+            // Hide the spinner when the page is fully loaded
+            window.onload = function () {
+                  // Hide the loading screen when the entire page is loaded
+                const loadingScreen = document.getElementById("loading-screen");
+                loadingScreen.style.display = "none";
+                const scrollToElement = document.getElementById("today");
+
+                if (scrollToElement) {
+                   scrollToElement.scrollIntoView({
+                       behavior: "smooth",
+                       block: "start"
+                   })
+                }
+            };
+
+            </script>
+
+            <script>
+                // Hide the spinner when the page is fully loaded
+                window.addEventListener("beforeunload", function() {
+                    const spinner = document.getElementById("loading-screen");
+                    spinner.style.display = ""; // Change to "none" if you want it to hide initially
+                });
         </script>
     </div>
 {% endblock %}

@@ -2,19 +2,28 @@
 {% load mathfilters %}
 
 {% block content %}
-    <div class="container-xxl">
-        <div class="row d-flex justify-content-between mb-4">
-            <div class="col-12 srg-header text-center card shadow-sm srg-bg-secondary border-0 rounded-2">
-                <h3 class="fw-normal">Engagement Planning</h3>
-                <h5 class="fw-normal">Today: {{ today|date:'D m/d/Y' }}</h5>
-                <h5 class="fw-normal">Week: {{ week_beg|date:'D m/d/Y' }} - {{ week_end|date:'D m/d/Y' }}</h5>
+    <div id="loading-screen">
+        <div class="">
+            <div class="spinner"></div><br>
+            <p>Loading...</p>
+        </div>
+    </div>
+    <div class="row p-0">
+        <div class="col-12 p-0">
+            <div class="srg-bg-primary px-4 py-2 shadow-sm d-flex justify-content-between">
+                <span class="srg-text-secondary display-6 fs-2 lh-base">Admin Scheduling</span>
+
+                <span class="srg-text-secondary display-6 fs-2 lh-base">{{ today|date:'l, F d, Y' }} </span>
             </div>
         </div>
-        <div class="row d-flex justify-content-center">
+    </div>
+
+    <div class="container-xxl">
+        <div class="row mt-4 d-flex justify-content-center">
             <div class="col-12">
                 <div class="card">
-                    <div class="card-header srg-bg-secondary srg-header d-flex justify-content-between align-items-baseline pb-0">
-                        <h4>Staff Availability</h4>
+                    <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline pb-0">
+                        <h4 class="fw-normal">Staff Availability</h4>
                     </div>
                     <div class="card-body px-0">
                         <div class="carousel slide d-flex justify-content-between" id="carouselExample">
@@ -358,6 +367,32 @@
                     myDiv.style.display= 'none'
                 }
             })
+        </script>
+
+        <script>
+            // Hide the spinner when the page is fully loaded
+            window.onload = function () {
+                  // Hide the loading screen when the entire page is loaded
+                const loadingScreen = document.getElementById("loading-screen");
+                loadingScreen.style.display = "none";
+                const scrollToElement = document.getElementById("today");
+
+                if (scrollToElement) {
+                   scrollToElement.scrollIntoView({
+                       behavior: "smooth",
+                       block: "start"
+                   })
+                }
+            };
+
+            </script>
+
+            <script>
+                // Hide the spinner when the page is fully loaded
+                window.addEventListener("beforeunload", function() {
+                    const spinner = document.getElementById("loading-screen");
+                    spinner.style.display = ""; // Change to "none" if you want it to hide initially
+                });
         </script>
 
 

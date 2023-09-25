@@ -45,12 +45,17 @@ class ExpenseForm(forms.ModelForm):
     class Meta:
         model = Expense
 
-        fields = ['expense_category', 'expense_amount']
+        fields = ['date', 'expense_category', 'expense_amount']
 
         labels = {
             'engagement': _('Engagement'),
+            'date': _('Date'),
             'expense_category': _('Category'),
             'expense_amount': _('Amount')
+        }
+
+        widgets = {
+            'date': DatePickerInput
         }
 
 

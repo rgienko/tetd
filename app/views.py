@@ -11,7 +11,7 @@ from django.core.paginator import Paginator
 from django.db.models import F
 from django.db.models import Max, Case, When, Q, DecimalField
 from django.db.models.functions import Coalesce
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, redirect, get_object_or_404
 from django_pandas.io import read_frame
 from reportlab.lib import colors
@@ -531,7 +531,11 @@ def EngagementDashboard(request):
             new_engagement.engagement_srg_id = engagement_srg_id
             new_engagement.save()
 
-            return redirect('engagement-dashboard')
+            if 'createEngagementAssign' in request.POST:
+                engagement_id = get_object_or_404(Engagement, engagement_srg_id=engagement_srg_id)
+                return redirect('admin-assign', engagement_id.engagement_id)
+            else:
+                return redirect('engagement-dashboard')
     else:
         createEngagementForm = CreateEngagementForm()
 
@@ -543,6 +547,12 @@ def EngagementDashboard(request):
 
 def AdminEngagementDetail(request, pk):
     user_info = get_object_or_404(User, pk=request.user.id)
+
+    period_beg = date.today()
+    today = date.today()
+    week_beg = today - timedelta(days=today.weekday()) - timedelta(days=1)
+    week_end = week_beg + timedelta(days=6)
+
     engagement_instance = get_object_or_404(Engagement, pk=pk)
 
     budget_calc = engagement_instance.budget_amount // 250
@@ -559,50 +569,45 @@ def AdminEngagementDetail(request, pk):
     total_billable_hours = billable_hours_employee.aggregate(Sum('billable_hours_sum'))
     total_non_billable_hours = non_billable_hours_employee.aggregate(Sum('non_billable_hours_sum'))
 
+    employee_engagement_hours = Employee.objects.select_related().all()
+
     engagement_td_hours_by_employee = Todolist.objects.filter(engagement=engagement_instance.engagement_id).values(
-        'engagement', 'employee__user__username').annotate(td_hours=Sum('anticipated_hours')).values('td_hours')
+        'engagement', 'employee__user__username').annotate(td_hours=Sum('anticipated_hours'))
 
     engagement_ts_hours_by_employee = Time.objects.filter(engagement=engagement_instance.engagement_id).values(
-        'engagement', 'employee__user__username').annotate(ts_hours=Sum('hours')).values('ts_hours')
+        'engagement', 'employee__user__username').annotate(ts_hours=Sum('hours'))
 
-    ts_vs_todo = Engagement.objects.raw('''
-                                        SELECT 
-                                            ae.engagement_id,
-                                            ae.engagement_srg_id,
-                                               ae.parent_id,
-                                               ae.provider_id,
-                                               at.username AS TS_EMP,
-                                               SUM(at.sum_hours) AS TS_HOURS,
-                                               tl.username AS TD_EMP,
-                                               SUM(tl.td_sum_hours) AS TD_HOURS
-                                        FROM app_engagement ae
-                                        FULL JOIN (
-                                            SELECT srg_id,
-                                                   au.username,
-                                                   SUM(hours) AS sum_hours
-                                            FROM app_time
-                                            JOIN app_employee on app_time.employee_id = app_employee.employee_id
-                                            JOIN auth_user au on app_employee.user_id = au.id
-                                            GROUP BY srg_id, au.username
-                                        ) at on ae.engagement_id = at.srg_id
-                                        FULL JOIN (
-                                            SELECT srg_id,
-                                                   au.username,
-                                                   SUM(anticipated_hours) AS td_sum_hours
-                                            FROM app_todolist
-                                            JOIN app_employee on app_todolist.employee_id = app_employee.employee_id
-                                            JOIN auth_user au on app_employee.user_id = au.id
-                                            GROUP BY srg_id, au.username
-                                        ) tl on ae.engagement_id = tl.srg_id
-                                        WHERE ae.engagement_srg_id = %s
-                                        GROUP BY ae.engagement_id, ae.engagement_srg_id, ae.parent_id, ae.provider_id, at.username, tl.username
-                                        ORDER BY ae.parent_id, ae.provider_id
-                                        ''', [engagement_instance.engagement_srg_id])
+    if len(engagement_ts_hours_by_employee) >= len(engagement_td_hours_by_employee):
+        ts_vs_todo_data = engagement_ts_hours_by_employee
+        for emp in engagement_ts_hours_by_employee:
+            if engagement_td_hours_by_employee.filter(employee__user__username=emp['employee__user__username']).exists():
+                emp_data = engagement_td_hours_by_employee.filter(employee__user__username=emp['employee__user__username']).values('td_hours')
+                for i in emp_data:
+                    emp['td_hours'] = i['td_hours']
+            else:
+                emp['td_hours'] = 0
+            emp['variance'] = emp['ts_hours'] - emp['td_hours']
+        ts_vs_todo_data = engagement_ts_hours_by_employee
+    else:
+        for emp in engagement_td_hours_by_employee:
+            if engagement_ts_hours_by_employee.filter(employee__user__username=emp['employee__user__username']).exists():
+                emp_data = engagement_ts_hours_by_employee.filter(employee__user__username=emp['employee__user__username']).values('td_hours')
+                for i in emp_data:
+                    emp['ts_hours'] = i['ts_hours']
+            else:
+                emp['ts_hours'] = 0
+            emp['variance'] = emp['ts_hours'] - emp['td_hours']
+        ts_vs_todo_data = engagement_td_hours_by_employee
 
-    context = {'user_info': user_info, 'engagement_instance': engagement_instance,
+    context = {'user_info': user_info, 'today': today, 'week_beg': week_beg, 'week_end': week_end,
+               'engagement_instance': engagement_instance,
+               'ts_vs_todo_data': ts_vs_todo_data,
+               'engagement_td_hours_by_employee': engagement_td_hours_by_employee,
+               'engagement_ts_hours_by_employee': engagement_ts_hours_by_employee,
+               'employee_engagement_hours': employee_engagement_hours,
                'billable_hours_employee': billable_hours_employee, 'total_billable_hours': total_billable_hours,
                'non_billable_hours_employee': non_billable_hours_employee, 'budget_calc': budget_calc,
-               'total_non_billable_hours': total_non_billable_hours, 'ts_vs_todo': ts_vs_todo}
+               'total_non_billable_hours': total_non_billable_hours}
 
     return render(request, 'adminEngagementDetail.html', context)
 
@@ -625,17 +630,17 @@ def AdminTimesheet(request):
                                    'engagement__type_id',
                                    'engagement__is_rac',
                                    'engagement__engagement_hourly_rate',
+                                   'engagement__expense__expense_amount',
                                    'hours',
                                    'note').order_by('ts_date', 'engagement__parent__parent_name',
                                                     'engagement__provider',
                                                     'engagement__fye')
 
-    expense_queryset = Expense.objects.values('ts_date', 'employee__user__username', 'engagement__engagement_srg_id',
-                                              'expense_category', 'expense_amount').order_by('ts_date')
+    expense_queryset = Expense.objects.values('date', 'employee__user__username', 'engagement__engagement_srg_id',
+                                              'expense_category', 'expense_amount').order_by('date')
 
     f = TimesheetFilter(request.GET, queryset=queryset)
     expense_filter = ExpenseFilter(request.GET, queryset=expense_queryset)
-
     if request.method == 'GET' and 'extract_button' in request.GET:
         ts_data = read_frame(f.qs)
 
@@ -654,6 +659,7 @@ def AdminTimesheet(request):
 
     context = {'filter': f, 'expense_filter': expense_filter, 'today': today, 'week_beg': week_beg,
                'week_end': week_end, 'user_info': user_info}
+
     return render(request, 'adminTimesheet.html', context)
 
 
@@ -764,12 +770,29 @@ def AdminPlanning(request):
 
 def AdminEmployeeDashboard(request, pk, per_beg, per_end):
     user_info = get_object_or_404(User, pk=request.user.id)
+    user_filter_list = pk.split(".")
+    first_name = user_filter_list[0]
+    last_name = user_filter_list[1]
     today = date.today()
     per_beg_object = datetime.datetime.strptime(per_beg, "%Y-%m-%d")
     per_end_object = datetime.datetime.strptime(per_end, "%Y-%m-%d")
 
-    timesheet_entries = Time.objects.all().filter(employee__user__username=user_info.username).filter(
-        date__gte=per_beg).filter(date__lte=per_end)
+    user_assignments = Assignments.objects.filter(employee_id=user_info.employee.employee_id).values('engagement_id')
+    # user_engagements = Engagement.objects.filter(engagement_id__in=user_assignments)
+
+    user_engagements = Engagement.objects.values("engagement_id", "engagement_srg_id", "parent_id",
+                                                 "parent__parent_name",
+                                                 "provider_id", "provider__provider_name", "time_code",
+                                                 "time_code__time_code_desc",
+                                                 "is_complete", "fye", "budget_hours", "budget_amount").annotate(
+        engagement_hours_sum=Coalesce(Sum('time__hours'), 0, output_field=DecimalField(0.00)),
+        budget_calc=Max('budget_amount') / 250).filter(
+        engagement_id__in=user_assignments).order_by('-fye', 'time_code',
+                                                     'provider_id',
+                                                     'engagement_hours_sum')
+
+    timesheet_entries = Time.objects.all().filter(employee__user__username=pk).filter(
+        ts_date__gte=per_beg).filter(ts_date__lte=per_end)
 
     billable_hours_sum = timesheet_entries.exclude(Q(engagement__type_id='N') | Q(time_type_id_id='N')).aggregate(
         amount=Coalesce(Sum('hours'), 0, output_field=DecimalField(0.00)))
@@ -784,13 +807,14 @@ def AdminEmployeeDashboard(request, pk, per_beg, per_end):
                                                       'engagement__provider_id__provider_name',
                                                       'engagement__time_code',
                                                       'engagement__time_code__time_code_desc').filter(
-        employee__user__username=request.user.username).order_by('todo_date').annotate(
+        employee__user__username=pk).order_by('todo_date').annotate(
         hsum=Sum('anticipated_hours'))
 
     employee_td_entries = employee_td_entries_all.filter(todo_date=today).order_by('todo_date')
 
     context = {'per_end_object': per_end_object, 'per_beg_object': per_beg_object, 'user_info': user_info,
-               'timesheet_entries': timesheet_entries, 'today': today,
+               'timesheet_entries': timesheet_entries, 'today': today, 'first_name': first_name, 'last_name': last_name,
+               'user_engagements': user_engagements,
                'billable_hours_sum': billable_hours_sum, 'non_billable_hours_sum': non_billable_hours_sum,
                'employee_td_entries': employee_td_entries, 'employee_td_entries_all': employee_td_entries_all}
     return render(request, 'adminEmployeeDashboard.html', context)
@@ -907,6 +931,8 @@ def EmployeeTimesheet(request):
         current_week.append(week_beg + timedelta(days=i))
 
     if request.method == 'POST':
+        time_form = TimeForm()
+        expense_form = ExpenseForm()
         if 'time_button' in request.POST:
             time_form = TimeForm(request.POST)
             if time_form.is_valid():
@@ -929,7 +955,7 @@ def EmployeeTimesheet(request):
 
                 return redirect('employee-timesheet')
         elif 'expense_button' in request.POST:
-            expense_form = ExpenseForm()
+            expense_form = ExpenseForm(request.POST)
             if expense_form.is_valid():
                 employee_instance = get_object_or_404(Employee, user=request.user.id)
                 engagement_id = request.POST.get('expense-input')
@@ -991,7 +1017,7 @@ def EmployeeTodolist(request):
         todo_form = TodoForm(request.POST)
         if todo_form.is_valid():
 
-            engagement_id = request.POST.get('todo-input')
+            engagement_id = request.POST.get('engagement-input')
             engagement_instance = get_object_or_404(Engagement, engagement_srg_id=engagement_id)
             employee_instance = get_object_or_404(Employee, user=request.user.id)
 
