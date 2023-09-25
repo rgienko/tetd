@@ -40,7 +40,7 @@ ALLOWED_HOSTS = ['https://tetd.azurewebsites.net']
 
 INTERNAL_IPS = ['127.0.0.1']
 
-CSRF_TRUSTED_ORIGINS = ['tetd.azurewebsites.net']
+CSRF_TRUSTED_ORIGINS = ['https://www.tetd.azurewebsites.net']
 
 # Application definition
 
