@@ -41,4 +41,5 @@ urlpatterns = [
     path('add-engagement-assign/<int:eng>/<emp>/', views.AddAssignment, name='add-engagement-assign'),
     path('remove-engagement-assign/<int:eng>/<emp>/', views.RemoveAssignment, name='remove-engagement-assign'),
     path('admin/', admin.site.urls),
+    path('__debug__/', include('debug_toolbar.urls'))
 ]
