@@ -41,6 +41,27 @@ class TimeForm(forms.ModelForm):
         }
 
 
+class EditTimeForm(forms.ModelForm):
+    class Meta:
+        model = Time
+
+        fields = ['timesheet_id', 'engagement', 'ts_date', 'hours', 'time_type_id', 'note']
+
+        labels = {
+            'timesheet_id': _('Record #'),
+            'engagement': _('Engagement'),
+            'ts_date': _('Date'),
+            'hours': _('Hours'),
+            'time_type_id': _('Type'),
+            'note': _('Note')
+        }
+
+        widgets = {
+            'note': forms.Textarea(attrs={'rows': 5, 'cols': 40}),
+            'ts_date': DatePickerInput
+        }
+
+
 class ExpenseForm(forms.ModelForm):
     class Meta:
         model = Expense
@@ -79,6 +100,27 @@ class TodoForm(forms.ModelForm):
         }
 
 
+class EditTodoForm(forms.ModelForm):
+    class Meta:
+        model = Todolist
+
+        fields = ['engagement', 'todo_date', 'todo_date_end', 'anticipated_hours', 'note']
+
+        labels = {
+            'engagement': _('Engagement'),
+            'todo_date': _('Start Date'),
+            'todo_date_end': _('End Date'),
+            'anticipated_hours': _('Hours per Day'),
+            'note': _('Note')
+        }
+
+        widgets = {
+            'note': forms.Textarea(attrs={'rows': 5, 'cols': 40}),
+            'todo_date': DatePickerInput,
+            'todo_date_end': DatePickerInput,
+        }
+
+
 class UpdateEngagementStatusForm(forms.ModelForm):
     class Meta:
         model = Engagement
@@ -90,4 +132,5 @@ class MonthSelectForm(forms.Form):
     MONTH_CHOICES = [(str(i), calendar.month_name[i]) for i in range(1, 13)]
     MONTH_CHOICES.append(('YTD', 'YTD'))
 
-    month = forms.ChoiceField(choices=MONTH_CHOICES, widget=forms.Select(attrs={'class': 'form-select', 'onchange': 'submit()'}))
+    month = forms.ChoiceField(choices=MONTH_CHOICES,
+                              widget=forms.Select(attrs={'class': 'form-select', 'onchange': 'submit()'}))

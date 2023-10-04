@@ -18,13 +18,15 @@
         </div>
     </div>
 
-    <div class="row p-0 d-print-none">
-        <div class="col-12 p-0">
-            <div class="srg-bg-primary px-4 py-2 shadow-sm d-flex justify-content-between">
+    <div class="row p-0">
+        <div class="col-12 srg-bg-primary px-4 py-2 shadow-sm d-flex flex-wrap justify-content-xl-between justify-content-md-start ">
+            <div class="col-lg-4 col-md-12">
                 <span class="srg-text-secondary display-6 fs-2 lh-base">Admin Dashboard</span>
-
-                <span class="srg-text-secondary display-6 fs-2 lh-base">{{ today|date:'l, F d, Y' }} </span>
-
+            </div>
+            <div class="col-lg-4 col-md-12 text-start">
+                <span class="srg-text-secondary display-6 fs-2 lh-base">{{ today|date:'l, F d, Y' }}</span>
+            </div>
+            <div class="col-lg-4 col-md-12 text-lg-end text-md-start">
                 <span class="srg-text-secondary display-6 fs-2 lh-base">Period: {{ week_beg|date:"m/d/y" }} - {{ week_end|date:"m/d/y" }}</span>
             </div>
         </div>
@@ -35,7 +37,7 @@
             <div class="card col-12 px-4 shadow-sm text-center">
                 <div class="card-header bg-transparent srg-header d-flex justify-content-between align-items-baseline">
                     <div class="text-start">
-                    <h4>Employee Hours Compilation</h4>
+                    <h4>Productivity Hours Report</h4>
                     <h5>{% if selected_month == 'YTD' %}Year to Date{% else %}{{ selected_month|date:'F Y' }}{% endif %}</h5>
                     </div>
 
@@ -54,18 +56,18 @@
 
                 </div>
                 <div class="card-body">
-                    <table class="table table-bordered">
+                    <table class="srg-table">
                         <thead>
-                            <tr>
-                                <th>Employee</th>
-                                <th>Fixed</th>
-                                <th>Hourly</th>
-                                <th>CGY</th>
-                                <th>NB</th>
-                                <th>PTO</th>
-                                <th>Total Billable<br>with CGY</th>
-                                <th>Total with<br>Non-Billable</th>
-                                <th>% Billable</th>
+                            <tr style="background-color:yellow;">
+                                <th style="background-color:yellow;">Employee</th>
+                                <th style="background-color:yellow;">Fixed</th>
+                                <th style="background-color:yellow;">Hourly</th>
+                                <th style="background-color:yellow;">CGY</th>
+                                <th style="background-color:yellow;">NB</th>
+                                <th style="background-color:yellow;">PTO</th>
+                                <th style="background-color:yellow;">Total Billable<br>with CGY</th>
+                                <th style="background-color:yellow;">Total with<br>Non-Billable</th>
+                                <th style="background-color:yellow;">% Billable</th>
                             </tr>
                         </thead>
                         {% for emp in vps %}
@@ -132,25 +134,25 @@
                                 <td>
                                     {% for item in vp_billable_hours_by_employee %}
                                         {% if item.employee_id == emp.employee_id %}
-                                            {{ item.billable_hours_sum|div:200|mul:100|floatformat:2 }} %
+                                            {{ item.billable_hours_sum|div:monthly_total_hours|mul:100|floatformat:2 }} %
                                         {% else %}
                                         {% endif %}
                                     {% endfor %}
                                 </td>
                             </tr>
                         {% endfor %}
-                        <tr style="color:#02308C">
-                            <th class="srg-bg-secondary" style="color:#02308C">VP Total</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ vp_total_fixed_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ vp_total_hourly_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ vp_total_cgy_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ vp_total_non_billable_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ vp_total_pto_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ vp_total_billable_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ vp_total_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ vp_total_billable_hours.amount|div:200|mul:100|floatformat:2 }} %</th>
+                        <tr class="">
+                            <th class="">VP Total</th>
+                            <th class="">{{ vp_total_fixed_hours.amount }}</th>
+                            <th class="">{{ vp_total_hourly_hours.amount }}</th>
+                            <th class="">{{ vp_total_cgy_hours.amount }}</th>
+                            <th class="">{{ vp_total_non_billable_hours.amount }}</th>
+                            <th class="">{{ vp_total_pto_hours.amount }}</th>
+                            <th class="">{{ vp_total_billable_hours.amount }}</th>
+                            <th class="">{{ vp_total_hours.amount }}</th>
+                            <th class=""></th>
                         </tr>
-                        <tr><td colspan="10" class="border-0"></td></tr>
+                        <tr><td colspan="10" class="srg-bg-secondary"></td></tr>
                         {% for emp in smgrs %}
                             <tr>
                                 <td class="text-start">{{ emp }}</td>
@@ -215,25 +217,25 @@
                                 <td>
                                     {% for item in smgr_billable_hours_by_employee %}
                                         {% if item.employee_id == emp.employee_id %}
-                                            {{ item.billable_hours_sum|div:200|mul:100|floatformat:2 }} %
+                                            {{ item.billable_hours_sum|div:monthly_total_hours|mul:100|floatformat:2 }} %
                                         {% else %}
                                         {% endif %}
                                     {% endfor %}
                                 </td>
                             </tr>
                         {% endfor %}
-                        <tr class="srg-link">
-                            <th class="srg-bg-secondary" style="color:#02308C"> Sr. Managers Total</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ smgr_total_fixed_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ smgr_total_hourly_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ smgr_total_cgy_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ smgr_total_non_billable_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ smgr_total_pto_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ smgr_total_billable_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ smgr_total_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ smgr_total_billable_hours.amount|div:200|mul:100|floatformat:2 }} %</th>
+                        <tr class="">
+                            <th class="">Sr. Managers Total</th>
+                            <th class="">{{ smgr_total_fixed_hours.amount }}</th>
+                            <th class="">{{ smgr_total_hourly_hours.amount }}</th>
+                            <th class="">{{ smgr_total_cgy_hours.amount }}</th>
+                            <th class="">{{ smgr_total_non_billable_hours.amount }}</th>
+                            <th class="">{{ smgr_total_pto_hours.amount }}</th>
+                            <th class="">{{ smgr_total_billable_hours.amount }}</th>
+                            <th class="">{{ smgr_total_hours.amount }}</th>
+                            <th class=""></th>
                         </tr>
-                        <tr><td colspan="10" class="border-0"></td></tr>
+                        <tr><td colspan="10" class="srg-bg-secondary"></td></tr>
                         {% for emp in mgrs %}
                             <tr>
                                 <td class="text-start">{{ emp }}</td>
@@ -298,25 +300,25 @@
                                 <td>
                                     {% for item in mgr_billable_hours_by_employee %}
                                         {% if item.employee_id == emp.employee_id %}
-                                            {{ item.billable_hours_sum|div:200|mul:100|floatformat:2 }} %
+                                            {{ item.billable_hours_sum|div:monthly_total_hours|mul:100|floatformat:2 }} %
                                         {% else %}
                                         {% endif %}
                                     {% endfor %}
                                 </td>
                             </tr>
                         {% endfor %}
-                        <tr class="srg-link">
-                            <th class="srg-bg-secondary" style="color:#02308C">Managers Total</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ mgr_total_fixed_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ mgr_total_hourly_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ mgr_total_cgy_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ mgr_total_non_billable_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ mgr_total_pto_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ mgr_total_billable_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ mgr_total_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ mgr_total_billable_hours.amount|div:200|mul:100|floatformat:2 }} %</th>
+                        <tr class="">
+                            <th class="">Managers Total</th>
+                            <th class="">{{ mgr_total_fixed_hours.amount }}</th>
+                            <th class="">{{ mgr_total_hourly_hours.amount }}</th>
+                            <th class="">{{ mgr_total_cgy_hours.amount }}</th>
+                            <th class="">{{ mgr_total_non_billable_hours.amount }}</th>
+                            <th class="">{{ mgr_total_pto_hours.amount }}</th>
+                            <th class="">{{ mgr_total_billable_hours.amount }}</th>
+                            <th class="">{{ mgr_total_hours.amount }}</th>
+                            <th class=""></th>
                         </tr>
-                        <tr><td colspan="10" class="border-0"></td></tr>
+                        <tr><td colspan="10" class=srg-bg-secondary></td></tr>
                         {% for emp in consultants %}
                             <tr>
                                 <td class="text-start">{{ emp }}</td>
@@ -381,7 +383,7 @@
                                 <td>
                                     {% for item in c_billable_hours_by_employee %}
                                         {% if item.employee_id == emp.employee_id %}
-                                            {{ item.billable_hours_sum|div:200|mul:100|floatformat:2 }} %
+                                            {{ item.billable_hours_sum|div:monthly_total_hours|mul:100|floatformat:2 }} %
                                         {% else %}
                                         {% endif %}
                                     {% endfor %}
@@ -389,37 +391,121 @@
                             </tr>
                         {% endfor %}
                         <tr>
-                            <th class="srg-bg-secondary" style="color:#02308C">Consultants Total</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ c_total_fixed_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ c_total_hourly_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ c_total_cgy_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ c_total_non_billable_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ c_total_pto_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ c_total_billable_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ c_total_hours.amount }}</th>
-                            <th class="srg-bg-secondary" style="color:#02308C">{{ c_total_billable_hours.amount|div:200|mul:100|floatformat:2 }} %</th>
+                            <th class="">Consultants Total</th>
+                            <th class="">{{ c_total_fixed_hours.amount }}</th>
+                            <th class="">{{ c_total_hourly_hours.amount }}</th>
+                            <th class="">{{ c_total_cgy_hours.amount }}</th>
+                            <th class="">{{ c_total_non_billable_hours.amount }}</th>
+                            <th class="">{{ c_total_pto_hours.amount }}</th>
+                            <th class="">{{ c_total_billable_hours.amount }}</th>
+                            <th class="">{{ c_total_hours.amount }}</th>
+                            <th class=""></th>
                         </tr>
-                        <tr><td colspan="10" class="border-0"></td></tr>
-                        <tfoot style="background-color: #02308C; color:white">
-                            <tr class="srg-bg-primary" style="background-color: #02308C; color:white">
-                                <th class="srg-bg-primary border-0" style="color: #02308C">Grand Total</th>
-                                <th class="srg-bg-primary border-0" style="color: #02308C">{{ srg_total_fixed_hours }}</th>
-                                <th class="srg-bg-primary border-0" style="color: #02308C">{{ srg_total_hourly_hours }}</th>
-                                <th class="srg-bg-primary border-0" style="color: #02308C">{{ srg_total_cgy_hours }}</th>
-                                <th class="srg-bg-primary border-0" style="color: #02308C">{{ srg_total_non_billable_hours }}</th>
-                                <th class="srg-bg-primary border-0" style="color: #02308C">{{ srg_total_pto_hours }}</th>
-                                <th class="srg-bg-primary border-0" style="color: #02308C">{{ srg_total_billable_hours }}</th>
-                                <th class="srg-bg-primary border-0" style="color: #02308C">{{ srg_total_hours }}</th>
-                                <th class="srg-bg-primary border-0" style="color: #02308C">{{ srg_total_billable_hours|div:200|mul:100|floatformat:2 }} %</th>
+                        <tr><td colspan="10" class="border-0 srg-bg-secondary"></td></tr>
+                        <tfoot>
+                            <tr class="">
+                                <th class="">Grand Total</th>
+                                <th class="">{{ srg_total_fixed_hours }}</th>
+                                <th class="">{{ srg_total_hourly_hours }}</th>
+                                <th class="">{{ srg_total_cgy_hours }}</th>
+                                <th class="">{{ srg_total_non_billable_hours }}</th>
+                                <th class="">{{ srg_total_pto_hours }}</th>
+                                <th class="">{{ srg_total_billable_hours }}</th>
+                                <th class="">{{ srg_total_hours }}</th>
+                                <th class=""></th>
                             </tr>
                         </tfoot>
                         <caption>Note: Period is based on calendar month.</caption>
+                    </table>
+
+                    <table class="srg-table" style="width:75%">
+                        <tbody>
+                            <tr>
+                                <td>VP Non-Billable</td>
+                                <td>{{ vp_total_non_billable_hours.amount }}</td>
+                                <td>X</td>
+                                <td>$300</td>
+                                <td>${{ vp_loss_rev|intcomma }}</td>
+                            </tr>
+                            <tr>
+                                <td>Senior MGR Non-Billable</td>
+                                <td>{{ smgr_total_non_billable_hours.amount }}</td>
+                                <td>X</td>
+                                <td>$250</td>
+                                <td>${{ smgr_lost_rev|intcomma }}</td>
+                            </tr>
+                            <tr>
+                                <td>Manager Non-Billable</td>
+                                <td>{{ mgr_total_non_billable_hours.amount }}</td>
+                                <td>X</td>
+                                <td>$225</td>
+                                <td>${{ mgr_lost_rev|intcomma }}</td>
+                            </tr>
+                            <tr>
+                                <td>Consultant Non-Billable</td>
+                                <td>{{ c_total_non_billable_hours.amount }}</td>
+                                <td>X</td>
+                                <td>$200</td>
+                                <td>${{ c_lost_rev|intcomma }}</td>
+                            </tr>
+                            <tr>
+                                <td>Total Lost Revenue</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td class="fw-bold srg-text-danger">${{ srg_total_lost_revenue|intcomma }}</td>
+                            </tr>
+                            <tr><td colspan="5" class="srg-bg-secondary"></td> </tr>
+                            <tr>
+                                <td>
+                                    Billable Weeks
+                                </td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>{{ billable_weeks }}</td>
+                                <td></td>
+                                <td class="fw-bold">Actual Billable</td>
+                                <td class="fw-bold">{{ srg_total_billable_hours }}</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    X 40 hrs / week
+                                </td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>{{ billable_weeks|mul:40 }}</td>
+                                <td></td>
+                                <td class="fw-bold">Billable %</td>
+                                <td class="fw-bold">{{ srg_billable_percentage }} %</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    X # of Employees
+                                </td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>19</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    Total Billable @ 100%
+                                </td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td>{{ billable_weeks|mul:40|mul:19|intcomma }}</td>
+                            </tr>
+                        </tbody>
                     </table>
 
                 </div>
             </div>
         </div>
 
+        <!--
         <div class="row my-4">
             <div class="card col-12 px-4 shadow-sm text-center">
                 <div class="card-header bg-transparent srg-header d-flex justify-content-between align-items-baseline">
@@ -475,6 +561,7 @@
                 </div>
             </div>
         </div>
+        -->
         <script>
             document.getElementById("printButton").addEventListener("click", function (){
                // document.getElementById("grandTotalHeader").style.backgroundColor = "#02308C"

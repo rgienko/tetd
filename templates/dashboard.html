@@ -3,12 +3,14 @@
 
 {% block content %}
     <div class="row p-0">
-        <div class="col-12 p-0">
-            <div class="srg-bg-primary px-4 py-2 shadow-sm d-flex justify-content-between">
+        <div class="col-12 srg-bg-primary px-4 py-2 shadow-sm d-flex flex-wrap justify-content-xl-between justify-content-md-start ">
+            <div class="col-lg-4 col-md-12">
                 <span class="srg-text-secondary display-6 fs-2 lh-base">Dashboard</span>
-
-                <span class="srg-text-secondary display-6 fs-2 lh-base">{{ today|date:'l, F d, Y' }} </span>
-
+            </div>
+            <div class="col-lg-4 col-md-12 text-start">
+                <span class="srg-text-secondary display-6 fs-2 lh-base">{{ today|date:'l, F d, Y' }}</span>
+            </div>
+            <div class="col-lg-4 col-md-12 text-lg-end text-md-start">
                 <span class="srg-text-secondary display-6 fs-2 lh-base">Period: {{ week_beg|date:"m/d/y" }} - {{ week_end|date:"m/d/y" }}</span>
             </div>
         </div>
@@ -17,14 +19,14 @@
     <div class="container-xxl mt-4">
         {% if ts_is_submitted == False %}
         <div class="row">
-            <div class="col-12 border">
-                <a class="srg-btn-ol-primary w-100" href="{% url 'employee-timesheet-review' %}">Review / Submit Timesheet</a>
+            <div class="col-12">
+                <a type="button" class="srg-btn-ol-primary w-100 text-center" href="{% url 'employee-timesheet-review' %}">Review / Submit Timesheet</a>
             </div>
         </div>
         {% else %}
         {% endif %}
     <div class="row d-flex justify-content-center my-4">
-        <div class="col-4">
+        <div class="col-lg-4 col-md-12">
             <div class="card shadow-sm" style="min-height:400px;max-height:500px">
                 <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline">
                     <span class="fs-3">My Time</span>
@@ -98,7 +100,7 @@
             </div>
         </div>
 
-        <div class="col-8">
+        <div class="col-lg-8 mt-lg-0 col-md-12 mt-md-4">
             <div class="card shadow-sm" style="min-height:400px;max-height:500px">
                 <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline">
                     <span class="fs-3">Today's Schedule</span>
@@ -121,6 +123,10 @@
                                     <td>{{ entry.engagement__provider_id }} - {{ entry.engagement__provider_id__provider_name }}</td>
                                     <td>{{ entry.engagement__time_code }} - {{ entry.engagement__time_code__time_code_desc }}</td>
                                     <td class="text-center">{{ entry.hsum }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">Nothing scheduled for today...</td>
                                 </tr>
                             {% endfor %}
                         </tbody>

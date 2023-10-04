@@ -123,6 +123,10 @@
 .srg-text-secondary {
     color: #d9d9d9;
 }
+
+.srg-text-danger {
+    color: #8B0000;
+}
 /* BUTTONS, LINKS, LISTS */
 
 .srg-active {
@@ -250,6 +254,12 @@
     text-decoration: none;
     border-left: 2px solid #d9d9d9;
 }
+
+.srg-link-danger {
+    text-decoration: none;
+    color: #8B0000;
+}
+
 
 .srg-login-button {
     background: #02308C;

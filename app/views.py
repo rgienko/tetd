@@ -4,18 +4,19 @@ from datetime import timedelta
 from io import BytesIO
 
 import pandas
+import numpy as np
 from dateutil.relativedelta import relativedelta
 from django.contrib import auth, messages
 from django.core.mail import EmailMessage
 from django.core.paginator import Paginator
-from django.db.models import F
+from django.db.models import F, Count
 from django.db.models import Max, Case, When, Q, DecimalField
 from django.db.models.functions import Coalesce
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django_pandas.io import read_frame
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_JUSTIFY
+from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
@@ -84,8 +85,8 @@ def dashboard(request):
                                                      'engagement_hours_sum')
 
     today = date.today()
-    week_beg = today - timedelta(days=today.weekday())
-    week_end = week_beg + timedelta(days=5)
+    week_beg = today - timedelta(days=today.weekday()) - timedelta(days=1)
+    week_end = week_beg + timedelta(days=6)
 
     timesheet_entries = Time.objects.all().filter(employee__user__username=request.user.username).filter(
         ts_date__gte=week_beg).filter(ts_date__lte=week_end)
@@ -114,6 +115,8 @@ def dashboard(request):
 
 
 def getCompilationData(mnth):
+    number_of_workdays = 0
+    billable_weeks = 0
     if mnth == 'YTD':
         fixed_hours_by_employee = Time.objects.filter(engagement__type_id='F', ts_date__year=date.today().year).values(
             'employee_id', 'employee__title').annotate(
@@ -121,7 +124,7 @@ def getCompilationData(mnth):
         )
 
         hourly_hours_by_employee = Time.objects.filter(engagement__type_id='H', ts_date__year=date.today().year).values(
-            'employee_id', 'employee__title').annotate(
+            'employee_id', 'employee__title').exclude(engagement__time_code_id__gte=900).annotate(
             hourly_hours_by_employee_sum=Sum('hours')
         )
 
@@ -130,55 +133,60 @@ def getCompilationData(mnth):
             cgy_hours_by_employee_sum=Sum('hours')
         )
 
-        non_billable_hours_by_employee = Time.objects.filter(time_type_id='N', ts_date__year=date.today().year).values(
-            'employee_id').annotate(non_billable_hours_sum=Sum('hours'))
+        non_billable_hours_by_employee = Time.objects.filter(Q(time_type_id='N') | Q(engagement__type_id='N'),
+                                                             ts_date__year=date.today().year).exclude(
+            engagement__time_code=990).values('employee_id').annotate(non_billable_hours_sum=Sum('hours'))
 
-        pto_hours_by_employee = Time.objects.filter(engagement__time_code=945, ts_date__year=date.today().year).values(
-            'employee_id').annotate(
-            pto_hours_by_employee_sum=Sum('hours')
-        )
+        pto_hours_by_employee = Time.objects.filter(engagement__time_code=990, ts_date__year=date.today().year).values(
+            'employee_id').annotate(pto_hours_by_employee_sum=Sum('hours')
+                                    )
 
         billable_hours_by_employee = Time.objects.filter(time_type_id='B', ts_date__year=date.today().year).values(
-            'employee_id').annotate(
-            billable_hours_sum=Sum('hours'))
+            'employee_id').annotate(billable_hours_sum=Sum('hours'))
 
         total_hours_by_employee = Time.objects.filter(ts_date__year=date.today().year).values('employee_id').annotate(
             total_hours_sum=Sum('hours'))
     else:
         fixed_hours_by_employee = Time.objects.filter(engagement__type_id='F', ts_date__month=mnth).values(
-            'employee_id', 'employee__title').annotate(
-            fixed_hours_by_employee_sum=Sum('hours')
-        )
+            'employee_id', 'employee__title').annotate(fixed_hours_by_employee_sum=Sum('hours')
+                                                       ).order_by('employee__user__last_name')
 
         hourly_hours_by_employee = Time.objects.filter(engagement__type_id='H', ts_date__month=mnth).values(
-            'employee_id', 'employee__title').annotate(
-            hourly_hours_by_employee_sum=Sum('hours')
-        )
+            'employee_id', 'employee__title', 'employee__user__username').exclude(
+            engagement__time_code_id__gte=900).annotate(
+            hourly_hours_by_employee_sum=Sum('hours')).order_by('employee__user__last_name')
 
         cgy_hours_by_employee = Time.objects.filter(engagement__type_id='C', ts_date__month=mnth).values(
-            'employee_id', 'employee__title').annotate(
-            cgy_hours_by_employee_sum=Sum('hours')
-        )
+            'employee_id', 'employee__title').annotate(cgy_hours_by_employee_sum=Sum('hours'))
 
         non_billable_hours_by_employee = Time.objects.filter(Q(time_type_id='N') | Q(engagement__type_id='N'),
-                                                             ts_date__month=mnth).values(
+                                                             ts_date__month=mnth).exclude(
+            engagement__time_code=990).values(
             'employee_id').annotate(non_billable_hours_sum=Sum('hours'))
 
-        pto_hours_by_employee = Time.objects.filter(engagement__time_code=945, ts_date__month=mnth).values(
-            'employee_id').annotate(
-            pto_hours_by_employee_sum=Sum('hours')
-        )
+        pto_hours_by_employee = Time.objects.filter(engagement__time_code=990, ts_date__month=mnth).values(
+            'employee_id').annotate(pto_hours_by_employee_sum=Sum('hours'))
 
         billable_hours_by_employee = Time.objects.filter(time_type_id='B', ts_date__month=mnth).values(
-            'employee_id').annotate(
-            billable_hours_sum=Sum('hours'))
+            'employee_id').annotate(billable_hours_sum=Sum('hours'))
 
         total_hours_by_employee = Time.objects.filter(ts_date__month=mnth).values('employee_id').annotate(
             total_hours_sum=Sum('hours'))
 
+        next_month = int(mnth) + 1
+        current_year = datetime.datetime.now().year
+        if int(mnth) <= 9:
+            number_of_workdays = np.busday_count(str(current_year) + '-0' + str(mnth),
+                                                 str(current_year) + '-' + str(next_month))
+        else:
+            number_of_workdays = np.busday_count(str(current_year) + '-' + str(mnth),
+                                                 str(current_year) + '-' + str(next_month))
+
+        billable_weeks = number_of_workdays / 5
+
     # VP HOURS ##########
-    vp_fixed_hours_by_employee = fixed_hours_by_employee.filter(employee__title='VP')
-    vp_hourly_hours_by_employee = hourly_hours_by_employee.filter(Q(employee__title='EVP') | Q(employee__title='VP'))
+    vp_fixed_hours_by_employee = fixed_hours_by_employee.filter(Q(employee__title='EVP') | Q(employee__title='VP'))
+    vp_hourly_hours_by_employee = hourly_hours_by_employee.filter(employee__title='VP')
     vp_cgy_hours_by_employee = cgy_hours_by_employee.filter(Q(employee__title='EVP') | Q(employee__title='VP'))
     vp_non_billable_hours_by_employee = non_billable_hours_by_employee.filter(
         Q(employee__title='EVP') | Q(employee__title='VP'))
@@ -297,6 +305,8 @@ def getCompilationData(mnth):
 
     srg_total_lost_revenue = vp_loss_rev + mgr_lost_rev + c_lost_rev
 
+    srg_billable_percentage = round((float(srg_total_billable_hours) / (billable_weeks * 40 * 19)) * 100, 0)
+
     return vp_fixed_hours_by_employee, vp_hourly_hours_by_employee, vp_cgy_hours_by_employee, \
         vp_non_billable_hours_by_employee, vp_pto_hours_by_employee, vp_billable_hours_by_employee, \
         vp_total_hours_by_employee, vp_total_fixed_hours, vp_total_hourly_hours, vp_total_cgy_hours, \
@@ -315,7 +325,8 @@ def getCompilationData(mnth):
         c_total_non_billable_hours, c_total_pto_hours, c_total_billable_hours, c_total_hours, \
         srg_total_fixed_hours, srg_total_hourly_hours, srg_total_cgy_hours, \
         srg_total_non_billable_hours, srg_total_pto_hours, srg_total_billable_hours, srg_total_hours, \
-        vp_loss_rev, smgr_lost_rev, mgr_lost_rev, c_lost_rev, srg_total_lost_revenue
+        vp_loss_rev, smgr_lost_rev, mgr_lost_rev, c_lost_rev, srg_total_lost_revenue, number_of_workdays, billable_weeks, \
+        srg_billable_percentage
 
 
 def AdminDashboard(request):
@@ -337,6 +348,7 @@ def AdminDashboard(request):
         if month_form.is_valid():
             selected_month = month_form.cleaned_data['month']
             new_data = getCompilationData(selected_month)
+            monthly_total_hours = new_data[68] * 8
             if selected_month == 'YTD':
                 pass
             else:
@@ -412,6 +424,10 @@ def AdminDashboard(request):
                        'mgr_lost_rev': new_data[65],
                        'c_lost_rev': new_data[66],
                        'srg_total_lost_revenue': new_data[67],
+                       'number_of_workdays': new_data[68],
+                       'billable_weeks': new_data[69],
+                       'srg_billable_percentage': new_data[70],
+                       'monthly_total_hours': monthly_total_hours,
                        'selected_month': selected_month,
                        'month_form': month_form}
 
@@ -420,6 +436,7 @@ def AdminDashboard(request):
     else:
         month_form = MonthSelectForm(initial={'month': current_month})
         current_month_data = getCompilationData(current_month)
+        monthly_total_hours = current_month_data[68] * 8
         context = {'employee_info': employee_info, 'user_info': user_info, 'today': today, 'week_beg': week_beg,
                    'week_end': week_end, 'employees': employees, 'vps': vps,
                    'smgrs': smgrs, 'mgrs': mgrs, 'consultants': consultants,
@@ -491,6 +508,10 @@ def AdminDashboard(request):
                    'mgr_lost_rev': current_month_data[65],
                    'c_lost_rev': current_month_data[66],
                    'srg_total_lost_revenue': current_month_data[67],
+                   'number_of_workdays': current_month_data[68],
+                   'billable_weeks': current_month_data[69],
+                   'srg_billable_percentage': current_month_data[70],
+                   'monthly_total_hours': monthly_total_hours,
                    'selected_month': today,
                    'month_form': month_form}
 
@@ -580,8 +601,10 @@ def AdminEngagementDetail(request, pk):
     if len(engagement_ts_hours_by_employee) >= len(engagement_td_hours_by_employee):
         ts_vs_todo_data = engagement_ts_hours_by_employee
         for emp in engagement_ts_hours_by_employee:
-            if engagement_td_hours_by_employee.filter(employee__user__username=emp['employee__user__username']).exists():
-                emp_data = engagement_td_hours_by_employee.filter(employee__user__username=emp['employee__user__username']).values('td_hours')
+            if engagement_td_hours_by_employee.filter(
+                    employee__user__username=emp['employee__user__username']).exists():
+                emp_data = engagement_td_hours_by_employee.filter(
+                    employee__user__username=emp['employee__user__username']).values('td_hours')
                 for i in emp_data:
                     emp['td_hours'] = i['td_hours']
             else:
@@ -590,8 +613,10 @@ def AdminEngagementDetail(request, pk):
         ts_vs_todo_data = engagement_ts_hours_by_employee
     else:
         for emp in engagement_td_hours_by_employee:
-            if engagement_ts_hours_by_employee.filter(employee__user__username=emp['employee__user__username']).exists():
-                emp_data = engagement_ts_hours_by_employee.filter(employee__user__username=emp['employee__user__username']).values('td_hours')
+            if engagement_ts_hours_by_employee.filter(
+                    employee__user__username=emp['employee__user__username']).exists():
+                emp_data = engagement_ts_hours_by_employee.filter(
+                    employee__user__username=emp['employee__user__username']).values('ts_hours')
                 for i in emp_data:
                     emp['ts_hours'] = i['ts_hours']
             else:
@@ -930,6 +955,7 @@ def EmployeeTimesheet(request):
     for i in range(7):
         current_week.append(week_beg + timedelta(days=i))
 
+    edit_time_form = EditTimeForm()
     if request.method == 'POST':
         time_form = TimeForm()
         expense_form = ExpenseForm()
@@ -977,7 +1003,7 @@ def EmployeeTimesheet(request):
 
     context = {'today': today, 'employee_ts_entries': employee_ts_entries, 'week_beg': week_beg, 'week_end': week_end,
                'current_week': current_week, 'current_week_ts': current_week_ts, 'user_engagements': user_engagements,
-               'time_form': time_form, 'expense_form': expense_form,
+               'time_form': time_form, 'expense_form': expense_form, 'edit_time_form': edit_time_form,
                'total_weekly_hours': total_weekly_hours, 'user_info': user_info,
                'total_available_hours': total_available_hours,
                'employee_hours_by_day': employee_hours_by_day}
@@ -1013,10 +1039,10 @@ def EmployeeTodolist(request):
     page_number = request.GET.get("page")
     page_obj = paginator.get_page(page_number)
 
+    edit_todo_form = EditTodoForm()
     if request.method == 'POST':
         todo_form = TodoForm(request.POST)
         if todo_form.is_valid():
-
             engagement_id = request.POST.get('engagement-input')
             engagement_instance = get_object_or_404(Engagement, engagement_srg_id=engagement_id)
             employee_instance = get_object_or_404(Employee, user=request.user.id)
@@ -1035,6 +1061,7 @@ def EmployeeTodolist(request):
                 new_entry = todo_form.save(commit=False)
                 new_entry.employee_id = employee_instance.employee_id
                 new_entry.engagement = engagement_instance
+                new_entry.todo_date_end = start_date
                 new_entry.save()
             else:
                 number_of_days = number_of_days + timedelta(days=1)
@@ -1043,7 +1070,7 @@ def EmployeeTodolist(request):
                         employee=employee_instance,
                         engagement=engagement_instance,
                         todo_date=start_date + timedelta(days=i),
-                        todo_date_end=start_date + timedelta(days=1),
+                        todo_date_end=start_date + timedelta(days=i),
                         anticipated_hours=request.POST.get('anticipated_hours'),
                         note=request.POST.get('note')
                     )
@@ -1059,7 +1086,7 @@ def EmployeeTodolist(request):
 
     context = {'employee_td_entries': employee_td_entries, 'week_beg': week_beg, 'week_end': week_end, 'today': today,
                'todo_form': todo_form, 'user_info': user_info, 'page_obj': page_obj, 'paginator': paginator,
-               'employee_td_hours_by_day': employee_td_hours_by_day,
+               'employee_td_hours_by_day': employee_td_hours_by_day, 'edit_todo_form': edit_todo_form,
                'current_week': current_week, 'current_week_ts': current_week_ts, 'user_engagements': user_engagements}
 
     return render(request, 'employeeTodolist.html', context)
@@ -1159,6 +1186,76 @@ def RemoveAssignment(request, eng, emp):
     return redirect('admin-assign', eng)
 
 
+def DeleteTimesheetEntry(request, pk):
+    entry_instance = get_object_or_404(Time, pk=pk)
+    entry_instance.delete()
+
+    return redirect('employee-timesheet')
+
+
+def GetTsEntry(request, ts_id):
+    entry = Time.objects.get(pk=ts_id)
+    data = {
+        'ts_id': entry.timesheet_id,
+        'engagement': entry.engagement_id,
+        'ts_date': entry.ts_date,
+        'hours': entry.hours,
+        'btype': entry.time_type_id_id,
+        'note': entry.note
+    }
+
+    return JsonResponse(data)
+
+
+def UpdateTsEntry(request):
+    if request.method == 'POST':
+        form = EditTimeForm(request.POST)
+        if form.is_valid():
+            entry = Time.objects.get(pk=request.POST.get('ts-id-input'))
+            entry.engagement = form.cleaned_data['engagement']
+            entry.ts_date = form.cleaned_data['ts_date']
+            entry.hours = form.cleaned_data['hours']
+            entry.time_type_id = form.cleaned_data['time_type_id']
+            entry.note = form.cleaned_data['note']
+            entry.save()
+    return redirect('employee-timesheet')
+
+
+def DeleteTdEntry(request, pk):
+    entry_instance = get_object_or_404(Todolist, pk=pk)
+    entry_instance.delete()
+
+    return redirect('employee-todolist')
+
+
+def GetTdEntry(request, td_id):
+    entry = Todolist.objects.get(pk=td_id)
+    data = {
+        'td_id': entry.todolist_id,
+        'engagement': entry.engagement_id,
+        'todo_date': entry.todo_date,
+        'todo_date_end': entry.todo_date_end,
+        'anticipated_hours': entry.anticipated_hours,
+        'note': entry.note
+    }
+
+    return JsonResponse(data)
+
+
+def UpdateTdEntry(request):
+    if request.method == 'POST':
+        form = EditTodoForm(request.POST)
+        if form.is_valid():
+            entry = Todolist.objects.get(pk=request.POST.get('td-id-input'))
+            entry.engagement = form.cleaned_data['engagement']
+            entry.todo_date = form.cleaned_data['todo_date']
+            entry.todo_date_end = form.cleaned_data['todo_date_end']
+            entry.anticipated_hours = form.cleaned_data['anticipated_hours']
+            entry.note = form.cleaned_data['note']
+            entry.save()
+    return redirect('employee-todolist')
+
+
 def RenewEngagement(request, pk):
     engagement_instance = get_object_or_404(Engagement, pk=pk)
     parent_instance = get_object_or_404(Parent, pk=engagement_instance.parent_id)
@@ -1234,9 +1331,9 @@ def overBudgetAlert(pk):
 def createEmployeeHoursCompilationReport(request, mnth):
     global period
     styles = getSampleStyleSheet()
-    styles.add(ParagraphStyle(name='Justify', alignment=TA_JUSTIFY))
+    styles.add(ParagraphStyle(name='Justify', alignment=TA_LEFT))
     title = Paragraph('<para>Strategic Reimbursement Group, LLC</para>', styles['Normal'])
-    subTitle = Paragraph('<para>Employee Hours Compilation Report</para>', styles['Normal'])
+    subTitle = Paragraph('<para>Productivity Hours Report</para>', styles['Normal'])
     if mnth == "YTD":
         period_text = Paragraph('<para>Year To Date</para>', styles['Normal'])
         period = "YTD"
@@ -1245,12 +1342,31 @@ def createEmployeeHoursCompilationReport(request, mnth):
         period_text = Paragraph('<para>' + str(period_date.strftime("%B")) + " " + str(period_date.year) + '</para>')
         period = period_date.month
         print(period)
-    vps = Employee.objects.filter(title='VP').values('employee_id', 'user__username')
-    smgrs = Employee.objects.filter(title='SM').values('employee_id', 'user__username')
-    mgrs = Employee.objects.filter(title='M').values('employee_id', 'user__username')
-    cs = Employee.objects.filter(Q(title='SC') | Q(title='C')).values('employee_id', 'user__username')
+    vps = Employee.objects.filter(title='VP').values('employee_id', 'user__username').order_by('user__last_name')
+    smgrs = Employee.objects.filter(title='SM').values('employee_id', 'user__username').order_by('user__last_name')
+    mgrs = Employee.objects.filter(title='M').values('employee_id', 'user__username').order_by('user__last_name')
+    cs = Employee.objects.filter(Q(title='SC') | Q(title='C')).values('employee_id', 'user__username').order_by(
+        'user__last_name')
 
-    elements = []
+    tblStyleWithHeader = TableStyle([('BOX', (0, 0), (-1, -1), 1, colors.black),
+                                     ('INNERGRID', (0, 0), (-1, -1), 1, colors.black),
+                                     ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                                     ('BACKGROUND', (0, 0), (-1, 0), colors.yellow)])
+
+    tblStyle = TableStyle([('BOX', (0, 0), (-1, -1), 1, colors.black),
+                           ('INNERGRID', (0, 0), (-1, -1), 1, colors.black),
+                           ('ALIGN', (0, 0), (-1, -1), 'CENTER')])
+
+    total_row_style = TableStyle([('BOX', (0, 0), (-1, -1), 1, colors.black),
+                                  ('INNERGRID', (0, 0), (-1, -1), 1, colors.black)])
+
+    blank_row_style = TableStyle([('BOX', (0, 0), (-1, -1), 1, colors.black),
+                                  ('INNERGRID', (0, 0), (-1, -1), 1, colors.black),
+                                  ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#d9d9d9'))])
+
+    elements = [title, subTitle, period_text]
+    spacer = Spacer(1, 20)
+    elements.append(spacer)
 
     # Create Column Headers for Table #
     employeeHeader = Paragraph('<para align=center>Employee</para>', styles['Normal'])
@@ -1259,14 +1375,22 @@ def createEmployeeHoursCompilationReport(request, mnth):
     cgyHeader = Paragraph('<para align=center>CGY</para>', styles['Normal'])
     nbHeader = Paragraph('<para align=center>NB</para>', styles['Normal'])
     ptoHeader = Paragraph('<para align=center>PTO</para>', styles['Normal'])
-    billableHeader = Paragraph('<para align=center>Total Billable</para>', styles['Normal'])
-    totalHeader = Paragraph('<para align=center>Total</para>', styles['Normal'])
+    billableHeader = Paragraph('<para align=center>Total Billable<br/>with<br/>Contingency</para>', styles['Normal'])
+    totalHeader = Paragraph('<para align=center>Total with<br/>Non-Billable</para>', styles['Normal'])
     percentBillableHeader = Paragraph('<para align=center>% Billable</para>', styles['Normal'])
 
     data = [[employeeHeader, fixedHeader, hourlyHeader, cgyHeader, nbHeader, ptoHeader, billableHeader, totalHeader,
              percentBillableHeader]]
 
+    header_row = Table(data, colWidths=[3.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm,
+                                        2.5 * cm, 2.5 * cm, 2 * cm])
+    header_row.setStyle(tblStyleWithHeader)
+    elements.append(header_row)
+
     compilationData = getCompilationData(period)
+
+    billable_weeks_per_month = compilationData[69]
+    billable_hours_per_month = compilationData[68] * 8
 
     vp_fixed = compilationData[0]
     vp_hourly = compilationData[1]
@@ -1276,26 +1400,28 @@ def createEmployeeHoursCompilationReport(request, mnth):
     vp_billable = compilationData[5]
     vp_total = compilationData[6]
 
-    employeeHourlyColumn = 0
-    employeeFixedColumn = 0
-    employeeCGYColumn = 0
-    employeeNBColumn = 0
-    employeePTOColumn = 0
-    employeeBillableColumn = 0
-    employeeTotalColumn = 0
-    percentBillable = 0
+    vp_data_row_data = []
 
     for emp in vps:
         employeeColumn = Paragraph('<para align=left>' + str(emp['user__username']) + '</para>', styles['Normal'])
+        employeePercentBillableColumn = 0
+        employeeHourlyColumn = 0
+        employeeFixedColumn = 0
+        employeeCGYColumn = 0
+        employeeNBColumn = 0
+        employeePTOColumn = 0
+        employeeBillableColumn = 0
+        employeeTotalColumn = 0
+        percentBillable = 0
         for item in vp_fixed:
             if item['employee_id'] == emp['employee_id']:
-                employeeFixedColumn = str(item['fixed_hours_by_employee_sum'])
-                data.append(employeeFixedColumn)
+                employeeFixedColumn = Paragraph(
+                    '<para align=center>' + str(item['fixed_hours_by_employee_sum']) + '</para>')
         for item in vp_hourly:
-            if item['employee_id'] == emp['employee_id']:
+            if item['employee__user__username'] == emp['user__username']:
                 employeeHourlyColumn = Paragraph(
-                    '<para align=center>' + str(item['hourly_hours_by_employee_sum']) + '</para>', styles['Normal'])
-                # data.append([employeeHourlyColumn])
+                    '<para align=center>' + str(item['hourly_hours_by_employee_sum']) + '</para>',
+                    styles['Normal'])
         for item in vp_cgy:
             if item['employee_id'] == emp['employee_id']:
                 employeeCGYColumn = Paragraph(
@@ -1310,36 +1436,57 @@ def createEmployeeHoursCompilationReport(request, mnth):
                     '<para align=center>' + str(item['pto_hours_by_employee_sum']) + '</para>', styles['Normal'])
         for item in vp_billable:
             if item['employee_id'] == emp['employee_id']:
-                percentBillable = (item['billable_hours_sum'] / 200) * 100
-                employeeBillableColumn = Paragraph('<para align=center>' + str(item['billable_hours_sum']) + '</para>',
-                                                   styles['Normal'])
+                percentBillable = round((item['billable_hours_sum'] / billable_hours_per_month) * 100, 2)
+                employeeBillableColumn = Paragraph(
+                    '<para align=center><b>' + str(item['billable_hours_sum']) + '</b></para>',
+                    styles['Normal'])
         for item in vp_total:
             if item['employee_id'] == emp['employee_id']:
-                employeeTotalColumn = Paragraph('<para align=center>' + str(item['total_hours_sum']) + '</para>',
+                employeeTotalColumn = Paragraph('<para align=center><b>' + str(item['total_hours_sum']) + '</b></para>',
                                                 styles['Normal'])
 
-        employeePercentBillableColumn = Paragraph('<para align=center>' + str(percentBillable) + ' %</para>',
+        employeePercentBillableColumn = Paragraph('<para align=center><b>' + str(percentBillable) + '%</b></para>',
                                                   styles['Normal'])
 
-        data.append([employeeColumn, employeeFixedColumn, employeeHourlyColumn, employeeCGYColumn, employeeNBColumn,
-                     employeePTOColumn, employeeBillableColumn, employeeTotalColumn, employeePercentBillableColumn])
+        vp_data_row_data.append([employeeColumn, employeeFixedColumn, employeeHourlyColumn,
+                                 employeeCGYColumn, employeeNBColumn, employeePTOColumn, employeeBillableColumn,
+                                 employeeTotalColumn, employeePercentBillableColumn])
+
+    vp_data_row = Table(vp_data_row_data, repeatRows=1,
+                        colWidths=[3.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm,
+                                   2.5 * cm, 2.5 * cm, 2 * cm])
+    vp_data_row.hAlign = 'CENTER'
+    vp_data_row.setStyle(tblStyle)
+    elements.append(vp_data_row)
 
     vp_total_data = []
 
-    vp_total_text = Paragraph('<para align=center color=white>VP Total:</para>')
-    vp_fixed_total_column = Paragraph('<para align=center color=white>' + str(compilationData[7]['amount']) + '</para>')
-    vp_hourly_total = Paragraph('<para align=center color=white>' + str(compilationData[8]['amount']) + '</para>')
-    vp_cgy_total = Paragraph('<para align=center color=white>' + str(compilationData[9]['amount']) + '</para>')
-    vp_nb_total = Paragraph('<para align=center color=white>' + str(compilationData[10]['amount']) + '</para>')
-    vp_pto_total = Paragraph('<para align=center color=white>' + str(compilationData[11]['amount']) + '</para>')
-    vp_billable_total = Paragraph('<para align=center color=white>' + str(compilationData[12]['amount']) + '</para>')
-    vp_total_total = Paragraph('<para align=center color=white>' + str(compilationData[13]['amount']) + '</para>')
-    vp_percent_billable_total = Paragraph(
-        '<para align=center color=white>' + str(compilationData[12]['amount'] / 200 * 100) + ' %</para>')
+    vp_total_text = Paragraph('')
+    vp_fixed_total_column = Paragraph('<para align=center><b>' + str(compilationData[7]['amount']) + '</b></para>')
+    vp_hourly_total = Paragraph('<para align=center><b>' + str(compilationData[8]['amount']) + '</b></para>')
+    vp_cgy_total = Paragraph('<para align=center><b>' + str(compilationData[9]['amount']) + '</b></para>')
+    vp_nb_total = Paragraph('<para align=center><b>' + str(compilationData[10]['amount']) + '</b></para>')
+    vp_pto_total = Paragraph('<para align=center><b>' + str(compilationData[11]['amount']) + '</b></para>')
+    vp_billable_total = Paragraph('<para align=center><b>' + str(compilationData[12]['amount']) + '</b></para>')
+    vp_total_total = Paragraph('<para align=center><b>' + str(compilationData[13]['amount']) + '</b></para>')
+    vp_percent_billable_total = Paragraph('')
 
     vp_total_data.append(
         [vp_total_text, vp_fixed_total_column, vp_hourly_total, vp_cgy_total, vp_nb_total, vp_pto_total,
          vp_billable_total, vp_total_total, vp_percent_billable_total])
+
+    vp_total_row = Table(vp_total_data, colWidths=[3.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm,
+                                                   2.5 * cm, 2.5 * cm, 2 * cm])
+    vp_total_row.hAlign = 'CENTER'
+    vp_total_row.setStyle(total_row_style)
+
+    elements.append(vp_total_row)
+
+    blank_row_data = ['']
+    blank_row = Table(blank_row_data, colWidths=[19.5 * cm], rowHeights=[.25 * cm])
+    blank_row.setStyle(blank_row_style)
+
+    elements.append(blank_row)
     # ################################################# SR MANAGERS TABLE ##############################################
     smgr_fixed = compilationData[14]
     smgr_hourly = compilationData[15]
@@ -1349,35 +1496,32 @@ def createEmployeeHoursCompilationReport(request, mnth):
     smgr_billable = compilationData[19]
     smgr_total = compilationData[20]
 
-    smgrEmployeeFixedColumn = 0
-    smgrEmployeeHourlyColumn = 0
-    smgrEmployeeCGYColumn = 0
-    smgrEmployeeNBColumn = 0
-    smgrEmployeePTOColumn = 0
-    smgrEmployeeBillableColumn = 0
-    smgrEmployeeTotalColumn = 0
-    smgrPercentBillable = 0
-
     smgr_data = []
     smgr_total_data = []
 
-    smgr_total_text = Paragraph('<para align=center color=white>Sr. Manager Total:</para>')
-    smgr_fixed_total_column = Paragraph(
-        '<para align=center color=white>' + str(compilationData[35]['amount']) + '</para>')
-    smgr_hourly_total = Paragraph('<para align=center color=white>' + str(compilationData[21]['amount']) + '</para>')
-    smgr_cgy_total = Paragraph('<para align=center color=white>' + str(compilationData[22]['amount']) + '</para>')
-    smgr_nb_total = Paragraph('<para align=center color=white>' + str(compilationData[23]['amount']) + '</para>')
-    smgr_pto_total = Paragraph('<para align=center color=white>' + str(compilationData[24]['amount']) + '</para>')
-    smgr_billable_total = Paragraph('<para align=center color=white>' + str(compilationData[25]['amount']) + '</para>')
-    smgr_total_total = Paragraph('<para align=center color=white>' + str(compilationData[26]['amount']) + '</para>')
-    smgr_percent_billable_total = Paragraph(
-        '<para align=center color=white>' + str(compilationData[25]['amount'] / 200 * 100) + ' %</para>')
+    smgr_total_text = Paragraph('')
+    smgr_fixed_total_column = Paragraph('<para align=center><b>' + str(compilationData[21]['amount']) + '</b></para>')
+    smgr_hourly_total = Paragraph('<para align=center><b>' + str(compilationData[22]['amount']) + '</b></para>')
+    smgr_cgy_total = Paragraph('<para align=center><b>' + str(compilationData[23]['amount']) + '</b></para>')
+    smgr_nb_total = Paragraph('<para align=center><b>' + str(compilationData[24]['amount']) + '</b></para>')
+    smgr_pto_total = Paragraph('<para align=center><b>' + str(compilationData[25]['amount']) + '</b></para>')
+    smgr_billable_total = Paragraph('<para align=center><b>' + str(compilationData[26]['amount']) + '</b></para>')
+    smgr_total_total = Paragraph('<para align=center><b>' + str(compilationData[27]['amount']) + '</b></para>')
+    smgr_percent_billable_total = Paragraph('')
 
     smgr_total_data.append(
         [smgr_total_text, smgr_fixed_total_column, smgr_hourly_total, smgr_cgy_total, smgr_nb_total, smgr_pto_total,
          smgr_billable_total, smgr_total_total, smgr_percent_billable_total])
 
     for emp in smgrs:
+        smgrEmployeeFixedColumn = 0
+        smgrEmployeeHourlyColumn = 0
+        smgrEmployeeCGYColumn = 0
+        smgrEmployeeNBColumn = 0
+        smgrEmployeePTOColumn = 0
+        smgrEmployeeBillableColumn = 0
+        smgrEmployeeTotalColumn = 0
+        smgrPercentBillable = 0
         employeeColumn = Paragraph('<para align=left>' + str(emp['user__username']) + '</para>', styles['Normal'])
         for item in smgr_fixed:
             if item['employee_id'] == emp['employee_id']:
@@ -1401,19 +1545,35 @@ def createEmployeeHoursCompilationReport(request, mnth):
                     '<para align=center>' + str(item['pto_hours_by_employee_sum']) + '</para>', styles['Normal'])
         for item in smgr_billable:
             if item['employee_id'] == emp['employee_id']:
-                smgrPercentBillable = (item['billable_hours_sum'] / 200) * 100
+                smgrPercentBillable = round((item['billable_hours_sum'] / billable_hours_per_month) * 100, 2)
                 smgrEmployeeBillableColumn = Paragraph(
-                    '<para align=center>' + str(item['billable_hours_sum']) + '</para>', styles['Normal'])
+                    '<para align=center><b>' + str(item['billable_hours_sum']) + '</b></para>', styles['Normal'])
         for item in smgr_total:
             if item['employee_id'] == emp['employee_id']:
                 smgrEmployeeTotalColumn = Paragraph(
-                    '<para align=center>' + str(item['total_hours_sum']) + '</para>', styles['Normal'])
-        smgrEmployeePercentBillableColumn = Paragraph('<para align=center>' + str(smgrPercentBillable) + ' %</para>',
-                                                      styles['Normal'])
+                    '<para align=center><b>' + str(item['total_hours_sum']) + '</b></para>', styles['Normal'])
+        smgrEmployeePercentBillableColumn = Paragraph(
+            '<para align=center><b>' + str(smgrPercentBillable) + '%</b></para>',
+            styles['Normal'])
 
         smgr_data.append([employeeColumn, smgrEmployeeFixedColumn, smgrEmployeeHourlyColumn, smgrEmployeeCGYColumn,
                           smgrEmployeeNBColumn, smgrEmployeePTOColumn, smgrEmployeeBillableColumn,
                           smgrEmployeeTotalColumn, smgrEmployeePercentBillableColumn])
+
+    smgr_data_row = Table(smgr_data, repeatRows=1,
+                          colWidths=[3.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm,
+                                     2.5 * cm, 2.5 * cm, 2 * cm])
+    smgr_data_row.hAlign = 'CENTER'
+    smgr_data_row.setStyle(tblStyle)
+    elements.append(smgr_data_row)
+
+    smgr_total_data_row = Table(smgr_total_data, repeatRows=1,
+                                colWidths=[3.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm,
+                                           2.5 * cm, 2.5 * cm, 2 * cm])
+    smgr_total_data_row.hAlign = 'CENTER'
+    smgr_total_data_row.setStyle(tblStyle)
+    elements.append(smgr_total_data_row)
+    elements.append(blank_row)
 
     # ################################################# MANAGERS TABLE #################################################
     mgr_fixed = compilationData[28]
@@ -1424,29 +1584,19 @@ def createEmployeeHoursCompilationReport(request, mnth):
     mgr_billable = compilationData[33]
     mgr_total = compilationData[34]
 
-    mgrEmployeeFixedColumn = 0
-    mgrEmployeeHourlyColumn = 0
-    mgrEmployeeCGYColumn = 0
-    mgrEmployeeNBColumn = 0
-    mgrEmployeePTOColumn = 0
-    mgrEmployeeBillableColumn = 0
-    mgrEmployeeTotalColumn = 0
-    mgrPercentBillable = 0
-
     mgr_data = []
     mgr_total_data = []
 
-    mgr_total_text = Paragraph('<para align=center color=white>Manager Total:</para>')
+    mgr_total_text = Paragraph('')
     mgr_fixed_total_column = Paragraph(
-        '<para align=center color=white>' + str(compilationData[35]['amount']) + '</para>')
-    mgr_hourly_total = Paragraph('<para align=center color=white>' + str(compilationData[36]['amount']) + '</para>')
-    mgr_cgy_total = Paragraph('<para align=center color=white>' + str(compilationData[37]['amount']) + '</para>')
-    mgr_nb_total = Paragraph('<para align=center color=white>' + str(compilationData[38]['amount']) + '</para>')
-    mgr_pto_total = Paragraph('<para align=center color=white>' + str(compilationData[39]['amount']) + '</para>')
-    mgr_billable_total = Paragraph('<para align=center color=white>' + str(compilationData[40]['amount']) + '</para>')
-    mgr_total_total = Paragraph('<para align=center color=white>' + str(compilationData[41]['amount']) + '</para>')
-    mgr_percent_billable_total = Paragraph(
-        '<para align=center color=white>' + str(compilationData[40]['amount'] / 200 * 100) + ' %</para>')
+        '<para align=center><b>' + str(compilationData[35]['amount']) + '</b></para>')
+    mgr_hourly_total = Paragraph('<para align=center><b>' + str(compilationData[36]['amount']) + '</b></para>')
+    mgr_cgy_total = Paragraph('<para align=center><b>' + str(compilationData[37]['amount']) + '</b></para>')
+    mgr_nb_total = Paragraph('<para align=center><b>' + str(compilationData[38]['amount']) + '</b></para>')
+    mgr_pto_total = Paragraph('<para align=center><b>' + str(compilationData[39]['amount']) + '</b></para>')
+    mgr_billable_total = Paragraph('<para align=center><b>' + str(compilationData[40]['amount']) + '</b></para>')
+    mgr_total_total = Paragraph('<para align=center><b>' + str(compilationData[41]['amount']) + '</b></para>')
+    mgr_percent_billable_total = Paragraph('')
 
     mgr_total_data.append(
         [mgr_total_text, mgr_fixed_total_column, mgr_hourly_total, mgr_cgy_total, mgr_nb_total, mgr_pto_total,
@@ -1454,6 +1604,14 @@ def createEmployeeHoursCompilationReport(request, mnth):
 
     for emp in mgrs:
         employeeColumn = Paragraph('<para align=left>' + str(emp['user__username']) + '</para>', styles['Normal'])
+        mgrEmployeeFixedColumn = 0
+        mgrEmployeeHourlyColumn = 0
+        mgrEmployeeCGYColumn = 0
+        mgrEmployeeNBColumn = 0
+        mgrEmployeePTOColumn = 0
+        mgrEmployeeBillableColumn = 0
+        mgrEmployeeTotalColumn = 0
+        mgrPercentBillable = 0
         for item in mgr_fixed:
             if item['employee_id'] == emp['employee_id']:
                 mgrEmployeeFixedColumn = str(item['fixed_hours_by_employee_sum'])
@@ -1461,7 +1619,6 @@ def createEmployeeHoursCompilationReport(request, mnth):
             if item['employee_id'] == emp['employee_id']:
                 mgrEmployeeHourlyColumn = Paragraph(
                     '<para align=center>' + str(item['hourly_hours_by_employee_sum']) + '</para>', styles['Normal'])
-                # data.append([employeeHourlyColumn])
         for item in mgr_cgy:
             if item['employee_id'] == emp['employee_id']:
                 mgrEmployeeCGYColumn = Paragraph(
@@ -1476,19 +1633,34 @@ def createEmployeeHoursCompilationReport(request, mnth):
                     '<para align=center>' + str(item['pto_hours_by_employee_sum']) + '</para>', styles['Normal'])
         for item in mgr_billable:
             if item['employee_id'] == emp['employee_id']:
-                mgrPercentBillable = (item['billable_hours_sum'] / 200) * 100
+                mgrPercentBillable = round((item['billable_hours_sum'] / billable_hours_per_month) * 100, 2)
                 mgrEmployeeBillableColumn = Paragraph(
-                    '<para align=center>' + str(item['billable_hours_sum']) + '</para>', styles['Normal'])
+                    '<para align=center><b>' + str(item['billable_hours_sum']) + '</b></para>', styles['Normal'])
         for item in mgr_total:
             if item['employee_id'] == emp['employee_id']:
                 mgrEmployeeTotalColumn = Paragraph(
-                    '<para align=center>' + str(item['total_hours_sum']) + '</para>', styles['Normal'])
-        mgrEmployeePercentBillableColumn = Paragraph('<para align=center>' + str(mgrPercentBillable) + ' %</para>',
-                                                     styles['Normal'])
+                    '<para align=center><b>' + str(item['total_hours_sum']) + '</b></para>', styles['Normal'])
+        mgrEmployeePercentBillableColumn = Paragraph(
+            '<para align=center><b>' + str(mgrPercentBillable) + '%</b></para>',
+            styles['Normal'])
 
         mgr_data.append([employeeColumn, mgrEmployeeFixedColumn, mgrEmployeeHourlyColumn, mgrEmployeeCGYColumn,
                          mgrEmployeeNBColumn, mgrEmployeePTOColumn, mgrEmployeeBillableColumn,
                          mgrEmployeeTotalColumn, mgrEmployeePercentBillableColumn])
+
+    mgr_data_row = Table(mgr_data, colWidths=[3.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm,
+                                              2.5 * cm, 2.5 * cm, 2 * cm])
+    mgr_data_row.hAlign = 'CENTER'
+    mgr_data_row.setStyle(tblStyle)
+    elements.append(mgr_data_row)
+
+    mgr_total_data_row = Table(mgr_total_data,
+                               colWidths=[3.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm,
+                                          2.5 * cm, 2.5 * cm, 2 * cm])
+    mgr_total_data_row.hAlign = 'CENTER'
+    mgr_total_data_row.setStyle(tblStyle)
+    elements.append(mgr_total_data_row)
+    elements.append(blank_row)
 
     # ##################################### CONSULTANT TABLE ######################################################
     c_fixed = compilationData[42]
@@ -1499,29 +1671,19 @@ def createEmployeeHoursCompilationReport(request, mnth):
     c_billable = compilationData[47]
     c_total = compilationData[48]
 
-    cEmployeeFixedColumn = 0
-    cEmployeeHourlyColumn = 0
-    cEmployeeCGYColumn = 0
-    cEmployeeNBColumn = 0
-    cEmployeePTOColumn = 0
-    cEmployeeBillableColumn = 0
-    cEmployeeTotalColumn = 0
-    cPercentBillable = 0
-
     c_data = []
     c_total_data = []
 
-    c_total_text = Paragraph('<para align=center color=white>Consultant Total:</para>')
+    c_total_text = Paragraph('')
     c_fixed_total_column = Paragraph(
-        '<para align=center color=white>' + str(compilationData[49]['amount']) + '</para>')
-    c_hourly_total = Paragraph('<para align=center color=white>' + str(compilationData[50]['amount']) + '</para>')
-    c_cgy_total = Paragraph('<para align=center color=white>' + str(compilationData[51]['amount']) + '</para>')
-    c_nb_total = Paragraph('<para align=center color=white>' + str(compilationData[52]['amount']) + '</para>')
-    c_pto_total = Paragraph('<para align=center color=white>' + str(compilationData[53]['amount']) + '</para>')
-    c_billable_total = Paragraph('<para align=center color=white>' + str(compilationData[54]['amount']) + '</para>')
-    c_total_total = Paragraph('<para align=center color=white>' + str(compilationData[55]['amount']) + '</para>')
-    c_percent_billable_total = Paragraph(
-        '<para align=center color=white>' + str(compilationData[54]['amount'] / 200 * 100) + ' %</para>')
+        '<para align=center><b>' + str(compilationData[49]['amount']) + '</b></para>')
+    c_hourly_total = Paragraph('<para align=center><b>' + str(compilationData[50]['amount']) + '</b></para>')
+    c_cgy_total = Paragraph('<para align=center><b>' + str(compilationData[51]['amount']) + '</b></para>')
+    c_nb_total = Paragraph('<para align=center><b>' + str(compilationData[52]['amount']) + '</b></para>')
+    c_pto_total = Paragraph('<para align=center><b>' + str(compilationData[53]['amount']) + '</b></para>')
+    c_billable_total = Paragraph('<para align=center><b>' + str(compilationData[54]['amount']) + '</b></para>')
+    c_total_total = Paragraph('<para align=center><b>' + str(compilationData[55]['amount']) + '</b></para>')
+    c_percent_billable_total = Paragraph('')
 
     c_total_data.append(
         [c_total_text, c_fixed_total_column, c_hourly_total, c_cgy_total, c_nb_total, c_pto_total,
@@ -1529,6 +1691,14 @@ def createEmployeeHoursCompilationReport(request, mnth):
 
     for emp in cs:
         employeeColumn = Paragraph('<para align=left>' + str(emp['user__username']) + '</para>', styles['Normal'])
+        cEmployeeFixedColumn = 0
+        cEmployeeHourlyColumn = 0
+        cEmployeeCGYColumn = 0
+        cEmployeeNBColumn = 0
+        cEmployeePTOColumn = 0
+        cEmployeeBillableColumn = 0
+        cEmployeeTotalColumn = 0
+        cPercentBillable = 0
         for item in c_fixed:
             if item['employee_id'] == emp['employee_id']:
                 cEmployeeFixedColumn = str(item['fixed_hours_by_employee_sum'])
@@ -1536,7 +1706,6 @@ def createEmployeeHoursCompilationReport(request, mnth):
             if item['employee_id'] == emp['employee_id']:
                 cEmployeeHourlyColumn = Paragraph(
                     '<para align=center>' + str(item['hourly_hours_by_employee_sum']) + '</para>', styles['Normal'])
-                # data.append([employeeHourlyColumn])
         for item in c_cgy:
             if item['employee_id'] == emp['employee_id']:
                 cEmployeeCGYColumn = Paragraph(
@@ -1551,35 +1720,48 @@ def createEmployeeHoursCompilationReport(request, mnth):
                     '<para align=center>' + str(item['pto_hours_by_employee_sum']) + '</para>', styles['Normal'])
         for item in c_billable:
             if item['employee_id'] == emp['employee_id']:
-                cPercentBillable = (item['billable_hours_sum'] / 200) * 100
+                cPercentBillable = round((item['billable_hours_sum'] / billable_hours_per_month) * 100, 2)
                 cEmployeeBillableColumn = Paragraph(
-                    '<para align=center>' + str(item['billable_hours_sum']) + '</para>', styles['Normal'])
+                    '<para align=center><b>' + str(item['billable_hours_sum']) + '</b></para>', styles['Normal'])
         for item in c_total:
             if item['employee_id'] == emp['employee_id']:
                 cEmployeeTotalColumn = Paragraph(
-                    '<para align=center>' + str(item['total_hours_sum']) + '</para>', styles['Normal'])
-        cEmployeePercentBillableColumn = Paragraph('<para align=center>' + str(cPercentBillable) + ' %</para>',
+                    '<para align=center><b>' + str(item['total_hours_sum']) + '</b></para>', styles['Normal'])
+        cEmployeePercentBillableColumn = Paragraph('<para align=center><b>' + str(cPercentBillable) + '%</b></para>',
                                                    styles['Normal'])
 
         c_data.append([employeeColumn, cEmployeeFixedColumn, cEmployeeHourlyColumn, cEmployeeCGYColumn,
                        cEmployeeNBColumn, cEmployeePTOColumn, cEmployeeBillableColumn,
                        cEmployeeTotalColumn, cEmployeePercentBillableColumn])
 
+    c_data_row = Table(c_data, colWidths=[3.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm,
+                                          2.5 * cm, 2.5 * cm, 2 * cm])
+    c_data_row.hAlign = 'CENTER'
+    c_data_row.setStyle(tblStyle)
+    elements.append(c_data_row)
+
+    c_total_data_row = Table(c_total_data,
+                             colWidths=[3.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm,
+                                        2.5 * cm, 2.5 * cm, 2 * cm])
+    c_total_data_row.hAlign = 'CENTER'
+    c_total_data_row.setStyle(tblStyle)
+    elements.append(c_total_data_row)
+    elements.append(blank_row)
+
     # ##################################### GRAND TOTAL CREATE ###################################################
 
     total_total_data = []
 
-    total_total_text = Paragraph('<para align=center color=white>Grand Total:</para>')
+    total_total_text = Paragraph('<para align=center><b>Total Hours:</b></para>')
     total_fixed_total_column = Paragraph(
-        '<para align=center color=white>' + str(compilationData[56]) + '</para>')
-    total_hourly_total = Paragraph('<para align=center color=white>' + str(compilationData[57]) + '</para>')
-    total_cgy_total = Paragraph('<para align=center color=white>' + str(compilationData[58]) + '</para>')
-    total_nb_total = Paragraph('<para align=center color=white>' + str(compilationData[59]) + '</para>')
-    total_pto_total = Paragraph('<para align=center color=white>' + str(compilationData[60]) + '</para>')
-    total_billable_total = Paragraph('<para align=center color=white>' + str(compilationData[61]) + '</para>')
-    total_total_total = Paragraph('<para align=center color=white>' + str(compilationData[62]) + '</para>')
-    total_percent_billable_total = Paragraph(
-        '<para align=center color=white>' + str(compilationData[61] / 200 * 100) + ' %</para>')
+        '<para align=center><b>' + str(compilationData[56]) + '</b></para>')
+    total_hourly_total = Paragraph('<para align=center><b>' + str(compilationData[57]) + '</b></para>')
+    total_cgy_total = Paragraph('<para align=center><b>' + str(compilationData[58]) + '</b></para>')
+    total_nb_total = Paragraph('<para align=center><b>' + str(compilationData[59]) + '</b></para>')
+    total_pto_total = Paragraph('<para align=center><b>' + str(compilationData[60]) + '</b></para>')
+    total_billable_total = Paragraph('<para align=center><b>' + str(compilationData[61]) + '</b></para>')
+    total_total_total = Paragraph('<para align=center><b>' + str(compilationData[62]) + '</b></para>')
+    total_percent_billable_total = Paragraph('')
 
     total_total_data.append(
         [total_total_text, total_fixed_total_column, total_hourly_total, total_cgy_total, total_nb_total,
@@ -1587,86 +1769,190 @@ def createEmployeeHoursCompilationReport(request, mnth):
          total_billable_total, total_total_total, total_percent_billable_total])
 
     # ##################################### METRICS CREATION #####################################################
-    vp_loss_rev = 0
-    smgr_lost_rev = 0
-    mgr_lost_rev = 0
-    c_lost_rev = 0
-    srg_total_lost_revenue = 0
+    vp_loss_rev = round(300 * compilationData[10]['amount'], 0)
+    smgr_lost_rev = round(250 * compilationData[23]['amount'], 0)
+    mgr_lost_rev = round(225 * compilationData[38]['amount'], 0)
+    c_lost_rev = round(200 * compilationData[52]['amount'], 0)
+    srg_total_lost_revenue = round(vp_loss_rev + smgr_lost_rev + mgr_lost_rev + c_lost_rev, 0)
 
-    # ##################################### TABLE CREATION ########################################################    
+    vp_metric_row_data = []
+    vp_nb_text = Paragraph('<para>VP Non-Billable</para>')
+    vp_nb_hours = Paragraph('<para align=center>' + str(compilationData[10]['amount']) + '</para>')
+    vp_x_text = Paragraph('<para align=center>X</para>')
+    vp_rate_text = Paragraph('<para align=center>$300</para>')
+    vp_loss_rev_text = Paragraph('<para align=center>$' + str('{:,}'.format(vp_loss_rev)) + '</para>')
 
-    tblStyle = TableStyle([('BOX', (0, 0), (-1, -1), 1, colors.black),
-                           ('INNERGRID', (0, 0), (-1, -1), 1, colors.black),
-                           ('ALIGN', (0, 0), (-1, -1), 'CENTER')])
+    vp_metric_row_data.append([vp_nb_text, vp_nb_hours, vp_x_text, vp_rate_text, vp_loss_rev_text])
 
-    total_row_style = TableStyle([('BOX', (0, 0), (-1, -1), 1, colors.black),
-                                  ('INNERGRID', (0, 0), (-1, -1), 1, colors.black),
-                                  ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#02308C'))])
+    smgr_metric_row_data = []
+    smgr_nb_text = Paragraph('<para>Senior Mgr. Non-Billable</para>')
+    smgr_nb_hours = Paragraph('<para align=center>' + str(compilationData[23]['amount']) + '</para>')
+    smgr_x_text = Paragraph('<para align=center>X</para>')
+    smgr_rate_text = Paragraph('<para align=center>$250</para>')
+    smgr_lost_rev_text = Paragraph('<para align=center>$' + str('{:,}'.format(smgr_lost_rev)) + '</para>')
 
-    vp_table_row = Table(data, repeatRows=1, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
-                                                        2 * cm, 2 * cm, 2 * cm])
-    vp_table_row.hAlign = 'CENTER'
-    vp_table_row.setStyle(tblStyle)
-    vp_total_row = Table(vp_total_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
-                                                   2 * cm, 2 * cm, 2 * cm])
-    vp_total_row.hAlign = 'CENTER'
-    vp_total_row.setStyle(total_row_style)
+    smgr_metric_row_data.append([smgr_nb_text, smgr_nb_hours, smgr_x_text, smgr_rate_text, smgr_lost_rev_text])
 
-    smgr_table_row = Table(smgr_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
-                                                 2 * cm, 2 * cm, 2 * cm])
-    smgr_table_row.hAlign = 'CENTER'
-    smgr_table_row.setStyle(tblStyle)
+    mgr_metric_row_data = []
+    mgr_nb_text = Paragraph('<para>Manager Non-Billable</para>')
+    mgr_nb_hours = Paragraph('<para align=center>' + str(compilationData[38]['amount']) + '</para>')
+    mgr_x_text = Paragraph('<para align=center>X</para>')
+    mgr_rate_text = Paragraph('<para align=center>$225</para>')
+    mgr_lost_rev_text = Paragraph('<para align=center>$' + str('{:,}'.format(mgr_lost_rev)) + '</para>')
 
-    smgr_total_row = Table(smgr_total_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
-                                                       2 * cm, 2 * cm, 2 * cm])
+    mgr_metric_row_data.append([mgr_nb_text, mgr_nb_hours, mgr_x_text, mgr_rate_text, mgr_lost_rev_text])
 
-    smgr_total_row.hAlign = 'CENTER'
-    smgr_total_row.setStyle(total_row_style)
+    c_metric_row_data = []
+    c_nb_text = Paragraph('<para>Consultant Non-Billable</para>')
+    c_nb_hours = Paragraph('<para align=center>' + str(compilationData[52]['amount']) + '</para>')
+    c_x_text = Paragraph('<para align=center>X</para>')
+    c_rate_text = Paragraph('<para align=center>$200</para>')
+    c_lost_rev_text = Paragraph('<para align=center>$' + str('{:,}'.format(c_lost_rev)) + '</para>')
 
-    mgr_table_row = Table(mgr_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
-                                               2 * cm, 2 * cm, 2 * cm])
-    mgr_table_row.hAlign = 'CENTER'
-    mgr_table_row.setStyle(tblStyle)
+    c_metric_row_data.append([c_nb_text, c_nb_hours, c_x_text, c_rate_text, c_lost_rev_text])
 
-    mgr_total_row = Table(mgr_total_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
-                                                     2 * cm, 2 * cm, 2 * cm])
+    total_metric_row_data = []
+    total_nb_text = Paragraph('<para>Total Lost Revenue</para>')
+    total_nb_hours = Paragraph('')
+    total_x_text = Paragraph('')
+    total_rate_text = Paragraph('')
+    total_lost_rev_text = Paragraph(
+        '<para align=center color=red>$' + str('{:,}'.format(srg_total_lost_revenue)) + '</para>')
 
-    mgr_total_row.hAlign = 'CENTER'
-    mgr_total_row.setStyle(total_row_style)
+    total_metric_row_data.append([total_nb_text, total_nb_hours, total_x_text, total_rate_text, total_lost_rev_text])
 
-    c_table_row = Table(c_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
-                                           2 * cm, 2 * cm, 2 * cm])
-    c_table_row.hAlign = 'CENTER'
-    c_table_row.setStyle(tblStyle)
+    billable_weeks_row_data = []
+    billable_weeks_text = Paragraph('<para>Billable Weeks</para>')
+    billable_weeks_blank_c1 = Paragraph('')
+    billable_weeks_blank_c2 = Paragraph('')
+    billable_weeks_blank_c3 = Paragraph('')
+    billable_weeks_value = Paragraph('<para align=center>' + str(billable_weeks_per_month) + '</para>')
+    billable_weeks_blank_c4 = Paragraph('')
+    billable_weeks_text2 = Paragraph('<para><b>Actual Billable</b></para>')
+    billable_weeks_value2 = Paragraph('<para align=center><b>' + str(compilationData[61]) + '</b></para>')
 
-    c_total_row = Table(c_total_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
-                                                 2 * cm, 2 * cm, 2 * cm])
+    billable_weeks_row_data.append([billable_weeks_text, billable_weeks_blank_c1, billable_weeks_blank_c2,
+                                    billable_weeks_blank_c3, billable_weeks_value, billable_weeks_blank_c4,
+                                    billable_weeks_text2, billable_weeks_value2])
 
-    c_total_row.hAlign = 'CENTER'
-    c_total_row.setStyle(total_row_style)
+    number_of_employees = Employee.objects.all().aggregate(total_employees=Count('employee_id'))
+    total_billable_hours = billable_hours_per_month * number_of_employees['total_employees']
+    srg_billable_percentage = round((compilationData[61] / total_billable_hours) * 100, 0)
 
-    total_total_row = Table(total_total_data, colWidths=[3.5 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm, 2 * cm,
-                                                         2 * cm, 2 * cm, 2 * cm])
+    times_forty_hours_week_row_data = []
+    time_forty_hours_week_text = Paragraph('<para>X 40 hours / week</para>')
+    time_forty_hours_week_blank_c1 = Paragraph('')
+    time_forty_hours_week_blank_c2 = Paragraph('')
+    time_forty_hours_week_blank_c3 = Paragraph('')
+    time_forty_hours_week_value = Paragraph('<para align=center>' + str(billable_hours_per_month) + '</para>')
+    time_forty_hours_week_blank_c4 = Paragraph('')
+    time_forty_hours_week_text2 = Paragraph('<para align=center><b>Billable %</b></para>')
+    time_forty_hours_week_value2 = Paragraph('<para align=center><b>' + str(srg_billable_percentage) + '%</b></para>')
+
+    times_forty_hours_week_row_data.append([time_forty_hours_week_text, time_forty_hours_week_blank_c1,
+                                            time_forty_hours_week_blank_c2, time_forty_hours_week_blank_c3,
+                                            time_forty_hours_week_value, time_forty_hours_week_blank_c4,
+                                            time_forty_hours_week_text2, time_forty_hours_week_value2
+                                            ])
+
+    number_of_employees_row_data = []
+    number_of_employees_text = Paragraph('<para>X # of Employees</para>')
+    number_of_employees_blank_c1 = Paragraph('')
+    number_of_employees_blank_c2 = Paragraph('')
+    number_of_employees_blank_c3 = Paragraph('')
+    number_of_employees_value = Paragraph(
+        '<para align=center>' + str(number_of_employees['total_employees']) + '</para>')
+
+    number_of_employees_row_data.append([number_of_employees_text, number_of_employees_blank_c1,
+                                         number_of_employees_blank_c2, number_of_employees_blank_c3,
+                                         number_of_employees_value])
+
+    month_total_billable_hours_row_data = []
+    month_total_billable_hours_text = Paragraph('<para>Total Billable @ 100%</para>')
+    month_total_billable_hours_blank = Paragraph('')
+    month_total_billable_hours_value = Paragraph('<para align=center>' + str(total_billable_hours) + '</para>')
+
+    month_total_billable_hours_row_data.append([month_total_billable_hours_text, month_total_billable_hours_blank,
+                                                month_total_billable_hours_blank, month_total_billable_hours_blank,
+                                                month_total_billable_hours_value])
+
+    # ##################################### TABLE CREATION ########################################################
+
+    blank_row_data = ['']
+    blank_row = Table(blank_row_data, colWidths=[19.5 * cm], rowHeights=[.25 * cm])
+    blank_row.setStyle(blank_row_style)
+
+    total_total_row = Table(total_total_data,
+                            colWidths=[3.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm,
+                                       2.5 * cm, 2.5 * cm, 2 * cm])
 
     total_total_row.hAlign = 'CENTER'
     total_total_row.setStyle(total_row_style)
 
-    elements.append(title)
-    elements.append(subTitle)
-    elements.append(period_text)
-    spacer = Spacer(1, 20)
-    elements.append(spacer)
-    elements.append(vp_table_row)
-    elements.append(vp_total_row)
-    elements.append(smgr_table_row)
-    elements.append(smgr_total_row)
-    elements.append(mgr_table_row)
-    elements.append(mgr_total_row)
-    elements.append(c_table_row)
-    elements.append(c_total_row)
-    spacer = Spacer(width=1, height=10)
-    elements.append(spacer)
+    vp_metric_row = Table(vp_metric_row_data,
+                          colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm],
+                          hAlign='LEFT')
+    vp_metric_row.setStyle(tblStyle)
+
+    smgr_metric_row = Table(smgr_metric_row_data,
+                            colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm],
+                            hAlign='LEFT')
+    smgr_metric_row.setStyle(tblStyle)
+
+    mgr_metric_row = Table(mgr_metric_row_data,
+                           colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm],
+                           hAlign='LEFT')
+    mgr_metric_row.setStyle(tblStyle)
+
+    c_metric_row = Table(c_metric_row_data,
+                         colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm],
+                         hAlign='LEFT')
+    c_metric_row.setStyle(tblStyle)
+
+    total_metric_row = Table(total_metric_row_data,
+                             colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm],
+                             hAlign='LEFT')
+    total_metric_row.setStyle(tblStyle)
+
+    billable_weeks_row = Table(billable_weeks_row_data,
+                               colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1 * cm, 3 * cm,
+                                          1.75 * cm],
+                               hAlign='LEFT')
+    billable_weeks_row.setStyle(tblStyle)
+
+    times_forty_hours_week_row = Table(times_forty_hours_week_row_data,
+                                       colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1 * cm, 3 * cm,
+                                                  1.75 * cm],
+                                       hAlign='LEFT')
+    times_forty_hours_week_row.setStyle(tblStyle)
+
+    number_of_employees_row = Table(number_of_employees_row_data,
+                                    colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm],
+                                    hAlign='LEFT')
+
+    number_of_employees_row.setStyle(tblStyle)
+
+    month_total_billable_hours_row = Table(month_total_billable_hours_row_data,
+                                           colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm],
+                                           hAlign='LEFT')
+
+    month_total_billable_hours_row.setStyle(tblStyle)
+
+    # elements.append(vp_total_row)
     elements.append(total_total_row)
+    spacer = Spacer(1, 10)
+    elements.append(spacer)
+    elements.append(vp_metric_row)
+    elements.append(smgr_metric_row)
+    elements.append(mgr_metric_row)
+    elements.append(c_metric_row)
+    elements.append(total_metric_row)
+    spacer = Spacer(1, 10)
+    elements.append(spacer)
+    elements.append(billable_weeks_row)
+    elements.append(times_forty_hours_week_row)
+    elements.append(number_of_employees_row)
+    elements.append(month_total_billable_hours_row)
 
     buffer = BytesIO()
     employeeHoursCompilationReportDoc = SimpleDocTemplate(buffer, pagesize=[A4[0], A4[1]], leftMargin=15,
@@ -1678,7 +1964,7 @@ def createEmployeeHoursCompilationReport(request, mnth):
 
     response = HttpResponse(content_type='application/pdf')
     response.write(pdf_value)
-    response['Content-Disposition'] = 'attachment; fileName="Employee Compilation Report.pdf"'
+    response['Content-Disposition'] = 'attachment; fileName="Productivity Hours Report.pdf"'
 
     return response
 

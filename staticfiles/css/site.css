@@ -1,4 +1,4 @@
-.custom-width {
+d.custom-width {
     width: 150px;
 }
 
@@ -123,6 +123,11 @@
 .srg-text-secondary {
     color: #d9d9d9;
 }
+
+
+.srg-text-danger {
+    color: #8B0000;
+}
 /* BUTTONS, LINKS, LISTS */
 
 .srg-active {
@@ -139,6 +144,13 @@
 .srg-link-light {
     color: #d9d9d9
 }
+
+
+.srg-link-danger {
+    text-decoration: none;
+    color: #8B0000;
+}
+
 
 .srg-list-group-item {
     padding:8px;

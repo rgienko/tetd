@@ -104,7 +104,7 @@
 
 
             <div class="modal fade" tabindex="-1" id="createEngagementModal" aria-labelledby="createEngagementModalLabel" aria-hidden="true">
-                <div class="modal-dialog">
+                <div class="modal-dialog modal-lg">
                     <div class="modal-content">
                         <div class="modal-header srg-bg-primary pb-0">
                             <h4 class="srg-text-secondary">Create Engagement Form</h4>
@@ -115,7 +115,7 @@
 
                                 <div class="fieldWrapper mb-3">
                                     {{ createEngagementForm.provider.errors }}
-                                    <label for="{{ createEngagementForm.provider.id_for_label }}">Provider:</label>
+                                    <label for="{{ createEngagementForm.provider.id_for_label }}">Provider:</label><br>
                                     {{ createEngagementForm.provider }}
                                     {% if createEngagementForm.provider.help_text %}
                                         <p class="help">{{ createEngagementForm.provider.help_text|safe }}</p>
@@ -202,15 +202,16 @@
                                 </div>
 
 
+                                <div class="modal-footer pb-0">
+                                    <button id="spinner-btn" class="srg-btn-primary my-2" type="submit" name="createEngagement">
+                                        <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
+                                        Create Engagement
+                                    </button>
 
-                                <button id="spinner-btn" class="srg-btn-primary my-2" type="submit" name="createEngagement">
-                                    <span class="spinner-border spinner-border-sm d-none" aria-hidden="true"></span>
-                                    Create Engagement
-                                </button>
-
-                                <button class="srg-btn-ol-primary my-2" type="submit" name="createEngagementAssign">
-                                    Create & Assign
-                                </button>
+                                    <button class="srg-btn-ol-primary my-2" type="submit" name="createEngagementAssign">
+                                        Create & Assign
+                                    </button>
+                                </div>
                             </form>
                         </div>
                     </div>

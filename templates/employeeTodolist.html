@@ -78,37 +78,46 @@
                 <div class="card-body overflow-auto">
                     {% for dy in page_obj %}
                         <div class="row mb-4 shadow-sm" {% if dy == today %}id="today"{% endif %} style="border-bottom-left-radius:12px; border-top-left-radius: 12px;">
-                            <div class="col-2 p-0 d-flex justify-content-center align-items-center {% if dy == today %}srg-bg-primary srg-text-secondary{% else %}srg-bg-secondary srg-header {% endif %}"
+                            <div class="col-1 p-0 d-flex justify-content-center align-items-center {% if dy == today %}srg-bg-primary srg-text-secondary{% else %}srg-bg-secondary srg-header {% endif %}"
                             style="border-bottom-left-radius:12px; border-top-left-radius: 12px;">
                                 <div class="card-body text-start">
-                                    <p class="fs-4 text-center">
-                                    {{ dy|date:'l' }}<br>
+                                    <p class="fs-5 text-center">
+                                    {{ dy|date:'D' }}<br>
                                     {{ dy|date:'m/d/y' }}
                                 </p>
                                 </div>
                             </div>
-                            <div class="col-10 p-0">
+                            <div class="col-11 p-0">
 
                                 <table class="srg-table">
                                     <thead>
-                                        <tr class="srg-bg-secondary">
-                                            <th>Parent</th>
+                                        <tr class="">
                                             <th>Provider</th>
                                             <th>Time Code</th>
                                             <th>FYE</th>
                                             <th>Hours</th>
+                                            <th class="text-center">Actions</th>
                                         </tr>
                                     </thead>
                                     {% for item in employee_td_entries %}
                                         {% if item.todo_date == dy %}
-                                            <tr class="p-0 ps-1 my-1 rounded-3" data-bs-html="true" data-toggle="popover" data-bs-title="{{ item.getProvider }}" data-bs-content="{{ item.getScope }}<br/>{{ item.getFYE|date:'m/d/Y' }}<br/> {{ item.anticipated_hours }} Hours">
-                                                <td>{{ item.engagement.parent }}</td>
+                                            <tr class="p-0 ps-1 my-1 rounded-3" data-bs-html="true" data-toggle="" data-bs-title="{{ item.getProvider }}" data-bs-content="{{ item.getScope }}<br/>{{ item.getFYE|date:'m/d/Y' }}<br/> {{ item.anticipated_hours }} Hours">
                                                 <td>{{ item.getProvider }}</td>
                                                 <td>{{ item.getScope }}</td>
                                                 <td>{{ item.getFYE|date:'Y' }}</td>
                                                 <td>{{ item.anticipated_hours }}</td>
-                                            </tr>
+                                                <td class="text-center">
+                                                    <a type="button" class="srg-link edit-button" data-bs-toggle="modal" href="#edit-modal" data-td-id="{{ item.todolist_id }}">
+                                                      <i class="bi bi-pencil-square"></i>
+                                                    </a>
 
+                                                    <a type="button" class="srg-link-danger" data-engagement-id="{{ item.todolist_id }}"
+                                                            href="{% url 'delete-todo-entry' item.todolist_id %}">
+                                                      <i class="bi bi-trash3"></i>
+                                                    </a>
+
+                                                </td>
+                                            </tr>
                                         {% else %}
                                         {% endif %}
                                     {% endfor %}
@@ -118,9 +127,9 @@
                                                 <tr>
                                                     <td></td>
                                                     <td></td>
-                                                    <td></td>
                                                     <td>Total:</td>
                                                     <td>{{ total.total_day_td_hours }}</td>
+                                                    <td></td>
                                                 </tr>
                                             </tfoot>
                                         {% else %}
@@ -154,6 +163,33 @@
                             {% endif %}
                         </ul>
                     </div>
+                        <div class="modal fade" id="edit-modal" tabindex="-1" aria-labelledby="edit-modal" aria-hidden="true">
+                            <div class="modal-dialog" id="modal">
+                                <div class="modal-content">
+                                    <div class="modal-header srg-bg-secondary srg-header fs-5">
+                                        Edit Entry
+                                    </div>
+                                    <div class="modal-body">
+                                        <form class="" method="POST" id="editTodoForm" action="{% url 'update-td' %}">
+                                            {% csrf_token %}
+                                                <label for="td-id">Record #:</label><br>
+                                                <input class="w-50" name="td-id-input" type="text" id="td-id" /><br>
+                                            {% for field in edit_todo_form %}
+                                                <div class="fieldWrapper my-3">
+                                                    {{ field.label_tag }} <br>{{ field }}
+                                                    {% if field.help_text %}
+                                                        <p class="help">{{ field.help_text|safe }}</p>
+                                                    {% endif %}
+                                                </div>
+
+                                            {% endfor %}
+                                            <button name="edit_todo_button" type="submit" class="srg-btn-primary my-2">Save Entry</button>
+                                        </form>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                 </div>
             </div>
 
@@ -162,7 +198,7 @@
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
-        <script>
+    <script>
         const myModal = document.getElementById('todo-modal')
         myModal.addEventListener('show.bs.modal', event => {
             //get data-id attribute of clicked event
@@ -173,37 +209,62 @@
         });
     </script>
 
-        <script>
-            let sortingOrder = 1
-            function sortTable(columnIndex, table_id) {
-                let table, rows, switching, i, x, y, shouldSwitch;
-                table = document.getElementById(table_id);
-                switching = true;
-                while (switching) {
-                    switching = false;
-                    rows = table.getElementsByTagName("tr");
+    <script>
+        $(document).ready(function () {
+            // Handle "Edit" button clicks
+            $('.edit-button').click(function () {
+                let tdID = $(this).data('td-id');
+                let editTdForm = $('#editTodoForm')
 
-                    for (i=1; i < (rows.length - 1); i++) {
-                        shouldSwitch = false;
-
-                        x = rows[i].getElementsByTagName("td")[columnIndex];
-                        y = rows[i + 1].getElementsByTagName("td")[columnIndex];
-
-                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
-                            shouldSwitch = true;
-                            break;
-                          }
+                // Fetch details using AJAX
+                $.ajax({
+                    url: '/get_td/' + tdID + '/',
+                    type: 'GET',
+                    success: function (data) {
+                        //Populate From fields with task details
+                        editTdForm.find('#td-id').val(tdID)
+                        editTdForm.find('#id_engagement').val(data.engagement)
+                        editTdForm.find('#id_todo_date').val(data.todo_date)
+                        editTdForm.find('#id_todo_date_end').val(data.todo_date_end)
+                        editTdForm.find('#id_anticipated_hours').val(data.anticipated_hours)
+                        editTdForm.find('#id_note').val(data.note)
                     }
+                })
+            })
+        })
+    </script>
 
-                    if (shouldSwitch) {
-                        rows[i].parentNode.insertBefore(rows[i+1], rows[i]);
-                        switching = true;
-                    }
+    <script>
+        let sortingOrder = 1
+        function sortTable(columnIndex, table_id) {
+            let table, rows, switching, i, x, y, shouldSwitch;
+            table = document.getElementById(table_id);
+            switching = true;
+            while (switching) {
+                switching = false;
+                rows = table.getElementsByTagName("tr");
+
+                for (i=1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+
+                    x = rows[i].getElementsByTagName("td")[columnIndex];
+                    y = rows[i + 1].getElementsByTagName("td")[columnIndex];
+
+                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                      }
                 }
-                sortingOrder *= -1
 
+                if (shouldSwitch) {
+                    rows[i].parentNode.insertBefore(rows[i+1], rows[i]);
+                    switching = true;
+                }
             }
-        </script>
+            sortingOrder *= -1
+
+        }
+    </script>
 
 
         <script>

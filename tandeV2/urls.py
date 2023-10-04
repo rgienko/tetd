@@ -41,6 +41,12 @@ urlpatterns = [
     path('renew-engagement/<pk>', views.RenewEngagement, name='renew-engagement'),
     path('add-engagement-assign/<int:eng>/<emp>/', views.AddAssignment, name='add-engagement-assign'),
     path('remove-engagement-assign/<int:eng>/<emp>/', views.RemoveAssignment, name='remove-engagement-assign'),
+    path('delete-time-entry/<pk>/', views.DeleteTimesheetEntry, name='delete-time-entry'),
+    path('get_ts/<int:ts_id>/', views.GetTsEntry, name='get-task'),
+    path('update_taks', views.UpdateTsEntry, name='update-ts'),
+    path('delete-todo-entry/<pk>/', views.DeleteTdEntry, name='delete-todo-entry'),
+    path('get_td/<int:td_id>/', views.GetTdEntry, name='get-td'),
+    path('update_td/', views.UpdateTdEntry, name='update-td'),
     path('admin/', admin.site.urls),
     path('__debug__/', include('debug_toolbar.urls'))
 ]
