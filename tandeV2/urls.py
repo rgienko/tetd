@@ -48,6 +48,9 @@ urlpatterns = [
     path('get_td/<int:td_id>/', views.GetTdEntry, name='get-td'),
     path('update_td/', views.UpdateTdEntry, name='update-td'),
     path('admin/', admin.site.urls),
+    path('forgot_password/', views.ForgotPassword, name='forgot-password'),
+    path('forogt_password_dne/<pk>/', views.ForgotPassDone, name='forgot-password-done'),
+    path('forgot_password_cfm/<uidb64>/<token>/', views.ForgotPassConfirm, name='forgot-password-confirm'),
     path('__debug__/', include('debug_toolbar.urls'))
 ]
 
