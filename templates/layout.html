@@ -28,14 +28,17 @@
     {% load mathfilters %}
 </head>
 <body>
+
+
     <div class="container-fluid">
-        <div class="row flex-md-nowrap d-flex justify-content-center">
-            <div class="col-lg-1 col-md-2 srg-bg-primary sticky-top d-print-none">
+        <div class="row d-flex justify-content-between">
+            <div class="col-1 srg-bg-primary sticky-top d-print-none">
+
                 <div class="d-flex flex-column min-vh-100 px-2">
                     <div class="text-center py-2 srg-text-secondary border-bottom">
                         {{ user_info.first_name }} {{ user_info.last_name }}
                     </div>
-                    <ul class="nav nav-pills flex-column pt-2" id="menu">
+                    <ul class="nav nav-pills pt-2" id="menu">
                         <li class="py-2">
                             <a href="{% url 'dashboard' %}" class="py-1 align-start ps-1 srg-link-secondary">
                                 <i class="bi-speedometer2"></i> <span class="d-none d-md-inline">Dashboard</span>
@@ -61,7 +64,6 @@
                         </li>
 
                         {% if request.user.is_staff %}
-
                             <li class="dropdown py-2">
                                 <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false" class="py-1 px-0 ps-1 align-start srg-link-secondary dropdown-toggle">
                                     <i class="bi bi-amd"></i> <span class="d-none d-md-inline">Admin</span>
@@ -81,7 +83,7 @@
 
                 </div>
             </div>
-            <div class="col-lg-11 col-md-10">
+            <div class="col-11 col-md-10">
                 {% block content %}
 
 

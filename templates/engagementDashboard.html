@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+{% extends 'layoutV2.html' %}
 {% load mathfilters %}
 
 {% block content %}
@@ -13,10 +13,10 @@
     <div class="row border">
         <div class="col-3 px-1">
             <div class="card srg-border vh-100 overflow-auto">
-                <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline sticky-top">
-                    <span class="fs-4 srg-text-secondary">Clients</span>
+                <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center sticky-top">
+                    <span class="display-6 fs-3 srg-text-secondary">Clients</span>
                     <input class="search-box" type="text" id="searchBar" onkeyup="searchClients()" placeholder="Search for clients.." title="Type in a name">
-                    <button type="button" class="btn srg-text-secondary" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><i class="fs-4 bi bi-plus-circle"></i></button>
+                    <a type="button" class="srg-link-secondary srg-text-secondary" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><svg class="bi" height=""><use xlink:href="#plus"/></svg></a>
                 </div>
 
                 <div class="card-body">
@@ -36,10 +36,10 @@
                 {% for parent in parents %}
                     <div class="tab-pane" id="list-{{ parent.parent_id }}" role="tabpanel" aria-labelledby="list-{{ parent.parent_id }}-list">
                         <div class="card pt-0 rounded-3 vh-100 overflow-auto">
-                            <div class="card-header srg-bg-primary d-flex justify-content-between align-items-baseline px-4 sticky-top">
-                                <span class="fs-4 srg-text-secondary">{{ parent.parent_name }} Engagements</span>
+                            <div class="card-header srg-bg-primary d-flex justify-content-between align-items-center px-4 sticky-top">
+                                <span class="display-6 fs-3 srg-text-secondary">{{ parent.parent_name }} Engagements</span>
                                 <input class="search-box" type="text" id="search{{ parent.parent_id }}" onkeyup="searchEngagement{{ parent.parent_id }}()" placeholder="Search for engagements.." title="Type in a name">
-                                <button type="button" class="btn srg-text-secondary" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><i class="fs-4 bi bi-plus-circle"></i> Add Engagement</button>
+                                <a type="button" class="srg-link-secondary srg-text-secondary" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><svg class="bi"><use xlink:href="#plus"/></svg> Add Engagement</a>
                             </div>
 
                             <script>
@@ -106,10 +106,10 @@
             <div class="modal fade" tabindex="-1" id="createEngagementModal" aria-labelledby="createEngagementModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content">
-                        <div class="modal-header srg-bg-primary pb-0">
-                            <h4 class="srg-text-secondary">Create Engagement Form</h4>
+                        <div class="modal-header srg-bg-primary">
+                            <span class="display-6 fs-3 srg-text-secondary">Create Engagement Form</span>
                         </div>
-                        <div class="modal-body">
+                        <div class="modal-body pe-0">
                             <form class="" method="POST">
                                 {% csrf_token %}
 
@@ -208,7 +208,7 @@
                                         Create Engagement
                                     </button>
 
-                                    <button class="srg-btn-ol-primary my-2" type="submit" name="createEngagementAssign">
+                                    <button class="srg-btn-secondary my-2" type="submit" name="createEngagementAssign">
                                         Create & Assign
                                     </button>
                                 </div>

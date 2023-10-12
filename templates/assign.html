@@ -1,15 +1,19 @@
-{% extends 'layout.html' %}
+{% extends 'layoutV2.html' %}
 
 {% block content %}
-    <div class="row d-flex justify-content-center vh-75">
-        <div class="col-9 pt-2 vh-75">
+    <div class="row d-flex justify-content-center">
+        <div class="col-9 pt-2">
             <div class="card">
-                <div class="card-header srg-bg-primary p-2 srg-text-secondary text-center d-flex align-items-baseline justify-content-between">
-                    <h4>Engagement Assignments</h4>
-                    <h6><a href="{% url 'engagement-detail' engagement_instance.engagement_id %}" class="srg-link-secondary">Back to Detail</a></h6>
+                <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline">
+                    <span class="display-6 fs-3">Engagement Assignments</span>
+
+                    <a href="{% url 'engagement-detail' engagement_instance.engagement_id %}" class="srg-link-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-left-square" viewBox="0 0 16 16">
+                          <path fill-rule="evenodd" d="M15 2a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V2zM0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm11.5 5.5a.5.5 0 0 1 0 1H5.707l2.147 2.146a.5.5 0 0 1-.708.708l-3-3a.5.5 0 0 1 0-.708l3-3a.5.5 0 1 1 .708.708L5.707 7.5H11.5z"></path>
+                        </svg> Back to Detail</a>
                 </div>
                 <div class="card-body">
-                    <table class="table">
+                    <table class="srg-table-borderless">
                         <thead>
                             <tr>
                                 <th>Engagement ID</th>
@@ -27,11 +31,11 @@
                             <td>{{ engagement_instance.fye|date:'m/d/Y' }}
                         </tr>
                     </table>
-                    <div class="row mt-2 overflow-auto">
+                    <div class="row mt-4 overflow-auto">
                         <div class="col-6">
                             <div class="card">
-                                <div class="card-header text-center">
-                                    <h5 class="srg-header">Assigned</h5>
+                                <div class="card-header srg-bg-primary srg-text-secondary">
+                                    <span class="display-6 fs-3">Assigned</span>
                                 </div>
                                 <div class="card-body">
                                     <div class="row d-flex justify-content-evenly">
@@ -46,8 +50,8 @@
                         </div>
                         <div class="col-6">
                             <div class="card">
-                                <div class="card-header text-center">
-                                    <h5 class="srg-header">Available</h5>
+                                <div class="card-header srg-bg-primary srg-text-secondary">
+                                    <span class="display-6 fs-3">Available</span>
                                 </div>
                                 <div class="card-body">
                                     <div class="row d-flex justify-content-evenly">

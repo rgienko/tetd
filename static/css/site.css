@@ -33,7 +33,7 @@
 }
 
 /* SRG TABLE */
-.srg-table {
+.srg-table, .srg-table-borderless {
     font-size: 11pt;
     width:100%;
 }
@@ -58,8 +58,25 @@
     width: auto;
     border: 0.5pt solid #a9a9a9;
     cursor: pointer;
+    background: #d9d9d9;
+    color: #02308C;
 }
 
+.srg-table-borderless th {
+    padding: 10px;
+    width: auto;
+    border-bottom: 0.5pt solid #a9a9a9;
+    cursor: pointer;
+    background: #d9d9d9;
+    color: #02308C;
+}
+
+.srg-table-borderless td {
+    padding: 8px;
+    width: auto;
+    border-bottom: 0.5pt solid #a9a9a9;
+
+}
 
 .srg-table td {
     padding: 8px;
@@ -69,7 +86,11 @@
 }
 
 .srg-table tbody > tr:hover {
+    background: #afc0df;
 
+}
+
+.srg-table-borderless tbody > tr:hover {
     background: #afc0df;
 
 }
@@ -252,7 +273,7 @@
 
 .srg-link-secondary:hover {
     text-decoration: none;
-    border-left: 2px solid #d9d9d9;
+    border-bottom: 2px solid #d9d9d9;
 }
 
 .srg-link-danger {
@@ -293,4 +314,8 @@
 
 ::placeholder, ::-webkit-input-placeholder {
     color:#d9d9d9;
+}
+
+.sidebar .nav-link {
+    color: #02308C;
 }

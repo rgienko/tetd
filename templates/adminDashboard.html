@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+{% extends 'layoutV2.html' %}
 {% load mathfilters %}
 {% load humanize %}
 
@@ -17,7 +17,7 @@
             <p>Loading...</p>
         </div>
     </div>
-
+    <!--
     <div class="row p-0">
         <div class="col-12 srg-bg-primary px-4 py-2 shadow-sm d-flex flex-wrap justify-content-xl-between justify-content-md-start ">
             <div class="col-lg-4 col-md-12">
@@ -31,14 +31,14 @@
             </div>
         </div>
     </div>
-
-    <div class="container-xxl">
-        <div class="row my-4">
-            <div class="card col-12 px-4 shadow-sm text-center">
-                <div class="card-header bg-transparent srg-header d-flex justify-content-between align-items-baseline">
+    -->
+    <div class="container-fluid">
+        <div class="row my-2 d-flex justify-content-evenly p-0">
+            <div class="card col-8 shadow-sm text-center p-0">
+                <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center">
                     <div class="text-start">
-                    <h4>Productivity Hours Report</h4>
-                    <h5>{% if selected_month == 'YTD' %}Year to Date{% else %}{{ selected_month|date:'F Y' }}{% endif %}</h5>
+                    <span class="display-6 fs-3 lh-4">Productivity Hours Report</span><br>
+                    <span class="display-6 fs-3">{% if selected_month == 'YTD' %}Year to Date{% else %}{{ selected_month|date:'F Y' }}{% endif %}</span>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-middle d-print-none">
@@ -49,7 +49,7 @@
                               </div>
                         </form>
 
-                        <a href="{% url 'generate-report-pdf' selected_month %}" id="MyprintButton" class="ms-3 srg-link fs-4"><i class="bi bi-printer"></i></a>
+                        <a href="{% url 'generate-report-pdf' selected_month %}" id="MyprintButton" class="ms-3 srg-text-secondary fs-4"><i class="bi bi-printer"></i></a>
 
                     </div>
 
@@ -418,7 +418,7 @@
                         <caption>Note: Period is based on calendar month.</caption>
                     </table>
 
-                    <table class="srg-table" style="width:75%">
+                    <table class="srg-table">
                         <tbody>
                             <tr>
                                 <td>VP Non-Billable</td>
@@ -453,56 +453,44 @@
                                 <td></td>
                                 <td></td>
                                 <td></td>
-                                <td class="fw-bold srg-text-danger">${{ srg_total_lost_revenue|intcomma }}</td>
+                                <td class="fw-bold srg-text-danger">${{ srg_total_lost_revenue|intcomma}}</td>
                             </tr>
                             <tr><td colspan="5" class="srg-bg-secondary"></td> </tr>
                             <tr>
-                                <td>
+                                <td colspan="4">
                                     Billable Weeks
                                 </td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
                                 <td>{{ billable_weeks }}</td>
                                 <td></td>
                                 <td class="fw-bold">Actual Billable</td>
                                 <td class="fw-bold">{{ srg_total_billable_hours }}</td>
                             </tr>
                             <tr>
-                                <td>
+                                <td colspan="4">
                                     X 40 hrs / week
                                 </td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td>{{ billable_weeks|mul:40 }}</td>
+                                <td>{{ billable_weeks|mul:40|floatformat:0 }}</td>
                                 <td></td>
                                 <td class="fw-bold">Billable %</td>
                                 <td class="fw-bold">{{ srg_billable_percentage }} %</td>
                             </tr>
                             <tr>
-                                <td>
+                                <td colspan="4">
                                     X # of Employees
                                 </td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
                                 <td>19</td>
                             </tr>
                             <tr>
-                                <td>
+                                <td colspan="4">
                                     Total Billable @ 100%
                                 </td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
                                 <td>{{ billable_weeks|mul:40|mul:19|intcomma }}</td>
                             </tr>
                         </tbody>
                     </table>
-
                 </div>
             </div>
+
         </div>
 
         <!--

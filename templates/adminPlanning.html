@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+{% extends 'layoutV2.html' %}
 {% load mathfilters %}
 
 {% block content %}
@@ -8,22 +8,23 @@
             <p>Loading...</p>
         </div>
     </div>
-    <div class="row p-0">
-        <div class="col-12 p-0">
-            <div class="srg-bg-primary px-4 py-2 shadow-sm d-flex justify-content-between">
-                <span class="srg-text-secondary display-6 fs-2 lh-base">Admin Scheduling</span>
+    <!--
+        <div class="row p-0">
+            <div class="col-12 p-0">
+                <div class="srg-bg-primary px-4 py-2 shadow-sm d-flex justify-content-between">
+                    <span class="srg-text-secondary display-6 fs-2 lh-base">Admin Scheduling</span>
 
-                <span class="srg-text-secondary display-6 fs-2 lh-base">{{ today|date:'l, F d, Y' }} </span>
+                    <span class="srg-text-secondary display-6 fs-2 lh-base">{{ today|date:'l, F d, Y' }} </span>
+                </div>
             </div>
         </div>
-    </div>
-
-    <div class="container-xxl">
+    -->
+    <div class="container-fluid">
         <div class="row mt-4 d-flex justify-content-center">
-            <div class="col-12">
+            <div class="col-lg-8 col-md-10 col-12">
                 <div class="card">
-                    <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline pb-0">
-                        <h4 class="fw-normal">Staff Availability</h4>
+                    <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline">
+                        <span class="display-5 fs-3">Staff Availability</span>
                     </div>
                     <div class="card-body px-0">
                         <div class="carousel slide d-flex justify-content-between" id="carouselExample">

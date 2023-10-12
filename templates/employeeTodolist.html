@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+{% extends 'layoutV2.html' %}
 
 {% block content %}
     <div id="loading-screen">
@@ -9,35 +9,37 @@
 
     </div>
 
-    <div class="row vh-100">
-        <div class="col-4 vh-100">
-            <div class="card vh-100">
-                <div class="card-header srg-bg-primary d-flex justify-content-between sticky-top">
-                    <span class="srg-text-secondary fs-3">My Engagements</span>
+    <div class="row">
+        <div class="col-4">
+            <div class="card">
+                <div class="card-header srg-bg-primary d-flex justify-content-between">
+                    <span class="srg-text-secondary display-6 fs-3">My Engagements</span>
                     <input class="search-box" type="text" id="searchBar" onkeyup="searchClients()" placeholder="Search for engagements.." title="Type in a name">
                 </div>
 
                 <div class="card-body px-2 py-2 overflow-auto">
-                    {% for engagement in user_engagements %}
-                        <div class="srg-list-group-item shadow-sm my-2">
-                            <div class="row d-flex align-items-center">
-                                <div class="col-10" style="font-size:11pt;">
-                                    {{ engagement.parent }}<br>
-                                    {{ engagement.provider }}<br>
-                                    {{ engagement.time_code }}<br>
-                                    {{ engagement.fye|date:'m/d/Y' }}
-                                </div>
-                                <div class="col-2 p-0 m-0 d-flex justify-content-center">
-                                    <div class="btn-group-vertical" role="group" aria-label="Vertical button group">
-                                          <a type="button" class="srg-link" data-bs-toggle="modal" data-toggle="tooltip" data-title="Yay"
-                                                   data-bs-target="#todo-modal" data-engagement-id="{{ engagement.engagement_srg_id }}"
-                                                   href="#todo-modal" aria-controls="todo-modal"><i class="bi bi-plus-circle fs-4"></i></a>
-                                        </div>
+                    <div class="list-group" role="tablist" id="clientList">
+                        {% for engagement in user_engagements %}
+                            <div class="srg-list-group-item shadow-sm my-2">
+                                <div class="row d-flex align-items-center">
+                                    <div class="col-10" style="font-size:11pt;">
+                                        {{ engagement.parent }}<br>
+                                        {{ engagement.provider }}<br>
+                                        {{ engagement.time_code }}<br>
+                                        {{ engagement.fye|date:'m/d/Y' }}
+                                    </div>
+                                    <div class="col-2 p-0 m-0 d-flex justify-content-center">
+                                        <div class="btn-group-vertical" role="group" aria-label="Vertical button group">
+                                              <a type="button" class="srg-link" data-bs-toggle="modal" data-toggle="tooltip" data-title="Yay"
+                                                       data-bs-target="#todo-modal" data-engagement-id="{{ engagement.engagement_srg_id }}"
+                                                       href="#todo-modal" aria-controls="todo-modal"><i class="bi bi-plus-circle fs-4"></i></a>
+                                            </div>
 
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    {% endfor %}
+                        {% endfor %}
+                    </div>
                 </div>
                     <div class="modal fade" id="todo-modal" tabindex="-1" aria-labelledby="todo-modal" aria-hidden="true">
                         <div class="modal-dialog" id="modal">
@@ -69,11 +71,9 @@
         </div>
 
         <div class="col-8">
-            <div class="card vh-100">
+            <div class="card">
                 <div class="card-header srg-text-secondary srg-bg-primary d-flex justify-content-between align-items-baseline">
-                    <span class="fs-3">My To-Do List</span>
-
-                    <span class="fs-3">Period: {{ week_beg|date:'m/d/Y' }} - {{ week_end|date:'m/d/Y' }}</span>
+                    <span class="display-6 fs-3">Current To-Do List</span>
                 </div>
                 <div class="card-body overflow-auto">
                     {% for dy in page_obj %}
@@ -270,31 +270,25 @@
         <script>
             function searchClients() {
                 // Declare Variables
-                let input, filter, table, tr, td, i, txtValue;
-                input = document.getElementById('searchBar');
+                let input, filter, ul, li, a, i, txtValue;
+                input = document.getElementById('searchBar')
                 filter = input.value.toUpperCase();
-                table = document.getElementById('clientList');
-                tr = table.getElementsByTagName('tr');
+                console.log(filter)
+                ul = document.getElementById('clientList')
+                li = ul.getElementsByClassName('srg-list-group-item');
 
-                // Loop through rows and display only matching ones
-                for (i = 0; i < tr.length; i++) {
-                    td = tr[i].getElementsByTagName("td");
-                    let rowMatch = false;
-                    for (let j = 0; j < td.length; j++) {
-                        if (td[j]) {
-                        txtValue = td[j].textContent || td[j].innerText;
-                            if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                                rowMatch = true;
-                            }
-                        }
-                    }
-                    if (rowMatch) {
-                    tr[i].style.display = "";
+                // Loop through elements and display only matches
+                for (i = 0; i < li.length; i++) {
+                    a = li[i].getElementsByTagName("a")[0];
+                    txtValue = li[i].textContent || li[i].innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        li[i].style.display = "block";
                     } else {
-                        tr[i].style.display = "none";
+                        li[i].style.display = "none";
                     }
                 }
-            };
+
+            }
         </script>
 
         <script>
@@ -322,14 +316,7 @@
                   // Hide the loading screen when the entire page is loaded
                 const loadingScreen = document.getElementById("loading-screen");
                 loadingScreen.style.display = "none";
-                const scrollToElement = document.getElementById("today");
 
-                if (scrollToElement) {
-                   scrollToElement.scrollIntoView({
-                       behavior: "smooth",
-                       block: "start"
-                   })
-                }
             };
 
         </script>

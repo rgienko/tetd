@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+{% extends 'layoutV2.html' %}
 
 {% block content %}
     <div id="loading-screen">
@@ -8,11 +8,11 @@
         </div>
 
     </div>
-    <div class="row border vh-100">
-        <div class="col-xxl-4 col-xl-6 vh-100">
+    <div class="row">
+        <div class="col-xxl-4 col-xl-6">
             <div class="card vh-100 flex-shrink-1">
                 <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center">
-                    <span class="fs-3">My Engagements</span>
+                    <span class="display-6 fs-3">My Engagements</span>
                     <input class="search-box" type="text" id="searchBar" onkeyup="searchClients()" placeholder="Search for engagements.." title="Type in a name">
                 </div>
 
@@ -104,9 +104,8 @@
         <div class="col-8 vh-100">
             <div class="card vh-100">
                 <div class="card-header srg-text-secondary srg-bg-primary d-flex justify-content-between align-items-baseline">
-                    <span class="fs-3">My Timesheet </span>
-                    <span class="fs-3">{{ total_available_hours }} hrs. avail</span>
-                    <span class="fs-3">{{ week_beg|date:'m/d/Y' }} - {{ week_end|date:'m/d/Y' }}</span>
+                    <span class="display-6 fs-3">Current Entries</span>
+                    <span class="display-6 fs-3">{{ total_available_hours }} hrs. avail</span>
                 </div>
                 <div class="card-body overflow-auto">
                     {% for dy in current_week %}
@@ -295,19 +294,12 @@
         </script>
 
         <script>
-        // Hide the spinner when the page is fully loaded
-       window.onload = function () {
+            // Hide the spinner when the page is fully loaded
+            window.onload = function () {
               // Hide the loading screen when the entire page is loaded
            const loadingScreen = document.getElementById("loading-screen");
            loadingScreen.style.display = "none";
-           const scrollToElement = document.getElementById("today");
 
-           if (scrollToElement) {
-               scrollToElement.scrollIntoView({
-                   behavior: "smooth",
-                   block: "start"
-               })
-           }
             };
 
         </script>

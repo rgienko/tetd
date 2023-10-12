@@ -1,6 +1,7 @@
 import datetime
 import os
 from datetime import timedelta
+from datetime import datetime
 from io import BytesIO
 
 import pandas
@@ -80,9 +81,8 @@ def dashboard(request):
                                                  "is_complete", "fye", "budget_hours", "budget_amount").annotate(
         engagement_hours_sum=Coalesce(Sum('time__hours'), 0, output_field=DecimalField(0.00)),
         budget_calc=Max('budget_amount') / 250).filter(
-        engagement_id__in=user_assignments).order_by('-fye', 'time_code',
-                                                     'provider_id',
-                                                     'engagement_hours_sum')
+        engagement_id__in=user_assignments).order_by('-engagement_hours_sum', '-fye', 'time_code',
+                                                     'provider_id')
 
     today = date.today()
     week_beg = today - timedelta(days=today.weekday()) - timedelta(days=1)
@@ -107,7 +107,8 @@ def dashboard(request):
         employee__user__username=request.user.username).filter(todo_date=today).order_by('todo_date').annotate(
         hsum=Sum('anticipated_hours'))
 
-    context = {'user_engagements': user_engagements, 'today': today, 'week_beg': week_beg, 'week_end': week_end,
+    context = {'page_title': 'Dashboard', 'user_engagements': user_engagements, 'today': today, 'week_beg': week_beg,
+               'week_end': week_end,
                'timesheet_entries': timesheet_entries, 'employee_td_entries': employee_td_entries,
                'user_info': user_info, 'user_assignments': user_assignments, 'billable_hours_sum': billable_hours_sum,
                'non_billable_hours_sum': non_billable_hours_sum, 'ts_is_submitted': ts_is_submitted}
@@ -174,7 +175,7 @@ def getCompilationData(mnth):
             total_hours_sum=Sum('hours'))
 
         next_month = int(mnth) + 1
-        current_year = datetime.datetime.now().year
+        current_year = datetime.now().year
         if int(mnth) <= 9:
             number_of_workdays = np.busday_count(str(current_year) + '-0' + str(mnth),
                                                  str(current_year) + '-' + str(next_month))
@@ -333,7 +334,7 @@ def AdminDashboard(request):
     user_info = get_object_or_404(User, pk=request.user.id)
     employee_info = get_object_or_404(Employee, user=user_info.id)
     today = date.today()
-    today_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # today_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     week_beg = today - timedelta(days=today.weekday())
     week_end = week_beg + timedelta(days=5)
     employees = Employee.objects.all().order_by('title', 'user__last_name')
@@ -354,7 +355,7 @@ def AdminDashboard(request):
             else:
                 selected_month = datetime.date(today.year, int(selected_month), 1)
             context = {'employee_info': employee_info, 'user_info': user_info, 'today': today, 'week_beg': week_beg,
-                       'week_end': week_end, 'employees': employees, 'vps': vps,
+                       'week_end': week_end, 'employees': employees, 'vps': vps, 'page_title': 'Admin Dashboard',
                        'smgrs': smgrs, 'mgrs': mgrs, 'consultants': consultants,
                        'vp_fixed_hours_by_employee': new_data[0],
                        'vp_hourly_hours_by_employee': new_data[1],
@@ -438,7 +439,7 @@ def AdminDashboard(request):
         current_month_data = getCompilationData(current_month)
         monthly_total_hours = current_month_data[68] * 8
         context = {'employee_info': employee_info, 'user_info': user_info, 'today': today, 'week_beg': week_beg,
-                   'week_end': week_end, 'employees': employees, 'vps': vps,
+                   'week_end': week_end, 'employees': employees, 'vps': vps, 'page_title': 'Admin Dashboard',
                    'smgrs': smgrs, 'mgrs': mgrs, 'consultants': consultants,
                    'vp_fixed_hours_by_employee': current_month_data[0],
                    'vp_hourly_hours_by_employee': current_month_data[1],
@@ -520,6 +521,9 @@ def AdminDashboard(request):
 
 def EngagementDashboard(request):
     user_info = get_object_or_404(User, pk=request.user.id)
+    today = date.today()
+    week_beg = today - timedelta(days=today.weekday()) - timedelta(days=1)
+    week_end = week_beg + timedelta(days=6)
     parents = list(Parent.objects.all())
     parents = sorted(parents, key=lambda x: (x.parent_id.isdigit(), x.parent_id))
 
@@ -561,7 +565,8 @@ def EngagementDashboard(request):
         createEngagementForm = CreateEngagementForm()
 
     context = {'user_info': user_info, 'parents': parents, 'createEngagementForm': createEngagementForm,
-               'engagements': engagements}
+               'engagements': engagements, 'today': today, 'week_beg': week_beg, 'week_end': week_end,
+               'page_title': 'Engagements'}
 
     return render(request, 'engagementDashboard.html', context)
 
@@ -625,7 +630,7 @@ def AdminEngagementDetail(request, pk):
         ts_vs_todo_data = engagement_td_hours_by_employee
 
     context = {'user_info': user_info, 'today': today, 'week_beg': week_beg, 'week_end': week_end,
-               'engagement_instance': engagement_instance,
+               'engagement_instance': engagement_instance, 'page_title': 'Engagement Detail',
                'ts_vs_todo_data': ts_vs_todo_data,
                'engagement_td_hours_by_employee': engagement_td_hours_by_employee,
                'engagement_ts_hours_by_employee': engagement_ts_hours_by_employee,
@@ -655,21 +660,22 @@ def AdminTimesheet(request):
                                    'engagement__type_id',
                                    'engagement__is_rac',
                                    'engagement__engagement_hourly_rate',
-                                   'engagement__expense__expense_amount',
                                    'hours',
                                    'note').order_by('ts_date', 'engagement__parent__parent_name',
                                                     'engagement__provider',
                                                     'engagement__fye')
 
-    expense_queryset = Expense.objects.values('date', 'employee__user__username', 'engagement__engagement_srg_id',
-                                              'expense_category', 'expense_amount').order_by('date')
-
     f = TimesheetFilter(request.GET, queryset=queryset)
-    expense_filter = ExpenseFilter(request.GET, queryset=expense_queryset)
+
+    f_start_date = f.form['start_date']
+    f_end_date = f.form['end_date']
+
     if request.method == 'GET' and 'extract_button' in request.GET:
+        matching_expenses = Expense.objects.filter(date__gte=datetime.strptime(f_start_date.value(), "%m/%d/%Y"),
+                                                   date__lte=datetime.strptime(f_end_date.value(), "%m/%d/%Y"))
         ts_data = read_frame(f.qs)
 
-        ex_data = read_frame(expense_filter.qs)
+        ex_data = read_frame(matching_expenses)
 
         fname = 'EmployeeTimesheetCompilation'
 
@@ -682,7 +688,7 @@ def AdminTimesheet(request):
 
             return response
 
-    context = {'filter': f, 'expense_filter': expense_filter, 'today': today, 'week_beg': week_beg,
+    context = {'filter': f, 'page_title': 'Extract Billing Data', 'today': today, 'week_beg': week_beg,
                'week_end': week_end, 'user_info': user_info}
 
     return render(request, 'adminTimesheet.html', context)
@@ -775,6 +781,7 @@ def AdminPlanning(request):
 
     context = {'todolists': todolists, 'employees': employees, 'period_days': period_days,
                'todo_filter': todo_filter, 'week_beg': week_beg, 'week_end': week_end,
+               'page_title': 'Admin Planning',
                'current_week_no_hours': current_week_no_hours,
                'current_week_hours': current_week_hours,
                'next_week_beg': next_week_beg, 'next_week_end': next_week_end,
@@ -799,8 +806,8 @@ def AdminEmployeeDashboard(request, pk, per_beg, per_end):
     first_name = user_filter_list[0]
     last_name = user_filter_list[1]
     today = date.today()
-    per_beg_object = datetime.datetime.strptime(per_beg, "%Y-%m-%d")
-    per_end_object = datetime.datetime.strptime(per_end, "%Y-%m-%d")
+    per_beg_object = datetime.strptime(per_beg, "%Y-%m-%d")
+    per_end_object = datetime.strptime(per_end, "%Y-%m-%d")
 
     user_assignments = Assignments.objects.filter(employee_id=user_info.employee.employee_id).values('engagement_id')
     # user_engagements = Engagement.objects.filter(engagement_id__in=user_assignments)
@@ -839,7 +846,8 @@ def AdminEmployeeDashboard(request, pk, per_beg, per_end):
 
     context = {'per_end_object': per_end_object, 'per_beg_object': per_beg_object, 'user_info': user_info,
                'timesheet_entries': timesheet_entries, 'today': today, 'first_name': first_name, 'last_name': last_name,
-               'user_engagements': user_engagements,
+               'user_engagements': user_engagements, 'week_beg': per_beg_object, 'week_end': per_end_object,
+               'page_title': 'Employee Detail',
                'billable_hours_sum': billable_hours_sum, 'non_billable_hours_sum': non_billable_hours_sum,
                'employee_td_entries': employee_td_entries, 'employee_td_entries_all': employee_td_entries_all}
     return render(request, 'adminEmployeeDashboard.html', context)
@@ -976,7 +984,7 @@ def EmployeeTimesheet(request):
                     ehours=Sum('hours')
                 )
 
-                if engagement_instance.budget_hours - engagement_hours['ehours'] <= 0:
+                if (engagement_instance.budget_amount // 200) - engagement_hours['ehours'] <= 0:
                     overBudgetAlert(engagement_instance.engagement_id)
 
                 return redirect('employee-timesheet')
@@ -1001,7 +1009,8 @@ def EmployeeTimesheet(request):
         time_form = TimeForm()
         expense_form = ExpenseForm()
 
-    context = {'today': today, 'employee_ts_entries': employee_ts_entries, 'week_beg': week_beg, 'week_end': week_end,
+    context = {'today': today, 'page_title': 'Timesheet', 'employee_ts_entries': employee_ts_entries,
+               'week_beg': week_beg, 'week_end': week_end,
                'current_week': current_week, 'current_week_ts': current_week_ts, 'user_engagements': user_engagements,
                'time_form': time_form, 'expense_form': expense_form, 'edit_time_form': edit_time_form,
                'total_weekly_hours': total_weekly_hours, 'user_info': user_info,
@@ -1084,7 +1093,8 @@ def EmployeeTodolist(request):
     else:
         todo_form = TodoForm()
 
-    context = {'employee_td_entries': employee_td_entries, 'week_beg': week_beg, 'week_end': week_end, 'today': today,
+    context = {'page_title': 'To-Do List', 'employee_td_entries': employee_td_entries, 'week_beg': week_beg,
+               'week_end': week_end, 'today': today,
                'todo_form': todo_form, 'user_info': user_info, 'page_obj': page_obj, 'paginator': paginator,
                'employee_td_hours_by_day': employee_td_hours_by_day, 'edit_todo_form': edit_todo_form,
                'current_week': current_week, 'current_week_ts': current_week_ts, 'user_engagements': user_engagements}
@@ -1105,7 +1115,7 @@ def EmployeeExpense(request):
     total_expense = employee_expenses.aggregate(Sum('expense_amount'))
 
     context = {'employee_expenses': employee_expenses, 'week_beg': week_beg, 'week_end': week_end,
-               'total_expense': total_expense, 'user_info': user_info}
+               'total_expense': total_expense, 'user_info': user_info, 'page_title': 'Expense Report', 'today': today}
 
     return render(request, 'employeeExpense.html', context)
 
@@ -1151,6 +1161,10 @@ def UpdateEngagementStatus(request, pk):
 def AssignmentProjects(request, pk):
     user_info = get_object_or_404(User, pk=request.user.id)
     engagement_instance = get_object_or_404(Engagement, pk=pk)
+    today = date.today()
+    week_beg = today - timedelta(days=today.weekday()) - timedelta(days=1)
+    week_end = week_beg + timedelta(days=6)
+
     eid = engagement_instance.engagement_id
     engagement_assignments = Assignments.objects.filter(engagement=engagement_instance).order_by('employee__user')
 
@@ -1161,7 +1175,8 @@ def AssignmentProjects(request, pk):
     # available_staff = available_staff
 
     context = {'engagement_assignments': engagement_assignments, 'engagement_instance': engagement_instance,
-               'available_staff': available_staff, 'user_info': user_info}
+               'available_staff': available_staff, 'user_info': user_info, 'week_beg': week_beg, 'week_end': week_end,
+               'today': today, 'page_title': 'Assign Staff'}
 
     return render(request, 'assign.html', context)
 
@@ -1299,7 +1314,7 @@ def overBudgetAlert(pk):
 
     engagement_id = engagement_instance.engagement_srg_id
     engagement_provider = str(engagement_instance.provider_id) + "-" + engagement_instance.getProviderName()
-    engagement_scope = str(engagement_instance.time_code) + "-" + engagement_instance.getTCDesc()
+    engagement_scope = str(engagement_instance.time_code)
     engagement_fye = str(engagement_instance.fye)
 
     msg = EmailMessage(
@@ -1308,7 +1323,7 @@ def overBudgetAlert(pk):
     )
 
     protocol = 'http://'
-    engagement_url = 'localhost:8000/admin_engagement_detail/' + str(engagement_instance.engagement_id) + '/'
+    engagement_url = 'localhost:8000/engagement-detail/' + str(engagement_instance.engagement_id) + '/'
 
     msg.template_id = "d-72ebc0569ab6402fa236d9cdc75a860b"
     msg.dynamic_template_data = {
