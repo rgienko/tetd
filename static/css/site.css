@@ -319,3 +319,9 @@
 .sidebar .nav-link {
     color: #02308C;
 }
+
+.event-title {
+        white-space: normal;
+        overflow: hidden;
+        text-overflow: clip;
+    }

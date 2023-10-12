@@ -1070,12 +1070,12 @@ def EmployeeTodolist(request):
             employee_instance = get_object_or_404(Employee, user=request.user.id)
 
             start_date = request.POST.get('todo_date')
-            start_date = datetime.datetime.strptime(start_date, "%Y-%m-%d")
+            start_date = datetime.strptime(start_date, "%Y-%m-%d")
             end_date = request.POST.get('todo_date_end')
             if end_date == '':
                 end_date = start_date
             else:
-                end_date = datetime.datetime.strptime(end_date, "%Y-%m-%d")
+                end_date = datetime.strptime(end_date, "%Y-%m-%d")
 
             number_of_days = end_date - start_date
 
