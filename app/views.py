@@ -1,5 +1,6 @@
 import datetime
 import os
+import time
 from datetime import timedelta
 from datetime import datetime
 from io import BytesIO
@@ -8,7 +9,10 @@ import pandas
 import numpy as np
 import sendgrid
 import six
-from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.contrib.auth import update_session_auth_hash, logout
+from django.contrib.auth.tokens import PasswordResetTokenGenerator, default_token_generator
+from django.utils.http import urlsafe_base64_decode
+from sendgrid import Content
 from sendgrid.helpers.mail import Mail, From, To, Subject, DynamicTemplateData
 from dateutil.relativedelta import relativedelta
 from django.contrib import auth, messages
@@ -50,6 +54,10 @@ def login(request):
     return render(request, 'login.html')
 
 
+def logout_view(request):
+    logout(request)
+
+    return redirect('login')
 def register(request):
     if request.method == 'POST':
         first_name = request.POST.get('first_name')
@@ -1351,8 +1359,7 @@ def overBudgetAlert(pk):
 class PasswordResetToken(PasswordResetTokenGenerator):
     def _make_hash_value(self, user, timestamp):
         return (
-                six.text_type(user.pk) + six.text_type(timestamp) +
-                six.text_type(user.profile.reset_password)
+                six.text_type(user.pk) + six.text_type(timestamp)
         )
 
 
@@ -1379,30 +1386,87 @@ def ForgotPassDone(request, pk):
 
 def send_password_reset_email(request, user_id):
     user = get_object_or_404(User, pk=user_id)
-    sg = sendgrid.SendGridAPIClient(api_key=os.environ.get('SENDGRID_API_KEY'))
+    # sg = sendgrid.SendGridAPIClient(api_key=os.environ.get('SENDGRID_API_KEY'))
     template_id = 'd-ba0cc16816a94181acce7efe0761c14b'
 
-    token = PasswordResetToken()
+    # timestamp = int(time.mktime(datetime.now().timetuple()))
+    # token_generator = PasswordResetToken()
+    token = default_token_generator.make_token(user)
     reset_link = request.build_absolute_uri(
-        reverse('forgot-password-confirm', kwargs={'uidb64': user.id, 'token': token})
+        reverse('forgot-password-confirm', kwargs={'uidb64': str(user_id), 'token': str(token)})
     )
 
-    message = EmailMessage(
-        from_email=('randall.gienko@srgroupllc.com', 'TEtD Admin'),
+    msg = EmailMessage(
+        from_email='Randall.Gienko@srgroupllc.com',
         to=[user.email]
-
     )
-    message.template_id = template_id
-    message.dynamic_template_data = {
+
+    msg.template_id = template_id
+    msg.dynamic_template_data = {
         "user_email": user.email,
-        "rest_link": reset_link
+        "reset_link": reset_link
     }
 
-    message.send(fail_silently=False)
+    # msg.SendGridAPIClient(SENDGRID_API_KEY)
+    msg.send(fail_silently=False)
+    # sg = SendGridAPIClient(SENDGRID_API_KEY)
+    # response = sg.send(msg)
 
 
-def ForgotPassConfirm(request):
-    return render(request, 'registration/password_reset_conf.html')
+def ForgotPassConfirm(request, uidb64, token):
+    form = UserPasswordResetForm(request.POST)
+
+    if request.method == 'POST':
+        try:
+            uid = str(uidb64)
+            print(uid)
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist) as e:
+            messages.add_message(request, messages.WARNING, str(e))
+            user = None
+
+        if user is not None and default_token_generator.check_token(user, token):
+            form = UserPasswordResetForm(user=user, data=request.POST)
+            if form.is_valid():
+                form.save()
+                update_session_auth_hash(request, form.user)
+
+                user.is_active = True
+                user.save()
+                messages.add_message(request, messages.SUCCESS, 'Password reset successfully.')
+                return redirect('login')
+            else:
+                context = {
+                    'form': form,
+                    'uid': str(uidb64),
+                    'token': token
+                }
+                messages.add_message(request, messages.WARNING, 'Password could not be reset.')
+                return render(request, 'registration/password_reset_conf.html', context)
+        else:
+            messages.add_message(request, messages.WARNING, 'Password reset link is invalid.')
+            messages.add_message(request, messages.WARNING, 'Please request a new password reset.')
+
+    try:
+        uid = str(uidb64)
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist) as e:
+        messages.add_message(request, messages.WARNING, str(e))
+        user = None
+
+    if user is not None and default_token_generator.check_token(user, token):
+        context = {
+            'form': UserPasswordResetForm(user),
+            'uid': str(uidb64),
+            'token': token
+        }
+        return render(request, 'registration/password_reset_conf.html', context)
+    else:
+        messages.add_message(request, messages.WARNING, 'Password reset link is invalid.')
+        messages.add_message(request, messages.WARNING, 'Please request a new password reset.')
+
+    context = {'password_reset_form': form}
+    return render(request, 'login.html', context)
 
 
 def createEmployeeHoursCompilationReport(request, mnth):

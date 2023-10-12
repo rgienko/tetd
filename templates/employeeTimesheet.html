@@ -297,9 +297,16 @@
             // Hide the spinner when the page is fully loaded
             window.onload = function () {
               // Hide the loading screen when the entire page is loaded
-           const loadingScreen = document.getElementById("loading-screen");
-           loadingScreen.style.display = "none";
+                const loadingScreen = document.getElementById("loading-screen");
+                loadingScreen.style.display = "none";
+                const scrollToElement = document.getElementById("today");
 
+                if (scrollToElement) {
+                   scrollToElement.scrollIntoView({
+                       behavior: "smooth",
+                       block: "start"
+                   })
+                }
             };
 
         </script>

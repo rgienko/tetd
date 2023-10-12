@@ -22,6 +22,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('', views.login, name='login'),
+    path('logout', views.logout_view, name='logout'),
     path('register/', views.register, name='register'),
     path('dashboard/', views.dashboard, name='dashboard'),
     path('timesheet/', views.EmployeeTimesheet, name='employee-timesheet'),
@@ -50,7 +51,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('forgot_password/', views.ForgotPassword, name='forgot-password'),
     path('forogt_password_dne/<pk>/', views.ForgotPassDone, name='forgot-password-done'),
-    path('forgot_password_cfm/<uidb64>/<token>/', views.ForgotPassConfirm, name='forgot-password-confirm'),
+    path('forgot_password_cfm/<str:uidb64>/<str:token>/', views.ForgotPassConfirm, name='forgot-password-confirm'),
     path('__debug__/', include('debug_toolbar.urls'))
 ]
 
