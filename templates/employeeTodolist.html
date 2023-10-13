@@ -71,7 +71,7 @@
         </div>
 
         <div class="col-8 vh-100">
-            <div class="card" style="height: 45%">
+            <div class="card vh-100">
                 <div class="card-header srg-text-secondary srg-bg-primary d-flex justify-content-between align-items-baseline">
                     <span class="display-6 fs-3">Current To-Do List</span>
                 </div>
@@ -201,51 +201,13 @@
                         </div>
                 </div>
             </div>
-            <div class="card mt-2" style="height:53%">
-                <div class="card-header srg-text-secondary srg-bg-primary d-flex justify-content-between align-items-baseline">
-                    <span class="display-6 fs-3">Calendar</span>
-                </div>
-                <div class="card-body" id="myCalendar">
-                </div>
-            </div>
+
 
         </div>
     </div>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
-    <style>
-    .event-title {
-        white-space: normal;
-        overflow: hidden;
-        text-overflow: clip;
-    }
-    </style>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const calendarEl = document.getElementById('myCalendar');
-            const calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                height:600,
-                weekends: true,
-                events: [
-                    {% for event in employee_td_entries %}
-                      {
-                          title: '{{ event.getProviderID|safe }} - {{ event.getTC }} - {{ event.anticipated_hours }} Hours',
-                          start: '{{ event.todo_date|date:'Y-m-d' }}',
-                          end: '{{ event.todo_date|date:'Y-m-d' }}'
-                      },
-                    {% endfor %}
-                ],
-                eventRender: function (info) {
-                    let eventElement = info.el;
-                    eventElement.querySelector('.fc-event-title').classList.add('event-title');
-                }
-            });
-            calendar.render();
-        });
 
-    </script>
 
     <script>
         const myModal = document.getElementById('todo-modal')
