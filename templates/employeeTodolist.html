@@ -78,6 +78,7 @@
                 <div class="card-body overflow-auto">
                     {% for dy in page_obj %}
                         <div class="row mb-4 shadow-sm" {% if dy == today %}id="today"{% endif %} style="border-bottom-left-radius:12px; border-top-left-radius: 12px;">
+                            <!--
                             <div class="col-1 p-0 d-flex justify-content-center align-items-center {% if dy == today %}srg-bg-primary srg-text-secondary{% else %}srg-bg-secondary srg-header {% endif %}"
                             style="border-bottom-left-radius:12px; border-top-left-radius: 12px;">
                                 <div class="card-body text-start">
@@ -87,54 +88,63 @@
                                 </p>
                                 </div>
                             </div>
-                            <div class="col-11 p-0">
-                                <table class="srg-table">
-                                    <thead>
-                                        <tr class="">
-                                            <th>Provider</th>
-                                            <th>Time Code</th>
-                                            <th>FYE</th>
-                                            <th>Hours</th>
-                                            <th class="text-center">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    {% for item in employee_td_entries %}
-                                        {% if item.todo_date == dy %}
-                                            <tr class="p-0 ps-1 my-1 rounded-3" data-bs-html="true" data-toggle="" data-bs-title="{{ item.getProvider }}" data-bs-content="{{ item.getScope }}<br/>{{ item.getFYE|date:'m/d/Y' }}<br/> {{ item.anticipated_hours }} Hours">
-                                                <td>{{ item.getProvider }}</td>
-                                                <td>{{ item.getScope }}</td>
-                                                <td>{{ item.getFYE|date:'Y' }}</td>
-                                                <td>{{ item.anticipated_hours }}</td>
-                                                <td class="text-center">
-                                                    <a type="button" class="srg-link edit-button" data-bs-toggle="modal" href="#edit-modal" data-td-id="{{ item.todolist_id }}">
-                                                      <i class="bi bi-pencil-square"></i>
-                                                    </a>
-
-                                                    <a type="button" class="srg-link-danger" data-engagement-id="{{ item.todolist_id }}"
-                                                            href="{% url 'delete-todo-entry' item.todolist_id %}">
-                                                      <i class="bi bi-trash3"></i>
-                                                    </a>
-
-                                                </td>
+                            -->
+                            <div class="col-12 p-0">
+                                <div class="card">
+                                    <div class="card-header border-bottom-0 {% if dy == today %}srg-bg-primary srg-text-secondary{% else %}srg-bg-secondary srg-header {% endif %}">
+                                        <span class="display-6 fs-4">{{ dy|date:'l' }}
+                                            {{ dy|date:'m/d/y' }}</span>
+                                    </div>
+                                    <div class="card-body p-2">
+                                        <table class="srg-table">
+                                        <thead>
+                                            <tr class="">
+                                                <th>Provider</th>
+                                                <th>Time Code</th>
+                                                <th>FYE</th>
+                                                <th>Hours</th>
+                                                <th class="text-center">Actions</th>
                                             </tr>
-                                        {% else %}
-                                        {% endif %}
-                                    {% endfor %}
-                                    {% for total in employee_td_hours_by_day %}
-                                        {% if total.todo_date == dy %}
-                                            <tfoot>
-                                                <tr>
-                                                    <td></td>
-                                                    <td></td>
-                                                    <td>Total:</td>
-                                                    <td>{{ total.total_day_td_hours }}</td>
-                                                    <td></td>
+                                        </thead>
+                                        {% for item in employee_td_entries %}
+                                            {% if item.todo_date == dy %}
+                                                <tr class="p-0 ps-1 my-1 rounded-3" data-bs-html="true" data-toggle="" data-bs-title="{{ item.getProvider }}" data-bs-content="{{ item.getScope }}<br/>{{ item.getFYE|date:'m/d/Y' }}<br/> {{ item.anticipated_hours }} Hours">
+                                                    <td>{{ item.getProvider }}</td>
+                                                    <td>{{ item.getScope }}</td>
+                                                    <td>{{ item.getFYE|date:'Y' }}</td>
+                                                    <td>{{ item.anticipated_hours }}</td>
+                                                    <td class="text-center">
+                                                        <a type="button" class="srg-link edit-button" data-bs-toggle="modal" href="#edit-modal" data-td-id="{{ item.todolist_id }}">
+                                                          <i class="bi bi-pencil-square"></i>
+                                                        </a>
+
+                                                        <a type="button" class="srg-link-danger" data-engagement-id="{{ item.todolist_id }}"
+                                                                href="{% url 'delete-todo-entry' item.todolist_id %}">
+                                                          <i class="bi bi-trash3"></i>
+                                                        </a>
+
+                                                    </td>
                                                 </tr>
-                                            </tfoot>
-                                        {% else %}
-                                        {% endif %}
-                                    {% endfor %}
-                                    </table>
+                                            {% else %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        {% for total in employee_td_hours_by_day %}
+                                            {% if total.todo_date == dy %}
+                                                <tfoot>
+                                                    <tr>
+                                                        <td></td>
+                                                        <td></td>
+                                                        <td>Total:</td>
+                                                        <td>{{ total.total_day_td_hours }}</td>
+                                                        <td></td>
+                                                    </tr>
+                                                </tfoot>
+                                            {% else %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        </table>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     {% endfor %}

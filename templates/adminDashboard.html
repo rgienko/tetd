@@ -32,9 +32,9 @@
         </div>
     </div>
     -->
-    <div class="container-fluid">
-        <div class="row my-2 d-flex justify-content-evenly p-0">
-            <div class="card col-8 shadow-sm text-center p-0">
+    <div class="container-fluid vh-100">
+        <div class="row d-flex justify-content-evenly p-0 vh-100">
+            <div class="card col-8 shadow-sm text-center p-0 vh-100 ">
                 <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center">
                     <div class="text-start">
                     <span class="display-6 fs-3 lh-4">Productivity Hours Report</span><br>
@@ -55,7 +55,7 @@
 
 
                 </div>
-                <div class="card-body">
+                <div class="card-body overflow-auto">
                     <table class="srg-table">
                         <thead>
                             <tr style="background-color:yellow;">
@@ -141,16 +141,16 @@
                                 </td>
                             </tr>
                         {% endfor %}
-                        <tr class="">
-                            <th class="">VP Total</th>
-                            <th class="">{{ vp_total_fixed_hours.amount }}</th>
-                            <th class="">{{ vp_total_hourly_hours.amount }}</th>
-                            <th class="">{{ vp_total_cgy_hours.amount }}</th>
-                            <th class="">{{ vp_total_non_billable_hours.amount }}</th>
-                            <th class="">{{ vp_total_pto_hours.amount }}</th>
-                            <th class="">{{ vp_total_billable_hours.amount }}</th>
-                            <th class="">{{ vp_total_hours.amount }}</th>
-                            <th class=""></th>
+                        <tr class="" style="background:white">
+                            <th class="" style="background:white">VP Total</th>
+                            <th class="" style="background:white">{{ vp_total_fixed_hours.amount }}</th>
+                            <th class="" style="background:white">{{ vp_total_hourly_hours.amount }}</th>
+                            <th class="" style="background:white">{{ vp_total_cgy_hours.amount }}</th>
+                            <th class="" style="background:white">{{ vp_total_non_billable_hours.amount }}</th>
+                            <th class="" style="background:white">{{ vp_total_pto_hours.amount }}</th>
+                            <th class="" style="background:white">{{ vp_total_billable_hours.amount }}</th>
+                            <th class="" style="background:white">{{ vp_total_hours.amount }}</th>
+                            <th class="" style="background:white"></th>
                         </tr>
                         <tr><td colspan="10" class="srg-bg-secondary"></td></tr>
                         {% for emp in smgrs %}
@@ -225,15 +225,15 @@
                             </tr>
                         {% endfor %}
                         <tr class="">
-                            <th class="">Sr. Managers Total</th>
-                            <th class="">{{ smgr_total_fixed_hours.amount }}</th>
-                            <th class="">{{ smgr_total_hourly_hours.amount }}</th>
-                            <th class="">{{ smgr_total_cgy_hours.amount }}</th>
-                            <th class="">{{ smgr_total_non_billable_hours.amount }}</th>
-                            <th class="">{{ smgr_total_pto_hours.amount }}</th>
-                            <th class="">{{ smgr_total_billable_hours.amount }}</th>
-                            <th class="">{{ smgr_total_hours.amount }}</th>
-                            <th class=""></th>
+                            <th class="" style="background:white">Sr. Managers Total</th>
+                            <th class="" style="background:white">{{ smgr_total_fixed_hours.amount }}</th>
+                            <th class="" style="background:white">{{ smgr_total_hourly_hours.amount }}</th>
+                            <th class="" style="background:white">{{ smgr_total_cgy_hours.amount }}</th>
+                            <th class="" style="background:white">{{ smgr_total_non_billable_hours.amount }}</th>
+                            <th class="" style="background:white">{{ smgr_total_pto_hours.amount }}</th>
+                            <th class="" style="background:white">{{ smgr_total_billable_hours.amount }}</th>
+                            <th class="" style="background:white">{{ smgr_total_hours.amount }}</th>
+                            <th class="" style="background:white"></th>
                         </tr>
                         <tr><td colspan="10" class="srg-bg-secondary"></td></tr>
                         {% for emp in mgrs %}
@@ -308,15 +308,15 @@
                             </tr>
                         {% endfor %}
                         <tr class="">
-                            <th class="">Managers Total</th>
-                            <th class="">{{ mgr_total_fixed_hours.amount }}</th>
-                            <th class="">{{ mgr_total_hourly_hours.amount }}</th>
-                            <th class="">{{ mgr_total_cgy_hours.amount }}</th>
-                            <th class="">{{ mgr_total_non_billable_hours.amount }}</th>
-                            <th class="">{{ mgr_total_pto_hours.amount }}</th>
-                            <th class="">{{ mgr_total_billable_hours.amount }}</th>
-                            <th class="">{{ mgr_total_hours.amount }}</th>
-                            <th class=""></th>
+                            <th class="" style="background:white">Managers Total</th>
+                            <th class="" style="background:white">{{ mgr_total_fixed_hours.amount }}</th>
+                            <th class="" style="background:white">{{ mgr_total_hourly_hours.amount }}</th>
+                            <th class="" style="background:white">{{ mgr_total_cgy_hours.amount }}</th>
+                            <th class="" style="background:white">{{ mgr_total_non_billable_hours.amount }}</th>
+                            <th class="" style="background:white">{{ mgr_total_pto_hours.amount }}</th>
+                            <th class="" style="background:white">{{ mgr_total_billable_hours.amount }}</th>
+                            <th class="" style="background:white">{{ mgr_total_hours.amount }}</th>
+                            <th class="" style="background:white"></th>
                         </tr>
                         <tr><td colspan="10" class=srg-bg-secondary></td></tr>
                         {% for emp in consultants %}
@@ -391,28 +391,28 @@
                             </tr>
                         {% endfor %}
                         <tr>
-                            <th class="">Consultants Total</th>
-                            <th class="">{{ c_total_fixed_hours.amount }}</th>
-                            <th class="">{{ c_total_hourly_hours.amount }}</th>
-                            <th class="">{{ c_total_cgy_hours.amount }}</th>
-                            <th class="">{{ c_total_non_billable_hours.amount }}</th>
-                            <th class="">{{ c_total_pto_hours.amount }}</th>
-                            <th class="">{{ c_total_billable_hours.amount }}</th>
-                            <th class="">{{ c_total_hours.amount }}</th>
-                            <th class=""></th>
+                            <th class="" style="background:white">Consultants Total</th>
+                            <th class="" style="background:white">{{ c_total_fixed_hours.amount }}</th>
+                            <th class="" style="background:white">{{ c_total_hourly_hours.amount }}</th>
+                            <th class="" style="background:white">{{ c_total_cgy_hours.amount }}</th>
+                            <th class="" style="background:white">{{ c_total_non_billable_hours.amount }}</th>
+                            <th class="" style="background:white">{{ c_total_pto_hours.amount }}</th>
+                            <th class="" style="background:white">{{ c_total_billable_hours.amount }}</th>
+                            <th class="" style="background:white">{{ c_total_hours.amount }}</th>
+                            <th class="" style="background:white"></th>
                         </tr>
                         <tr><td colspan="10" class="border-0 srg-bg-secondary"></td></tr>
                         <tfoot>
                             <tr class="">
-                                <th class="">Grand Total</th>
-                                <th class="">{{ srg_total_fixed_hours }}</th>
-                                <th class="">{{ srg_total_hourly_hours }}</th>
-                                <th class="">{{ srg_total_cgy_hours }}</th>
-                                <th class="">{{ srg_total_non_billable_hours }}</th>
-                                <th class="">{{ srg_total_pto_hours }}</th>
-                                <th class="">{{ srg_total_billable_hours }}</th>
-                                <th class="">{{ srg_total_hours }}</th>
-                                <th class=""></th>
+                                <th class="" style="background:white">Grand Total</th>
+                                <th class="" style="background:white">{{ srg_total_fixed_hours }}</th>
+                                <th class="" style="background:white">{{ srg_total_hourly_hours }}</th>
+                                <th class="" style="background:white">{{ srg_total_cgy_hours }}</th>
+                                <th class="" style="background:white">{{ srg_total_non_billable_hours }}</th>
+                                <th class="" style="background:white">{{ srg_total_pto_hours }}</th>
+                                <th class="" style="background:white">{{ srg_total_billable_hours }}</th>
+                                <th class="" style="background:white">{{ srg_total_hours }}</th>
+                                <th class="" style="background:white"></th>
                             </tr>
                         </tfoot>
                         <caption>Note: Period is based on calendar month.</caption>
