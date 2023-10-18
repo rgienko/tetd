@@ -868,7 +868,8 @@ def AdminEmployeeDashboard(request, pk, per_beg, per_end):
 
 def EmployeeTimesheetReview(request):
     user_info = get_object_or_404(User, pk=request.user.id)
-    last_week_beg = date.today() - timedelta(days=7) - timedelta(days=date.today().weekday()) - timedelta(days=1)
+    today = date.today()
+    last_week_beg = today - timedelta(days=7) - timedelta(days=date.today().weekday()) - timedelta(days=1)
     last_week_end = last_week_beg + timedelta(days=6)
 
     current_week = []
@@ -889,6 +890,7 @@ def EmployeeTimesheetReview(request):
 
     total_available_hours = 40 - total_weekly_hours['hours_sum']
 
+    edit_time_form = EditTimeForm()
     if request.method == 'POST':
         if 'submit_button' in request.POST:
             employee_instance = get_object_or_404(Employee, user=request.user.id)
@@ -937,7 +939,8 @@ def EmployeeTimesheetReview(request):
         time_form = TimeForm()
         expense_form = ExpenseForm()
 
-    context = {'user_info': user_info, 'last_week_beg': last_week_beg, 'last_week_end': last_week_end,
+    context = {'user_info': user_info,'page_title': 'Submit Timesheet', 'today': today, 'last_week_beg': last_week_beg,
+               'last_week_end': last_week_end,'edit_time_form': edit_time_form,
                'current_week': current_week, 'employee_ts_entries': employee_ts_entries,
                'employee_hours_by_day': employee_hours_by_day,
                'user_engagements': user_engagements, 'total_weekly_hours': total_weekly_hours,

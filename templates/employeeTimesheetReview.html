@@ -1,4 +1,4 @@
-{% extends 'layout.html' %}
+{% extends 'layoutV2.html' %}
 
 {% block content %}
     <div id="loading-screen">
@@ -12,7 +12,7 @@
         <div class="col-xxl-4 col-xl-6 vh-100">
             <div class="card vh-100 flex-shrink-1">
                 <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center">
-                    <span class="fs-3">My Engagements</span>
+                    <span class="display-6 fs-3">My Engagements</span>
                     <input class="search-box" type="text" id="searchBar" onkeyup="searchClients()" placeholder="Search for engagements.." title="Type in a name">
                 </div>
 
@@ -77,56 +77,70 @@
         <div class="col-8 vh-100">
             <div class="card vh-100">
                 <div class="card-header srg-text-secondary srg-bg-primary d-flex justify-content-between align-items-baseline">
-                    <span class="fs-3">Submit Timesheet </span>
-                    <span class="fs-3">{{ total_available_hours }} hrs. avail</span>
-                    <span class="fs-3">{{ last_week_beg|date:'m/d/Y' }} - {{ last_week_end|date:'m/d/Y' }}</span>
+                    <span class="display-6 fs-3">Submit Timesheet for Period: {{ last_week_beg|date:'m/d/Y' }} - {{ last_week_end|date:'m/d/Y' }}</span>
+                    <span class="display-6 fs-3">{{ total_available_hours }} hrs. avail</span>
                 </div>
                 <div class="card-body overflow-auto">
                     {% for dy in current_week %}
                         <div class="row mb-4 shadow-sm" style="border-bottom-left-radius:12px; border-top-left-radius: 12px;"
                         {% if dy == today %}id="today"{% endif %}>
+                            <!--
                             <div class="col-2 p-0 d-flex justify-content-center align-items-center {% if dy == today %}srg-bg-primary srg-text-secondary{% else %}srg-bg-secondary srg-header {% endif %}"
                             style="border-bottom-left-radius:12px; border-top-left-radius: 12px;">
-                                <p class="fs-4 text-center">
+                                <p class="fs-4">
                                     {{ dy|date:'l' }}<br>
                                     {{ dy|date:'m/d/y' }}
                                 </p>
                             </div>
-                            <div class="col-10 p-0">
-                                <div class="card-body p-0">
+                            -->
+                            <div class="col-12 p-0">
+                                <div class="card-header border-bottom-0 {% if dy == today %}srg-bg-primary srg-text-secondary{% else %}srg-bg-secondary srg-header {% endif %}">
+                                    <span class="display-6 fs-4">{{ dy|date:'l' }}
+                                            {{ dy|date:'m/d/y' }}</span>
+                                </div>
+                                <div class="card-body p-2">
                                     <table class="srg-table">
                                         <thead>
                                             <tr class="">
-                                                <th>Date</th>
                                                 <th class="">Provider</th>
                                                 <th class="">Scope</th>
                                                 <th class="">Hours</th>
                                                 <th class="text-center">Note</th>
+                                                <th class="text-center">Actions</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {% for entry in employee_ts_entries %}
                                                 {% if entry.ts_date == dy %}
                                                     <tr>
-                                                        <th scope="row">{{ dy|date:'m/d/Y' }}</th>
-                                                            <td>
-                                                                {{ entry.getProvider }}
-                                                            </td>
-                                                            <td>
+                                                        <td>
+                                                            {{ entry.getProvider }}
+                                                        </td>
+                                                        <td>
 
-                                                                {{ entry.getScope }}
-                                                            </td>
-                                                            <td>
-                                                                {{ entry.hours }}
-                                                            </td>
-                                                            <td class="text-center">
-                                                                {% if entry.note == '' %}
-                                                                {% else %}
-                                                                    <a type="button" class="srg-link" data-toggle="popover" data-bs-placement="left" data-bs-content="{{ entry.note|safe }}">
-                                                                      <i class="bi bi-stickies-fill"></i>
-                                                                    </a>
-                                                                {% endif %}
-                                                            </td>
+                                                            {{ entry.getScope }}
+                                                        </td>
+                                                        <td>
+                                                            {{ entry.hours }}
+                                                        </td>
+                                                        <td class="text-center">
+                                                            {% if entry.note == '' %}
+                                                            {% else %}
+                                                                <a type="button" class="srg-link" data-toggle="popover" data-bs-placement="left" data-bs-content="{{ entry.note|safe }}">
+                                                                  <i class="bi bi-stickies-fill"></i>
+                                                                </a>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td class="text-center">
+                                                            <a type="button" class="srg-link edit-button" data-bs-toggle="modal" href="#edit-modal" data-ts-id="{{ entry.timesheet_id }}">
+                                                              <i class="bi bi-pencil-square"></i>
+                                                            </a>
+
+                                                            <a type="button" class="srg-link-danger" data-engagement-id="{{ entry.timesheet_id }}"
+                                                                    href="{% url 'delete-time-entry' entry.timesheet_id %}">
+                                                              <i class="bi bi-trash3"></i>
+                                                            </a>
+                                                        </td>
                                                     </tr>
                                                     {% else %}
                                                     {% endif %}
@@ -137,10 +151,10 @@
                                                 <tfoot>
                                                     <tr>
                                                         <td></td>
-                                                        <td></td>
-                                                        <td></td>
                                                         <td>Total:</td>
                                                         <td>{{ total.ts_hours }}</td>
+                                                        <td></td>
+                                                        <td></td>
                                                     </tr>
                                                 </tfoot>
                                             {% else %}
@@ -151,6 +165,33 @@
                             </div>
                         </div>
                     {% endfor %}
+                    <div class="modal fade" id="edit-modal" tabindex="-1" aria-labelledby="edit-modal" aria-hidden="true">
+                            <div class="modal-dialog" id="modal">
+                                <div class="modal-content">
+                                    <div class="modal-header srg-bg-secondary srg-header fs-5">
+                                        Edit Entry
+                                    </div>
+                                    <div class="modal-body">
+                                        <form class="" method="POST" id="editTimeForm" action="{% url 'update-ts' %}">
+                                            {% csrf_token %}
+                                                <label for="ts-id">Record #:</label><br>
+                                                <input class="w-50" name="ts-id-input" type="text" id="ts-id" /><br>
+                                            {% for field in edit_time_form %}
+                                                <div class="fieldWrapper my-3">
+                                                    {{ field.label_tag }} <br>{{ field }}
+                                                    {% if field.help_text %}
+                                                        <p class="help">{{ field.help_text|safe }}</p>
+                                                    {% endif %}
+                                                </div>
+
+                                            {% endfor %}
+                                            <button name="edit_time_button" type="submit" class="srg-btn-primary my-2">Save Entry</button>
+                                        </form>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     {% if total_weekly_hours.hours_sum >= 32 %}
                         <div class="row mb-4">
                             <div class="col-12 d-flex justify-content-center">
@@ -167,6 +208,30 @@
         </div>
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Handle "Edit" button clicks
+            $('.edit-button').click(function () {
+                let tsID = $(this).data('ts-id');
+                let editTsForm = $('#editTimeForm');
+
+                // Fetch details using AJAX
+                $.ajax({
+                    url: '/get_ts/' + tsID + '/',
+                    type: 'GET',
+                    success: function (data) {
+                        //Populate from fields with task details
+                        editTsForm.find('#ts-id').val(tsID)
+                        editTsForm.find('#id_engagement').val(data.engagement)
+                        editTsForm.find('#id_ts_date').val(data.ts_date)
+                        editTsForm.find('#id_hours').val(data.hours)
+                        editTsForm.find('#id_time_type_id_id').val(data.btype)
+                        editTsForm.find('#id_note').val(data.note)
+                    }
+                })
+            })
+        })
+    </script>
     <script>
         const myModal = document.getElementById('time-modal')
         myModal.addEventListener('show.bs.modal', event => {

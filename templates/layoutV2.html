@@ -365,6 +365,17 @@
                         {% else %}
                         {% endif %}
 
+
+                         <div class="card pt-0 mt-lg-4 mt-md-0 border">
+                             <!--
+                            <div class="card-header srg-text-secondary srg-bg-primary d-flex justify-content-between align-items-baseline">
+                                <span class="display-6 fs-3">Calendar</span>
+                            </div>
+                            -->
+                            <div class="card-body px-3 py-0 srg-bg-secondary" id="myCalendar">
+                            </div>
+                        </div>
+
                         <hr class="my-3">
 
                         <ul class="nav flex-column mb-auto">
@@ -383,17 +394,6 @@
                                 </a>
                             </li>
                         </ul>
-                    </div>
-                    <div class="offcanvas-footer mb-0 d-md-flex flex-column p-0 pt-lg-3 overflow-y-auto">
-                         <div class="card mt-0 border-0">
-                             <!--
-                            <div class="card-header srg-text-secondary srg-bg-primary d-flex justify-content-between align-items-baseline">
-                                <span class="display-6 fs-3">Calendar</span>
-                            </div>
-                            -->
-                            <div class="card-body px-3 srg-bg-secondary" id="myCalendar">
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -415,11 +415,17 @@
             const calendarEl = document.getElementById('myCalendar');
             const calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
-                backgroundColor: 'blue',
-                aspectRatio: 1,
-                contentHeight: 'auto',
+                updateSize: true,
                 weekends: true,
+                height:455,
+                showNonCurrentDates: false,
+                fixedWeekCount: false,
                 eventDisplay: 'list-item',
+                headerToolbar: {
+                    start: 'title',
+                    center: 'today',
+                    end: 'prev,next'
+                },
                 events: [
                     {% for event in employee_td_entries %}
                       {
@@ -435,6 +441,7 @@
                 }
             });
             calendar.render();
+            calendar.updateSize()
         });
 
     </script>
