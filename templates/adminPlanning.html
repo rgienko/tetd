@@ -21,13 +21,13 @@
     -->
     <div class="container-fluid">
         <div class="row mt-1 d-flex justify-content-center vh-lg-100">
-            <div class="col-xxl-8 col-xl-10 col-lg-12 col-md-12 col-12">
+            <div class="col-xxl-10 col-xl-12 col-lg-12 col-md-12 col-12">
                 <div class="card">
                     <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline">
                         <span class="display-5 fs-3">Staff Availability</span>
                     </div>
                     <div class="card-body px-0">
-                        <div class="carousel slide d-flex justify-content-between" id="carouselExample">
+                        <div class="carousel slide d-flex justify-content-around" id="carouselExample">
                             <button class="border-0 bg-transparent srg-link" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
                                 <span class="srg-link" aria-hidden="true"><i class="bi bi-arrow-left"></i></span>
                                 <span class="">Previous</span>
@@ -35,7 +35,7 @@
 
                             <div class="carousel-inner">
                                 <div class="carousel-item active">
-                                    <div class="d-flex justify-content-between gap-2">
+                                    <div class="d-flex justify-content-around gap-2">
                                         <div class="card border-0">
                                             <div class="card-header srg-bg-primary-light fw-bolder d-flex justify-content-between">
                                                 <span>Current Week</span> <span>{{ week_beg }} - {{ week_end }}</span>
@@ -178,12 +178,12 @@
                                                 <table class="srg-table" id="threeWeekTable">
                                                     <thead>
                                                         <tr>
-                                                            <th class="" style="background: #b1c2af" onclick="sortTable(0, 'threeWeekTable')">Employee</th>
-                                                            <th class="text-center " style="background: #b1c2af" onclick="sortTable(1, 'threeWeekTable')">Billable <i class="bi bi-arrow-down-up"></i></th>
-                                                            <th class="text-center " style="background: #b1c2af" onclick="sortTable(2, 'threeWeekTable')">Non-Billable <i class="bi bi-arrow-down-up"></i></th>
-                                                            <th class="text-center " style="background: #b1c2af" onclick="sortTable(3, 'threeWeekTable')">Total <i class="bi bi-arrow-down-up"></i></th>
-                                                            <th class="text-center " style="background: #b1c2af" onclick="sortTable(4, 'threeWeekTable')">HPW</th>
-                                                            <th class="text-center " style="background: #b1c2af" onclick="sortTable(5, 'threeWeekTable')">Avail. <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="" style="background: #e2b9b2" onclick="sortTable(0, 'threeWeekTable')">Employee</th>
+                                                            <th class="text-center " style="background: #e2b9b2" onclick="sortTable(1, 'threeWeekTable')">Billable <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center " style="background: #e2b9b2" onclick="sortTable(2, 'threeWeekTable')">Non-Billable <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center " style="background: #e2b9b2" onclick="sortTable(3, 'threeWeekTable')">Total <i class="bi bi-arrow-down-up"></i></th>
+                                                            <th class="text-center " style="background: #e2b9b2" onclick="sortTable(4, 'threeWeekTable')">HPW</th>
+                                                            <th class="text-center " style="background: #e2b9b2" onclick="sortTable(5, 'threeWeekTable')">Avail. <i class="bi bi-arrow-down-up"></i></th>
                                                         </tr>
                                                     </thead>
                                                     <tbody>

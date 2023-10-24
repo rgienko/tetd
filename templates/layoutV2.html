@@ -425,19 +425,6 @@
                     start: 'title',
                     center: 'today',
                     end: 'prev,next'
-                },
-                events: [
-                    {% for event in employee_td_entries %}
-                      {
-                          // title: '{{ event.getProviderID|safe }} - {{ event.getTC }} - {{ event.anticipated_hours }} Hours',
-                          start: '{{ event.todo_date|date:'Y-m-d' }}',
-                          end: '{{ event.todo_date|date:'Y-m-d' }}'
-                      },
-                    {% endfor %}
-                ],
-                eventRender: function (info) {
-                    let eventElement = info.el;
-                    eventElement.querySelector('.fc-event-title').classList.add('event-title');
                 }
             });
             calendar.render();
