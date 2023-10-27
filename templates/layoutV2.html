@@ -365,17 +365,16 @@
                         {% else %}
                         {% endif %}
 
-
+                        <!--
                          <div class="card pt-0 mt-lg-4 mt-md-0 border">
-                             <!--
                             <div class="card-header srg-text-secondary srg-bg-primary d-flex justify-content-between align-items-baseline">
                                 <span class="display-6 fs-3">Calendar</span>
                             </div>
-                            -->
-                            <div class="card-body px-3 py-0 srg-bg-secondary" id="myCalendar">
+
+                            <div class="card-body px-3 py-0 srg-bg-secondary" id="myCalendar2">
                             </div>
                         </div>
-
+                        -->
                         <hr class="my-3">
 
                         <ul class="nav flex-column mb-auto">
@@ -410,28 +409,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const calendarEl = document.getElementById('myCalendar');
-            const calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                updateSize: true,
-                weekends: true,
-                height:455,
-                showNonCurrentDates: false,
-                fixedWeekCount: false,
-                eventDisplay: 'list-item',
-                headerToolbar: {
-                    start: 'title',
-                    center: 'today',
-                    end: 'prev,next'
-                }
-            });
-            calendar.render();
-            calendar.updateSize()
-        });
 
-    </script>
 
     <script type="text/javascript">
         $(function() {

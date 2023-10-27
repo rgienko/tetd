@@ -814,7 +814,7 @@ def AdminPlanning(request):
 
 
 def AdminEmployeeDashboard(request, pk, per_beg, per_end):
-    user_info = get_object_or_404(User, pk=request.user.id)
+    user_info = get_object_or_404(User, username=pk)
     user_filter_list = pk.split(".")
     first_name = user_filter_list[0]
     last_name = user_filter_list[1]
