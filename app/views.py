@@ -160,6 +160,11 @@ def getCompilationData(mnth):
 
         total_hours_by_employee = Time.objects.filter(ts_date__year=date.today().year).values('employee_id').annotate(
             total_hours_sum=Sum('hours'))
+
+        today = date.today()
+        ytd_start = date(today.year, 1, 1)
+        number_of_workdays = np.busday_count(ytd_start, today)
+        billable_weeks = number_of_workdays / 5
     else:
         fixed_hours_by_employee = Time.objects.filter(engagement__type_id='F', ts_date__month=mnth).values(
             'employee_id', 'employee__title').annotate(fixed_hours_by_employee_sum=Sum('hours')
@@ -189,9 +194,16 @@ def getCompilationData(mnth):
 
         next_month = int(mnth) + 1
         current_year = datetime.now().year
-        if int(mnth) <= 9:
+        next_year = current_year + 1
+        if int(mnth) < 9:
+            number_of_workdays = np.busday_count(str(current_year) + '-0' + str(mnth),
+                                                 str(current_year) + '-0' + str(next_month))
+        elif int(mnth) == 9:
             number_of_workdays = np.busday_count(str(current_year) + '-0' + str(mnth),
                                                  str(current_year) + '-' + str(next_month))
+        elif int(mnth) == 12:
+            number_of_workdays = np.busday_count(str(current_year) + '-' + str(mnth),
+                                                 str(next_year) + '-01')
         else:
             number_of_workdays = np.busday_count(str(current_year) + '-' + str(mnth),
                                                  str(current_year) + '-' + str(next_month))
@@ -319,7 +331,7 @@ def getCompilationData(mnth):
 
     srg_total_lost_revenue = vp_loss_rev + mgr_lost_rev + c_lost_rev
 
-    srg_billable_percentage = round((float(srg_total_billable_hours) / (billable_weeks * 40 * 19)) * 100, 0)
+    srg_billable_percentage = round((float(srg_total_billable_hours) / (billable_weeks * 40 * 21)) * 100, 0)
 
     return vp_fixed_hours_by_employee, vp_hourly_hours_by_employee, vp_cgy_hours_by_employee, \
         vp_non_billable_hours_by_employee, vp_pto_hours_by_employee, vp_billable_hours_by_employee, \
@@ -366,7 +378,7 @@ def AdminDashboard(request):
             if selected_month == 'YTD':
                 pass
             else:
-                selected_month = datetime.date(today.year, int(selected_month), 1)
+                selected_month = date(today.year, int(selected_month), 1)
             context = {'employee_info': employee_info, 'user_info': user_info, 'today': today, 'week_beg': week_beg,
                        'week_end': week_end, 'employees': employees, 'vps': vps, 'page_title': 'Admin Dashboard',
                        'smgrs': smgrs, 'mgrs': mgrs, 'consultants': consultants,
@@ -1482,7 +1494,7 @@ def createEmployeeHoursCompilationReport(request, mnth):
         period_text = Paragraph('<para>Year To Date</para>', styles['Normal'])
         period = "YTD"
     else:
-        period_date = datetime.datetime.strptime(mnth, "%Y-%m-%d")
+        period_date = datetime.strptime(mnth, "%Y-%m-%d")
         period_text = Paragraph('<para>' + str(period_date.strftime("%B")) + " " + str(period_date.year) + '</para>')
         period = period_date.month
         print(period)
