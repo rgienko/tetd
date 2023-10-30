@@ -265,4 +265,30 @@
         }
     </script>
 
+
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+          const calendarEl = document.getElementById('myCalendar');
+          const calendar = new FullCalendar.Calendar(calendarEl, {
+              initialView: 'dayGridMonth',
+              height:650,
+              events: [
+                  {% for event in employee_td_entries_all %}
+                      {
+                          title: '{{ event.engagement__provider_id|safe }} - {{ event.engagement__time_code }} - {{ event.hsum }} Hours',
+                          start: '{{ event.todo_date|date:'Y-m-d' }}',
+                          end: '{{ event.todo_date|date:'Y-m-d' }}'
+                      },
+                  {% endfor %}
+              ]
+          });
+          calendar.render();
+      });
+
+    </script>
+
+
+
 {% endblock %}
