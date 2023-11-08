@@ -38,7 +38,10 @@ class TimeForm(forms.ModelForm):
 
         widgets = {
             'note': forms.Textarea(attrs={'rows': 5, 'cols': 40}),
-            'ts_date': DatePickerInput
+            'ts_date': DatePickerInput,
+            'hours': forms.NumberInput(attrs={
+                'step': '.25'
+            })
         }
 
 
@@ -67,17 +70,19 @@ class ExpenseForm(forms.ModelForm):
     class Meta:
         model = Expense
 
-        fields = ['date', 'expense_category', 'expense_amount']
+        fields = ['date', 'expense_category', 'expense_amount', 'expense_note']
 
         labels = {
             'engagement': _('Engagement'),
             'date': _('Date'),
             'expense_category': _('Category'),
-            'expense_amount': _('Amount')
+            'expense_amount': _('Amount'),
+            'expense_note': _('Note')
         }
 
         widgets = {
-            'date': DatePickerInput
+            'date': DatePickerInput,
+            'expense_note': forms.Textarea(attrs={'rows': 5, 'cols': 40})
         }
 
 

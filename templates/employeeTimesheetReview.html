@@ -33,9 +33,9 @@
                                               <button type="button" class="btn srg-btn-ol-primary" data-bs-toggle="modal"
                                                        data-bs-target="#time-modal" data-engagement-id="{{ engagement.engagement_srg_id }}"
                                                        href="#time-modal" aria-controls="{{ engagement.engagement }}"><i class="bi bi-clock"></i></button>
-                                              <a type="button" class="btn srg-btn-ol-success" id="expense-modal-{{ engagement.engagement }}-modal" data-bs-toggle="modal"
-                                                       data-bs-target="#expense-modal-{{ forloop.counter }}" data-id="{{ engagement.engagement }}"
-                                                       href="#expense-modal-{{ forloop.counter }}-modal" aria-controls="{{ engagement.engagement }}"><i class="bi bi-currency-dollar"></i></a>
+                                              <button type="button" class="btn srg-btn-ol-success" data-bs-toggle="modal"
+                                                       data-bs-target="#expense-modal" data-engagement-id="{{ engagement.engagement_srg_id }}"
+                                                       href="#expense-modal" aria-controls="{{ engagement.engagement }}"><i class="bi bi-currency-dollar"></i></button>
                                             </div>
 
                                     </div>
@@ -44,32 +44,59 @@
 
                         {% endfor %}
 
-                         <div class="modal fade" id="time-modal" tabindex="-1" aria-labelledby="time-modal" aria-hidden="true">
-                                <div class="modal-dialog" id="modal">
-                                    <div class="modal-content">
-                                        <div class="modal-header srg-bg-primary text-light fs-5">
-                                            Record Time
-                                        </div>
-                                        <div class="modal-body">
-                                            <form class="" method="POST">
-                                                {% csrf_token %}
-                                                    <label for="my-input">Engagement:</label><br>
-                                                    <input name="engagement-input" type="text" id="my-input" /><br>
-                                                {% for field in time_form %}
-                                                    <div class="fieldWrapper my-3">
-                                                        {{ field.label_tag }} <br>{{ field }}
-                                                        {% if field.help_text %}
-                                                            <p class="help">{{ field.help_text|safe }}</p>
-                                                        {% endif %}
-                                                    </div>
+                        <div class="modal fade" id="time-modal" tabindex="-1" aria-labelledby="time-modal" aria-hidden="true">
+                            <div class="modal-dialog" id="modal">
+                                <div class="modal-content">
+                                    <div class="modal-header srg-bg-primary text-light fs-5">
+                                        Record Time
+                                    </div>
+                                    <div class="modal-body">
+                                        <form class="" method="POST">
+                                            {% csrf_token %}
+                                                <label for="my-input">Engagement:</label><br>
+                                                <input name="engagement-input" type="text" id="my-input" /><br>
+                                            {% for field in time_form %}
+                                                <div class="fieldWrapper my-3">
+                                                    {{ field.label_tag }} <br>{{ field }}
+                                                    {% if field.help_text %}
+                                                        <p class="help">{{ field.help_text|safe }}</p>
+                                                    {% endif %}
+                                                </div>
 
-                                                {% endfor %}
-                                                <button name="time_button" class="srg-btn-primary my-2">Record Time</button>
-                                            </form>
-                                        </div>
+                                            {% endfor %}
+                                            <button name="time_button" class="srg-btn-primary my-2">Record Time</button>
+                                        </form>
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="modal fade" id="expense-modal" tabindex="-1" aria-labelledby="expense-modal" aria-hidden="true">
+                            <div class="modal-dialog" id="modal">
+                                <div class="modal-content">
+                                    <div class="modal-header srg-bg-success text-light fs-5">
+                                        Record Expense
+                                    </div>
+                                    <div class="modal-body">
+                                        <form class="" method="POST">
+                                            {% csrf_token %}
+                                                <label for="my-input">Engagement:</label><br>
+                                                <input name="expense-input" type="text" id="my-input" /><br>
+                                            {% for field in expense_form %}
+                                                <div class="fieldWrapper my-3">
+                                                    {{ field.label_tag }} <br>{{ field }}
+                                                    {% if field.help_text %}
+                                                        <p class="help">{{ field.help_text|safe }}</p>
+                                                    {% endif %}
+                                                </div>
+
+                                            {% endfor %}
+                                            <button name="expense_button" class="srg-btn-success my-2">Record Expense</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -192,7 +219,7 @@
                                 </div>
                             </div>
                         </div>
-                    {% if total_weekly_hours.hours_sum >= 32 %}
+                    {% if total_weekly_hours.hours_sum == 40 %}
                         <div class="row mb-4">
                             <div class="col-12 d-flex justify-content-center">
                                 <form method="POST">
@@ -239,6 +266,13 @@
             let engagementID = $(event.relatedTarget).data("engagement-id")
             //populate the input field
             $(event.currentTarget).find('input[name="engagement-input"]').val(engagementID)
+        });
+        const myExpenseModal = document.getElementById('expense-modal')
+        myExpenseModal.addEventListener('show.bs.modal', event => {
+            //get data-id attribute of clicked event
+            let engagementID = $(event.relatedTarget).data("engagement-id")
+            //populate the input field
+            $(event.currentTarget).find('input[name="expense-input"]').val(engagementID)
         });
     </script>
         <script>

@@ -188,6 +188,7 @@ class Expense(models.Model):
     date = models.DateField(default=date.today())
     expense_category = models.ForeignKey(ExpenseCategory, on_delete=models.CASCADE)
     expense_amount = models.DecimalField(null=True, blank=True, max_digits=10, decimal_places=2)
+    expense_note = models.TextField(max_length=500, null=True, blank=True)
     engagement = models.ForeignKey(Engagement, on_delete=models.CASCADE, blank=False, null=False)
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, blank=False, null=False)
 

@@ -137,8 +137,8 @@ def getCompilationData(mnth):
             fixed_hours_by_employee_sum=Sum('hours')
         )
 
-        hourly_hours_by_employee = Time.objects.filter(engagement__type_id='H', ts_date__year=date.today().year).values(
-            'employee_id', 'employee__title').exclude(engagement__time_code_id__gte=900).annotate(
+        hourly_hours_by_employee = Time.objects.filter(engagement__type_id='H', time_type_id='B', ts_date__year=date.today().year).values(
+            'employee_id', 'employee__title').annotate(
             hourly_hours_by_employee_sum=Sum('hours')
         )
 
@@ -170,9 +170,8 @@ def getCompilationData(mnth):
             'employee_id', 'employee__title').annotate(fixed_hours_by_employee_sum=Sum('hours')
                                                        ).order_by('employee__user__last_name')
 
-        hourly_hours_by_employee = Time.objects.filter(engagement__type_id='H', ts_date__month=mnth).values(
-            'employee_id', 'employee__title', 'employee__user__username').exclude(
-            engagement__time_code_id__gte=900).annotate(
+        hourly_hours_by_employee = Time.objects.filter(engagement__type_id='H', time_type_id='B', ts_date__month=mnth).values(
+            'employee_id', 'employee__title', 'employee__user__username').annotate(
             hourly_hours_by_employee_sum=Sum('hours')).order_by('employee__user__last_name')
 
         cgy_hours_by_employee = Time.objects.filter(engagement__type_id='C', ts_date__month=mnth).values(
@@ -951,12 +950,12 @@ def EmployeeTimesheetReview(request):
         time_form = TimeForm()
         expense_form = ExpenseForm()
 
-    context = {'user_info': user_info,'page_title': 'Submit Timesheet', 'today': today, 'last_week_beg': last_week_beg,
-               'last_week_end': last_week_end,'edit_time_form': edit_time_form,
+    context = {'user_info': user_info, 'page_title': 'Submit Timesheet', 'today': today, 'last_week_beg': last_week_beg,
+               'last_week_end': last_week_end, 'edit_time_form': edit_time_form,
                'current_week': current_week, 'employee_ts_entries': employee_ts_entries,
                'employee_hours_by_day': employee_hours_by_day,
                'user_engagements': user_engagements, 'total_weekly_hours': total_weekly_hours,
-               'time_form': time_form, 'total_available_hours': total_available_hours}
+               'time_form': time_form,'expense_form': expense_form, 'total_available_hours': total_available_hours}
 
     return render(request, 'employeeTimesheetReview.html', context)
 
@@ -996,7 +995,7 @@ def EmployeeTimesheet(request):
         time_form = TimeForm()
         expense_form = ExpenseForm()
         if 'time_button' in request.POST:
-            time_form = TimeForm(request.POST)
+            time_form = TimeForm(request.POST, initial={'ts_date': today})
             if time_form.is_valid():
                 engagement_id = request.POST.get('engagement-input')
                 engagement_instance = get_object_or_404(Engagement, engagement_srg_id=engagement_id)
@@ -1017,7 +1016,7 @@ def EmployeeTimesheet(request):
 
                 return redirect('employee-timesheet')
         elif 'expense_button' in request.POST:
-            expense_form = ExpenseForm(request.POST)
+            expense_form = ExpenseForm(request.POST, initial={'date': today})
             if expense_form.is_valid():
                 employee_instance = get_object_or_404(Employee, user=request.user.id)
                 engagement_id = request.POST.get('expense-input')
@@ -1584,7 +1583,7 @@ def createEmployeeHoursCompilationReport(request, mnth):
                     '<para align=center>' + str(item['cgy_hours_by_employee_sum']) + '</para>', styles['Normal'])
         for item in vp_nb:
             if item['employee_id'] == emp['employee_id']:
-                employeeNBColumn = Paragraph('<para align=center>' + str(item['nb_hours_by_employee_sum']) + '</para>',
+                employeeNBColumn = Paragraph('<para align=center>' + str(item['non_billable_hours_sum']) + '</para>',
                                              styles['Normal'])
         for item in vp_pto:
             if item['employee_id'] == emp['employee_id']:

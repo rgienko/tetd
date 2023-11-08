@@ -8,6 +8,10 @@ admin.site.register(Parent)
 
 admin.site.register(Provider)
 
+@admin.register(Time)
+class TimeAdmin(admin.ModelAdmin):
+    list_display = ('engagement', 'employee', 'ts_date', 'hours', 'time_type_id', 'note')
+
 
 @admin.register(Timecode)
 class TimecodeAdmin(admin.ModelAdmin):
