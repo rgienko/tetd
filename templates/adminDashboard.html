@@ -63,6 +63,7 @@
                                 <th style="background-color:yellow;">Fixed</th>
                                 <th style="background-color:yellow;">Hourly</th>
                                 <th style="background-color:yellow;">CGY</th>
+                                <th style="background-color:yellow;">ANB</th>
                                 <th style="background-color:yellow;">NB</th>
                                 <th style="background-color:yellow;">PTO</th>
                                 <th style="background-color:yellow;">Total Billable<br>with CGY</th>
@@ -97,6 +98,7 @@
                                         {% endif %}
                                     {% endfor %}
                                 </td>
+                                <td></td>
                                 <td>
                                     {% for item in vp_non_billable_hours_by_employee %}
                                         {% if item.employee_id == emp.employee_id %}
@@ -146,6 +148,7 @@
                             <th class="" style="background:white">{{ vp_total_fixed_hours.amount }}</th>
                             <th class="" style="background:white">{{ vp_total_hourly_hours.amount }}</th>
                             <th class="" style="background:white">{{ vp_total_cgy_hours.amount }}</th>
+                            <th></th>
                             <th class="" style="background:white">{{ vp_total_non_billable_hours.amount }}</th>
                             <th class="" style="background:white">{{ vp_total_pto_hours.amount }}</th>
                             <th class="" style="background:white">{{ vp_total_billable_hours.amount }}</th>
@@ -180,6 +183,7 @@
                                         {% endif %}
                                     {% endfor %}
                                 </td>
+                                <td></td>
                                 <td>
                                     {% for item in smgr_non_billable_hours_by_employee %}
                                         {% if item.employee_id == emp.employee_id %}
@@ -229,6 +233,7 @@
                             <th class="" style="background:white">{{ smgr_total_fixed_hours.amount }}</th>
                             <th class="" style="background:white">{{ smgr_total_hourly_hours.amount }}</th>
                             <th class="" style="background:white">{{ smgr_total_cgy_hours.amount }}</th>
+                            <th></th>
                             <th class="" style="background:white">{{ smgr_total_non_billable_hours.amount }}</th>
                             <th class="" style="background:white">{{ smgr_total_pto_hours.amount }}</th>
                             <th class="" style="background:white">{{ smgr_total_billable_hours.amount }}</th>
@@ -261,6 +266,15 @@
                                             {{ item.cgy_hours_by_employee_sum }}
                                         {% else %}
                                         {% endif %}
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% for item in mgr_anb_hours_by_employee %}
+                                        {% if item.employee_id == emp.employee_id %}
+                                            {{ item.anb_hours_sum }}
+                                        {% else %}
+                                        {% endif %}
+
                                     {% endfor %}
                                 </td>
                                 <td>
@@ -312,6 +326,7 @@
                             <th class="" style="background:white">{{ mgr_total_fixed_hours.amount }}</th>
                             <th class="" style="background:white">{{ mgr_total_hourly_hours.amount }}</th>
                             <th class="" style="background:white">{{ mgr_total_cgy_hours.amount }}</th>
+                            <th></th>
                             <th class="" style="background:white">{{ mgr_total_non_billable_hours.amount }}</th>
                             <th class="" style="background:white">{{ mgr_total_pto_hours.amount }}</th>
                             <th class="" style="background:white">{{ mgr_total_billable_hours.amount }}</th>
@@ -346,6 +361,7 @@
                                         {% endif %}
                                     {% endfor %}
                                 </td>
+                                <td></td>
                                 <td>
                                     {% for item in c_non_billable_hours_by_employee %}
                                         {% if item.employee_id == emp.employee_id %}
@@ -395,6 +411,7 @@
                             <th class="" style="background:white">{{ c_total_fixed_hours.amount }}</th>
                             <th class="" style="background:white">{{ c_total_hourly_hours.amount }}</th>
                             <th class="" style="background:white">{{ c_total_cgy_hours.amount }}</th>
+                            <th></th>
                             <th class="" style="background:white">{{ c_total_non_billable_hours.amount }}</th>
                             <th class="" style="background:white">{{ c_total_pto_hours.amount }}</th>
                             <th class="" style="background:white">{{ c_total_billable_hours.amount }}</th>
@@ -408,6 +425,7 @@
                                 <th class="" style="background:white">{{ srg_total_fixed_hours }}</th>
                                 <th class="" style="background:white">{{ srg_total_hourly_hours }}</th>
                                 <th class="" style="background:white">{{ srg_total_cgy_hours }}</th>
+                                <th></th>
                                 <th class="" style="background:white">{{ srg_total_non_billable_hours }}</th>
                                 <th class="" style="background:white">{{ srg_total_pto_hours }}</th>
                                 <th class="" style="background:white">{{ srg_total_billable_hours }}</th>
