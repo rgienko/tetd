@@ -147,12 +147,9 @@ def getCompilationData(mnth):
             cgy_hours_by_employee_sum=Sum('hours')
         )
 
-        anb_hours_by_employee = Time.objects.filter(engagement__time_code=930, ts_date__month=mnth).values(
-            'employee_id').annotate(anb_hours_sum=Sum('hours'))
-
         non_billable_hours_by_employee = Time.objects.filter(Q(time_type_id='N') | Q(engagement__type_id='N'),
                                                              ts_date__year=date.today().year).exclude(
-            Q(engagement__time_code=990) | Q(engagement__time_code=930)).values('employee_id').annotate(non_billable_hours_sum=Sum('hours'))
+            engagement__time_code=990).values('employee_id').annotate(non_billable_hours_sum=Sum('hours'))
 
         pto_hours_by_employee = Time.objects.filter(engagement__time_code=990, ts_date__year=date.today().year).values(
             'employee_id').annotate(pto_hours_by_employee_sum=Sum('hours')
@@ -180,12 +177,9 @@ def getCompilationData(mnth):
         cgy_hours_by_employee = Time.objects.filter(engagement__type_id='C', ts_date__month=mnth).values(
             'employee_id', 'employee__title').annotate(cgy_hours_by_employee_sum=Sum('hours'))
 
-        anb_hours_by_employee = Time.objects.filter(engagement__time_code=930, ts_date__month=mnth).values(
-            'employee_id').annotate(anb_hours_sum=Sum('hours'))
-
         non_billable_hours_by_employee = Time.objects.filter(Q(time_type_id='N') | Q(engagement__type_id='N'),
                                                              ts_date__month=mnth).exclude(
-            Q(engagement__time_code=990) | Q(engagement__time_code=930)).values(
+            engagement__time_code=990).values(
             'employee_id').annotate(non_billable_hours_sum=Sum('hours'))
 
         pto_hours_by_employee = Time.objects.filter(engagement__time_code=990, ts_date__month=mnth).values(
@@ -269,7 +263,6 @@ def getCompilationData(mnth):
     mgr_fixed_hours_by_employee = fixed_hours_by_employee.filter(employee__title='M')
     mgr_hourly_hours_by_employee = hourly_hours_by_employee.filter(employee__title='M')
     mgr_cgy_hours_by_employee = cgy_hours_by_employee.filter(employee__title='M')
-    mgr_anb_hours_by_employee = anb_hours_by_employee.filter(employee__title='M')
     mgr_non_billable_hours_by_employee = non_billable_hours_by_employee.filter(employee__title='M')
     mgr_pto_hours_by_employee = pto_hours_by_employee.filter(employee__title='M')
     mgr_billable_hours_by_employee = billable_hours_by_employee.filter(employee__title='M')
@@ -281,9 +274,6 @@ def getCompilationData(mnth):
         amount=Coalesce(Sum('hourly_hours_by_employee_sum'), 0, output_field=DecimalField(0.00)))
     mgr_total_cgy_hours = mgr_cgy_hours_by_employee.aggregate(
         amount=Coalesce(Sum('cgy_hours_by_employee_sum'), 0, output_field=DecimalField(0.00)))
-    mgr_total_anb_hours = mgr_anb_hours_by_employee.aggregate(
-        amount=Coalesce(Sum('anb_hours_sum'), 0, output_field=DecimalField(0.00))
-    )
     mgr_total_non_billable_hours = mgr_non_billable_hours_by_employee.aggregate(
         amount=Coalesce(Sum('non_billable_hours_sum'), 0, output_field=DecimalField(0.00)))
     mgr_total_pto_hours = mgr_pto_hours_by_employee.aggregate(
@@ -361,7 +351,7 @@ def getCompilationData(mnth):
         srg_total_fixed_hours, srg_total_hourly_hours, srg_total_cgy_hours, \
         srg_total_non_billable_hours, srg_total_pto_hours, srg_total_billable_hours, srg_total_hours, \
         vp_loss_rev, smgr_lost_rev, mgr_lost_rev, c_lost_rev, srg_total_lost_revenue, number_of_workdays, billable_weeks, \
-        srg_billable_percentage, mgr_anb_hours_by_employee
+        srg_billable_percentage
 
 
 def AdminDashboard(request):
@@ -462,7 +452,6 @@ def AdminDashboard(request):
                        'number_of_workdays': new_data[68],
                        'billable_weeks': new_data[69],
                        'srg_billable_percentage': new_data[70],
-                       'mgr_anb_hours_by_employee': new_data[71],
                        'monthly_total_hours': monthly_total_hours,
                        'selected_month': selected_month,
                        'month_form': month_form}
@@ -547,7 +536,6 @@ def AdminDashboard(request):
                    'number_of_workdays': current_month_data[68],
                    'billable_weeks': current_month_data[69],
                    'srg_billable_percentage': current_month_data[70],
-                   'mgr_anb_hours_by_employee': current_month_data[71],
                    'monthly_total_hours': monthly_total_hours,
                    'selected_month': today,
                    'month_form': month_form}
@@ -1028,7 +1016,7 @@ def EmployeeTimesheet(request):
 
                 return redirect('employee-timesheet')
         elif 'expense_button' in request.POST:
-            expense_form = ExpenseForm(request.POST, initial={'date': today})
+            expense_form = ExpenseForm(request.POST)
             if expense_form.is_valid():
                 employee_instance = get_object_or_404(Employee, user=request.user.id)
                 engagement_id = request.POST.get('expense-input')
