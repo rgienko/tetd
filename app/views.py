@@ -32,7 +32,7 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
 
-from .filters import TimesheetFilter, ExpenseFilter, AdminTodoListFilter
+from .filters import TimesheetFilter, ExpenseFilter, AdminTodoListFilter, TimesheetFilterPrevious
 from .forms import *
 
 
@@ -58,6 +58,8 @@ def logout_view(request):
     logout(request)
 
     return redirect('login')
+
+
 def register(request):
     if request.method == 'POST':
         first_name = request.POST.get('first_name')
@@ -137,7 +139,8 @@ def getCompilationData(mnth):
             fixed_hours_by_employee_sum=Sum('hours')
         )
 
-        hourly_hours_by_employee = Time.objects.filter(engagement__type_id='H', time_type_id='B', ts_date__year=date.today().year).values(
+        hourly_hours_by_employee = Time.objects.filter(engagement__type_id='H', time_type_id='B',
+                                                       ts_date__year=date.today().year).values(
             'employee_id', 'employee__title').annotate(
             hourly_hours_by_employee_sum=Sum('hours')
         )
@@ -170,7 +173,8 @@ def getCompilationData(mnth):
             'employee_id', 'employee__title').annotate(fixed_hours_by_employee_sum=Sum('hours')
                                                        ).order_by('employee__user__last_name')
 
-        hourly_hours_by_employee = Time.objects.filter(engagement__type_id='H', time_type_id='B', ts_date__month=mnth).values(
+        hourly_hours_by_employee = Time.objects.filter(engagement__type_id='H', time_type_id='B',
+                                                       ts_date__month=mnth).values(
             'employee_id', 'employee__title', 'employee__user__username').annotate(
             hourly_hours_by_employee_sum=Sum('hours')).order_by('employee__user__last_name')
 
@@ -870,18 +874,77 @@ def AdminEmployeeDashboard(request, pk, per_beg, per_end):
 
     context = {'per_end_object': per_end_object, 'per_beg_object': per_beg_object, 'user_info': user_info,
                'timesheet_entries': timesheet_entries, 'today': today, 'first_name': first_name, 'last_name': last_name,
-               'user_engagements': user_engagements, 'week_beg': per_beg_object, 'week_end': per_end_object,
+               'user_engagements': user_engagements, 'week_beg': per_beg_object, 'week_en   d': per_end_object,
                'page_title': 'Employee Detail',
                'billable_hours_sum': billable_hours_sum, 'non_billable_hours_sum': non_billable_hours_sum,
                'employee_td_entries': employee_td_entries, 'employee_td_entries_all': employee_td_entries_all}
     return render(request, 'adminEmployeeDashboard.html', context)
 
 
+def EmployeeTimesheetPrevious(request):
+    user_info = get_object_or_404(User, pk=request.user.id)
+    today = date.today()
+    week_beg = today - timedelta(days=today.weekday())
+    week_end = week_beg + timedelta(days=5)
+
+    queryset = Time.objects.values('ts_date',
+                                   'employee__user__username',
+                                   'engagement__engagement_srg_id',
+                                   'engagement__parent__parent_name',
+                                   'engagement__provider',
+                                   'engagement__provider__provider_name',
+                                   'engagement__time_code',
+                                   'engagement__time_code__time_code_desc',
+                                   'engagement__fye',
+                                   'engagement__type_id',
+                                   'engagement__is_rac',
+                                   'engagement__engagement_hourly_rate',
+                                   'hours',
+                                   'note').order_by('ts_date', 'engagement__parent__parent_name',
+                                                    'engagement__provider',
+                                                    'engagement__fye').filter(employee_id=user_info.employee)
+
+    f = TimesheetFilterPrevious(request.GET, queryset=queryset)
+    qs = f.qs
+
+    qs_hours_total_f = qs.aggregate(qs_hours_sum=Sum('hours'))
+
+    f_start_date = f.form['start_date']
+    f_end_date = f.form['end_date']
+
+    if request.method == 'GET' and 'extract_button' in request.GET:
+        matching_expenses = Expense.objects.filter(date__gte=datetime.strptime(f_start_date.value(), "%m/%d/%Y"),
+                                                   date__lte=datetime.strptime(f_end_date.value(), "%m/%d/%Y"))
+        ts_data = read_frame(f.qs)
+
+        ex_data = read_frame(matching_expenses)
+
+        fname = 'EmployeeTimesheetCompilation'
+
+        response = HttpResponse(content_type='application/vns.ms-excel')
+        response['Content-Disposition'] = 'attachment; filename=' + fname + '.xlsx'
+        with pandas.ExcelWriter(response, engine='xlsxwriter') as writer:
+            ts_data.to_excel(writer, sheet_name='SRG Timesheet Compilation', index=False, header=True)
+            ex_data.to_excel(writer, sheet_name='SRG Expense Compilation', index=False, header=True)
+            # df_hfy.to_excel(writer, sheet_name=('PFY ' + fye), index=False, header=True)
+
+            return response
+
+    context = {'filter': f, 'page_title': 'Extract Billing Data', 'today': today, 'week_beg': week_beg,
+               'week_end': week_end, 'user_info': user_info, 'qs_hours_total_f': qs_hours_total_f}
+
+    return render(request, 'employeeTimesheetPrevious.html', context)
+
+
 def EmployeeTimesheetReview(request):
     user_info = get_object_or_404(User, pk=request.user.id)
     today = date.today()
-    last_week_beg = today - timedelta(days=7) - timedelta(days=date.today().weekday()) - timedelta(days=1)
-    last_week_end = last_week_beg + timedelta(days=6)
+    if today.weekday() <= 5:
+        last_week_beg = today - timedelta(days=today.weekday())
+        last_week_end = last_week_beg + timedelta(days=6)
+    else:
+        last_week_beg = today - timedelta(days=7) - timedelta(days=date.today().weekday()) - timedelta(days=1)
+        last_week_end = last_week_beg + timedelta(days=6)
 
     current_week = []
     current_week_ts = {}
@@ -902,6 +965,8 @@ def EmployeeTimesheetReview(request):
     total_available_hours = 40 - total_weekly_hours['hours_sum']
 
     edit_time_form = EditTimeForm()
+    time_form = TimeForm()
+    expense_form = ExpenseForm()
     if request.method == 'POST':
         if 'submit_button' in request.POST:
             employee_instance = get_object_or_404(Employee, user=request.user.id)
@@ -909,7 +974,7 @@ def EmployeeTimesheetReview(request):
             employee_instance.save()
             return redirect('dashboard')
         if 'time_button' in request.POST:
-            time_form = TimeForm(request.POST)
+            time_form = TimeForm(request.POST, initial={'ts_date': today})
             if time_form.is_valid():
                 engagement_id = request.POST.get('engagement-input')
                 engagement_instance = get_object_or_404(Engagement, engagement_srg_id=engagement_id)
@@ -942,20 +1007,21 @@ def EmployeeTimesheetReview(request):
 
                 new_expense.save()
 
-                return redirect('employee-timesheet')
+                return redirect('employee-timesheet-review')
         else:
             expense_form = ExpenseForm()
-            time_form = TimeForm()
+            time_form = TimeForm(initial={'ts_date': today})
     else:
-        time_form = TimeForm()
+        time_form = TimeForm(initial={'ts_date': today})
         expense_form = ExpenseForm()
 
     context = {'user_info': user_info, 'page_title': 'Submit Timesheet', 'today': today, 'last_week_beg': last_week_beg,
-               'last_week_end': last_week_end, 'edit_time_form': edit_time_form,
+               'last_week_end': last_week_end, 'week_beg': last_week_beg, 'week_end': last_week_end,
                'current_week': current_week, 'employee_ts_entries': employee_ts_entries,
-               'employee_hours_by_day': employee_hours_by_day,
-               'user_engagements': user_engagements, 'total_weekly_hours': total_weekly_hours,
-               'time_form': time_form,'expense_form': expense_form, 'total_available_hours': total_available_hours}
+               'employee_hours_by_day': employee_hours_by_day, 'user_engagements': user_engagements,
+               'total_weekly_hours': total_weekly_hours, 'total_available_hours': total_available_hours,
+               'time_form': time_form, 'edit_time_form': edit_time_form, 'expense_form': expense_form
+               }
 
     return render(request, 'employeeTimesheetReview.html', context)
 
@@ -1031,9 +1097,9 @@ def EmployeeTimesheet(request):
                 return redirect('employee-timesheet')
         else:
             expense_form = ExpenseForm()
-            time_form = TimeForm()
+            time_form = TimeForm(initial={'ts_date': today})
     else:
-        time_form = TimeForm()
+        time_form = TimeForm(initial={'ts_date': today})
         expense_form = ExpenseForm()
 
     context = {'today': today, 'page_title': 'Timesheet', 'employee_ts_entries': employee_ts_entries,
@@ -1260,7 +1326,7 @@ def UpdateTsEntry(request):
             entry.time_type_id = form.cleaned_data['time_type_id']
             entry.note = form.cleaned_data['note']
             entry.save()
-    return redirect('employee-timesheet')
+    return redirect('employee-timesheet-review')
 
 
 def DeleteTdEntry(request, pk):
@@ -1573,7 +1639,7 @@ def createEmployeeHoursCompilationReport(request, mnth):
                 employeeFixedColumn = Paragraph(
                     '<para align=center>' + str(item['fixed_hours_by_employee_sum']) + '</para>')
         for item in vp_hourly:
-            if item['employee__user__username'] == emp['user__username']:
+            if item['employee_id'] == emp['employee_id']:
                 employeeHourlyColumn = Paragraph(
                     '<para align=center>' + str(item['hourly_hours_by_employee_sum']) + '</para>',
                     styles['Normal'])
