@@ -939,7 +939,7 @@ def EmployeeTimesheetPrevious(request):
 def EmployeeTimesheetReview(request):
     user_info = get_object_or_404(User, pk=request.user.id)
     today = date.today()
-    if today.weekday() <= 5:
+    if today.weekday() == 5:
         last_week_beg = today - timedelta(days=today.weekday())
         last_week_end = last_week_beg + timedelta(days=6)
     else:
