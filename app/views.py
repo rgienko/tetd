@@ -702,6 +702,16 @@ def AdminTimesheet(request):
         matching_expenses = Expense.objects.filter(date__gte=datetime.strptime(f_start_date.value(), "%m/%d/%Y"),
                                                    date__lte=datetime.strptime(f_end_date.value(), "%m/%d/%Y"))
         ts_data = read_frame(f.qs)
+        ts_data = ts_data.rename(columns={'ts_date': 'Date', 'engagement__engagement_srg_id': 'SRG_ID',
+                                          'engagement__parent__parent_name': 'Parent',
+                                          'engagement__provider': 'Provider #',
+                                          'engagement__provider__provider_name': 'Provider Name',
+                                          'engagement__time_code': 'Time Code',
+                                          'engagement__time_code__time_code_desc': 'Time Code Description',
+                                          'engagement__fye': 'FYE', 'engagement__type_id': 'Bill Type',
+                                          'engagement__is_rac': 'RAC Y/N',
+                                          'engagement__engagement_hourly_rate': 'Engagement Rate',
+                                          'hours': 'Hours', 'note': 'Note'})
 
         ex_data = read_frame(matching_expenses)
 
@@ -725,8 +735,7 @@ def AdminTimesheet(request):
 def getStaffWeekHours(per_beg, per_end):
     data = Todolist.objects.values('employee__user__username').filter(todo_date__gte=per_beg).filter(
         todo_date__lte=per_end).annotate(
-        total_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()
-                                 ),
+        total_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()),
         non_billable_hours_sum=Coalesce(
             Sum(Case(When(engagement__type_id='N', then=F('anticipated_hours')))), 0,
             output_field=DecimalField()),
@@ -1073,12 +1082,13 @@ def EmployeeTimesheet(request):
                 new_entry.engagement = engagement_instance
                 new_entry.save()
 
-                engagement_hours = Time.objects.filter(engagement=engagement_instance.engagement_id).aggregate(
-                    ehours=Sum('hours')
-                )
+                if engagement_instance.alert:
+                    engagement_hours = Time.objects.filter(engagement=engagement_instance.engagement_id).aggregate(
+                        ehours=Sum('hours')
+                    )
 
-                if (engagement_instance.budget_amount // 200) - engagement_hours['ehours'] <= 0:
-                    overBudgetAlert(engagement_instance.engagement_id)
+                    if (engagement_instance.budget_amount // 200) - engagement_hours['ehours'] <= 0:
+                        overBudgetAlert(engagement_instance.engagement_id)
 
                 return redirect('employee-timesheet')
         elif 'expense_button' in request.POST:
@@ -1133,7 +1143,8 @@ def EmployeeTodolist(request):
     current_week = []
     current_week_ts = {}
 
-    for i in range(20):
+
+    for i in range(28):
         current_week.append(week_beg + timedelta(days=i))
 
     paginator = Paginator(current_week, 7)
@@ -1248,7 +1259,19 @@ def UpdateEngagementStatus(request, pk):
         engagement_instance.is_complete = False
         engagement_instance.save()
 
-    return redirect('admin-dashboard')
+    return redirect('engagement-detail', pk)
+
+
+def ToggleEngagementAlerts(request, pk):
+    engagement_instance = get_object_or_404(Engagement, pk=pk)
+    if engagement_instance.alert is False:
+        engagement_instance.alert = True
+        engagement_instance.save()
+    else:
+        engagement_instance.alert = False
+        engagement_instance.save()
+
+    return redirect('engagement-detail', pk)
 
 
 def AssignmentProjects(request, pk):
@@ -1316,6 +1339,20 @@ def GetTsEntry(request, ts_id):
 
 
 def UpdateTsEntry(request):
+    if request.method == 'POST':
+        form = EditTimeForm(request.POST)
+        if form.is_valid():
+            entry = Time.objects.get(pk=request.POST.get('ts-id-input'))
+            entry.engagement = form.cleaned_data['engagement']
+            entry.ts_date = form.cleaned_data['ts_date']
+            entry.hours = form.cleaned_data['hours']
+            entry.time_type_id = form.cleaned_data['time_type_id']
+            entry.note = form.cleaned_data['note']
+            entry.save()
+    return redirect('employee-timesheet')
+
+
+def UpdateRevTsEntry(request):
     if request.method == 'POST':
         form = EditTimeForm(request.POST)
         if form.is_valid():

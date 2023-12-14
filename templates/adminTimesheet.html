@@ -23,7 +23,7 @@
     </div>
     -->
     <div class="row mt-2 d-flex justify-content-evenly vh-100">
-        <div class="col-3">
+        <div class="col-xxl-4 col-xl-4 col-lg-4 col-md-12">
             <div class="card">
                 <div class="card-header srg-bg-primary srg-text-secondary">
                     <span class="display-6 fs-3">Filter Form</span>
@@ -32,7 +32,7 @@
                     <form method="get">
                         {% for field in filter.form %}
                             <div class="fieldWrapper mb-3">
-                                <p>{{ field.label_tag }} <br> {{ field }}
+                                <p class="">{{ field.label_tag|title }} <br> {{ field }}</p>
                                 {% if field.help_text %}
                                 <p class="help">{{ field.help_text|safe }}</p>
                                 {% endif %}
@@ -48,7 +48,7 @@
             </div>
         </div>
 
-        <div class="col-9 vh-100">
+        <div class="col-xxl-8 col-xl-8 col-lg-8 col-md-12 vh-100">
             <div class="card vh-100">
                 <div class="card-header srg-text-secondary srg-bg-primary">
                     <span class="display-6 fs-3">Timesheet Entries</span>

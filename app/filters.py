@@ -4,12 +4,10 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import request
 
 from app.models import *
+from django import forms
 
 
 class TimesheetFilter(django_filters.FilterSet):
-    # employee = django_filters.CharFilter(field_name='employee')
-    # engagement__provider = django_filters.CharFilter(field_name='engagement', lookup_expr='icontains')
-    # period = django_filters.DateFromToRangeFilter(field_name='ts_date', label='Period:')
     start_date = django_filters.DateFilter(field_name='ts_date', label='Start Date:', lookup_expr='gte')
     end_date = django_filters.DateFilter(field_name='ts_date', label='End Date:', lookup_expr='lte')
 
@@ -17,6 +15,13 @@ class TimesheetFilter(django_filters.FilterSet):
         model = Time
         fields = {
             'employee': ['exact'],
+            'engagement__time_code': ['exact'],
+            'engagement__parent': ['exact']
+        }
+
+        widgets = {
+            'engagement__time_code': django_filters.ModelChoiceFilter(widget=forms.Select(attrs={
+                'style': 'white-space: normal; width:75%'}))
         }
 
 

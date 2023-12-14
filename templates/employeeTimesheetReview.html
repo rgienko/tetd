@@ -199,7 +199,7 @@
                                         Edit Entry
                                     </div>
                                     <div class="modal-body">
-                                        <form class="" method="POST" id="editTimeForm" action="{% url 'update-ts' %}">
+                                        <form class="" method="POST" id="editTimeForm" action="{% url 'update-rev-ts' %}">
                                             {% csrf_token %}
                                                 <label for="ts-id">Record #:</label><br>
                                                 <input class="w-50" name="ts-id-input" type="text" id="ts-id" /><br>

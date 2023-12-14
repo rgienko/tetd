@@ -17,6 +17,7 @@
                                     <th class="">Scope</th>
                                     <th class="">Category</th>
                                     <th class="">Amount</th>
+                                    <th class="">Billable</th>
                                 </tr>
                             </thead>
 
@@ -37,6 +38,9 @@
                                     <td>
                                         {{ entry.expense_amount }}
                                     </td>
+                                    <td>
+                                        {{ entry.time_type_id }}
+                                    </td>
                                 </tr>
                             {% endfor %}
                             <tfoot>
@@ -46,6 +50,7 @@
                                     <td></td>
                                     <th>Total</th>
                                     <th>{{ total_expense.expense_amount__sum }}</th>
+                                    <td></td>
                                 </tr>
                             </tfoot>
                         </table>

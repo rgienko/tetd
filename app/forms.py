@@ -70,13 +70,14 @@ class ExpenseForm(forms.ModelForm):
     class Meta:
         model = Expense
 
-        fields = ['date', 'expense_category', 'expense_amount', 'expense_note']
+        fields = ['date', 'expense_category', 'expense_amount', 'time_type_id', 'expense_note']
 
         labels = {
             'engagement': _('Engagement'),
             'date': _('Date'),
             'expense_category': _('Category'),
             'expense_amount': _('Amount'),
+            'time_type_id': _('Type'),
             'expense_note': _('Note')
         }
 
