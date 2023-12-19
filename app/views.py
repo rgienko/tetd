@@ -608,6 +608,7 @@ def AdminEngagementDetail(request, pk):
     week_end = week_beg + timedelta(days=6)
 
     engagement_instance = get_object_or_404(Engagement, pk=pk)
+    engagement_notes = EngagementNotes.objects.filter(engagement=engagement_instance.engagement_id)
 
     budget_calc = engagement_instance.budget_amount // 250
 
@@ -657,12 +658,30 @@ def AdminEngagementDetail(request, pk):
             emp['variance'] = emp['ts_hours'] - emp['td_hours']
         ts_vs_todo_data = engagement_td_hours_by_employee
 
+    note_form = CreateEngagementNote()
+    if request.method == 'POST':
+        note_form = CreateEngagementNote(request.POST)
+        if note_form.is_valid():
+            employee_instance = get_object_or_404(Employee, user=request.user.id)
+
+            new_note = note_form.save(commit=False)
+            new_note.employee_id = employee_instance.employee_id
+            new_note.engagement = engagement_instance
+            new_note.note_date = date.today()
+            new_note.save()
+            print(engagement_instance.engagement_id)
+
+            return redirect('engagement-detail', engagement_instance.engagement_id)
+        else:
+            note_form = CreateEngagementNote()
+
+
     context = {'user_info': user_info, 'today': today, 'week_beg': week_beg, 'week_end': week_end,
                'engagement_instance': engagement_instance, 'page_title': 'Engagement Detail',
-               'ts_vs_todo_data': ts_vs_todo_data,
+               'ts_vs_todo_data': ts_vs_todo_data, 'engagement_notes': engagement_notes,
                'engagement_td_hours_by_employee': engagement_td_hours_by_employee,
                'engagement_ts_hours_by_employee': engagement_ts_hours_by_employee,
-               'employee_engagement_hours': employee_engagement_hours,
+               'employee_engagement_hours': employee_engagement_hours, 'note_form': note_form,
                'billable_hours_employee': billable_hours_employee, 'total_billable_hours': total_billable_hours,
                'non_billable_hours_employee': non_billable_hours_employee, 'budget_calc': budget_calc,
                'total_non_billable_hours': total_non_billable_hours}
@@ -995,12 +1014,13 @@ def EmployeeTimesheetReview(request):
                 new_entry.engagement = engagement_instance
                 new_entry.save()
 
-                engagement_hours = Time.objects.filter(engagement=engagement_instance.engagement_id).aggregate(
-                    ehours=Sum('hours')
-                )
+                if engagement_instance.alert:
+                    engagement_hours = Time.objects.filter(engagement=engagement_instance.engagement_id).aggregate(
+                        ehours=Sum('hours')
+                    )
 
-                if engagement_instance.budget_hours - engagement_hours['ehours'] <= 0:
-                    overBudgetAlert(engagement_instance.engagement_id)
+                    if engagement_instance.budget_hours - engagement_hours['ehours'] <= 0:
+                        overBudgetAlert(engagement_instance.engagement_id)
 
                 return redirect('employee-timesheet-review')
         elif 'expense_button' in request.POST:
@@ -1142,7 +1162,6 @@ def EmployeeTodolist(request):
 
     current_week = []
     current_week_ts = {}
-
 
     for i in range(28):
         current_week.append(week_beg + timedelta(days=i))

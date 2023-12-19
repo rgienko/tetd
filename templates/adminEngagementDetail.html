@@ -12,14 +12,14 @@
             </div>
         </div>
     -->
-    <div class="container-fluid vh-100">
+    <div class="container-fluid vh-100 overflow-auto">
         <div class="row d-flex justify-content-evenly mt-2">
             <div class="col-xl-5 col-lg-12 col-md-12 col-sm-12 card p-0 shadow-sm rounded-4">
                 <div class="card-header srg-text-secondary srg-bg-primary rounded-4 rounded-bottom-0 border-bottom-0">
                     <span class="display-6 fs-3">Engagement Info</span>
                 </div>
 
-                <div class="card-body p-1" >
+                <div class="card-body" >
                     {% if engagement_instance.is_complete == False %}<h5><span class="badge rounded-pill srg-bg-success fw-normal">Status: Open</span></h5>
                     {% else %}
                         <h5><span class="badge rounded-pill srg-bg-danger fw-normal">Status: Closed</span></h5>
@@ -176,23 +176,48 @@
                                 </div>
                            </div>
                         </div>
+
+                        <div class="row">
+                            <canvas class="my-4 text-light" id="myChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-xl-5 col-lg-12 col-md-12 col-sm-12 card rounded-4 p-0 shadow-sm">
-                <div class="card-header srg-text-secondary srg-bg-primary rounded-4 rounded-bottom-0 border-bottom-0">
-                    <span class="display-6 fs-3">Hours By Employee</span>
+                <div class="card-header srg-text-secondary srg-bg-primary rounded-4 rounded-bottom-0 border-bottom-0 d-flex justify-content-between align-items-center">
+                    <span class="display-6 fs-3">Engagement Notes 2.0</span>
+                    <a class="srg-link-secondary" href="" data-bs-toggle="modal" data-bs-target="#engagementNoteModal">
+                        <svg class="bi"><use xlink:href="#plus"/></svg> Add Note</a>
                 </div>
 
                 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
-                <div class="chart-container" style="position: relative;">
-                    <canvas class="my-4 text-light" id="myChart"></canvas>
+                <div class="card-body">
+                    {% if engagement_notes %}
+                        {% for item in engagement_notes %}
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="srg-list-group-item shadow-sm my-2">
+                                        <span class="fs-6 srg-header">{{ item.note_date|date:'m/d/y' }} - {{ item.employee }}</span>
+                                            <p class="">
+                                                {{ item.note|safe }}
+                                            </p>
+
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor    %}
+                    {% else %}
+                        <div class="d-flex justify-content-center">
+                            <p>There are no notes for this engagement.</p>
+
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
 
-
+        <!--
         <div class="row d-flex justify-content-evenly mt-4">
             <div class="col-xl-5 col-lg-12 col-md-12 col-sm-12 card p-0 shadow-sm rounded-4">
                 <div class="card-header srg-text-secondary srg-bg-primary rounded-4 rounded-bottom-0 border-bottom-0">
@@ -210,29 +235,31 @@
             </div>
 
         </div>
-
-        <!--
-        <div class="modal fade" id="engagementStatusModal" tabindex="-1" aria-labelledby="engagementStatusModal" aria-hidden="true">
+        -->
+        <div class="modal fade" id="engagementNoteModal" tabindex="-1" aria-labelledby="engagementNoteModal" aria-hidden="true">
             <div class="modal-dialog" id="modal">
                 <div class="modal-content">
                     <div class="modal-header srg-bg-primary text-light fs-5">
-                        Confirm Project Completion
+                        Add Note
                     </div>
                     <div class="modal-body">
                         <form method="POST">
                             {% csrf_token %}
-                            {% if engagement_instance.is_complete == false %}
-                                <p class="">Are you sure you want to complete this engagement?</p>
-                            {% else %}
-                                <p class="">Are you sure you want to open this engagement?</p>
-                            {% endif %}
-                            <button class="srg-btn-primary my-2" id="confirm-button" name="confirm-button">Confirm</button>
+                            {% for field in note_form %}
+                                <div class="fieldWrapper mb-3">
+                                    <p class="">{{ field.label_tag|title }} <br> {{ field }}</p>
+                                    {% if field.help_text %}
+                                    <p class="help">{{ field.help_text|safe }}</p>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+
+                            <button class="srg-btn-primary my-2" id="save-button" name="save-button">Save Note</button>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
-        -->
     </div>
     <script>
         const config = {
@@ -263,8 +290,14 @@
                 },
                 plugins: {
                   legend: {
-                      display: true
-                  }
+                      display: true,
+                      position: 'right'
+                  },
+                    title: {
+                        display: true,
+                        text: 'Hours By Employee',
+                        align: 'left'
+                    }
                 },
                 scales: {
                     x: {

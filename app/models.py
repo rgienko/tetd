@@ -106,6 +106,14 @@ class Engagement(models.Model):
         return self.time_code.time_code_desc
 
 
+class EngagementNotes(models.Model):
+    note_id = models.AutoField(primary_key=True, blank=False, null=False)
+    note_date = models.DateField(default=date.today())
+    note = models.TextField(blank=True, null=True)
+    engagement = models.ForeignKey(Engagement, on_delete=models.CASCADE)
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE)
+
+
 class Assignments(models.Model):
     assignment_id = models.AutoField(primary_key=True, blank=False, null=False)
     engagement = models.ForeignKey(Engagement, on_delete=models.CASCADE)

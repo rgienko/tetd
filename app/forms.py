@@ -23,6 +23,21 @@ class CreateEngagementForm(forms.ModelForm):
         }
 
 
+class CreateEngagementNote(forms.ModelForm):
+    class Meta:
+        model = EngagementNotes
+
+        fields = ['note']
+
+        labels = {
+            'note': _('Note')
+        }
+
+        widgets = {
+            'note': forms.Textarea(attrs={'rows': 7, 'cols': 55}),
+        }
+
+
 class TimeForm(forms.ModelForm):
     class Meta:
         model = Time
