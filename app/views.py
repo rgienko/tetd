@@ -608,7 +608,7 @@ def AdminEngagementDetail(request, pk):
     week_end = week_beg + timedelta(days=6)
 
     engagement_instance = get_object_or_404(Engagement, pk=pk)
-    engagement_notes = EngagementNotes.objects.filter(engagement=engagement_instance.engagement_id)
+    engagement_notes = EngagementNotes.objects.filter(engagement=engagement_instance.engagement_id).order_by('-note_date')
 
     budget_calc = engagement_instance.budget_amount // 250
 
@@ -1179,23 +1179,24 @@ def EmployeeTodolist(request):
             engagement_instance = get_object_or_404(Engagement, engagement_srg_id=engagement_id)
             employee_instance = get_object_or_404(Employee, user=request.user.id)
 
-            start_date = request.POST.get('todo_date')
-            start_date = datetime.strptime(start_date, "%Y-%m-%d")
-            end_date = request.POST.get('todo_date_end')
-            if end_date == '':
-                end_date = start_date
-            else:
-                end_date = datetime.strptime(end_date, "%Y-%m-%d")
+            # start_date = request.POST.get('todo_date')
+            # start_date = datetime.strptime(start_date, "%Y-%m-%d")
+            # end_date = request.POST.get('todo_date_end')
+            # end_date = datetime.strptime(end_date, "%Y-%m-%d")
 
-            number_of_days = end_date - start_date
+            start_date = todo_form.cleaned_data.get('todo_date')
+            end_date = todo_form.cleaned_data.get('todo_date_end')
 
-            if number_of_days.days == 0:
+            number_of_days = (end_date - start_date).days
+            print(str(number_of_days))
+
+            if number_of_days == 0:
                 new_entry = todo_form.save(commit=False)
                 new_entry.employee_id = employee_instance.employee_id
                 new_entry.engagement = engagement_instance
                 new_entry.todo_date_end = start_date
                 new_entry.save()
-            else:
+            elif number_of_days > 0:
                 number_of_days = number_of_days + timedelta(days=1)
                 for i in range(0, number_of_days.days):
                     new_entry = Todolist(
@@ -1211,13 +1212,14 @@ def EmployeeTodolist(request):
                     # new_entry.employee_id = employee_instance.employee_id
                     # new_entry.engagement = engagement_instance
                     new_entry.save()
-
+            else:
+                pass
             return redirect('employee-todolist')
     else:
         todo_form = TodoForm()
 
     context = {'page_title': 'To-Do List', 'employee_td_entries': employee_td_entries, 'week_beg': week_beg,
-               'week_end': week_end, 'today': today,
+               'week_end': week_end, 'today': today, 'employee_td_entries': employee_td_entries,
                'todo_form': todo_form, 'user_info': user_info, 'page_obj': page_obj, 'paginator': paginator,
                'employee_td_hours_by_day': employee_td_hours_by_day, 'edit_todo_form': edit_todo_form,
                'current_week': current_week, 'current_week_ts': current_week_ts, 'user_engagements': user_engagements}

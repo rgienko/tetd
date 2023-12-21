@@ -8,6 +8,7 @@ admin.site.register(Parent)
 
 admin.site.register(Provider)
 
+
 @admin.register(Time)
 class TimeAdmin(admin.ModelAdmin):
     list_display = ('engagement', 'employee', 'ts_date', 'hours', 'time_type_id', 'note')
@@ -27,3 +28,15 @@ class EngagementAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Expense)
+
+
+@admin.register(Todolist)
+class TodolistAdmin(admin.ModelAdmin):
+    list_display = ('engagement', 'employee', 'todo_date', 'todo_date_end', 'anticipated_hours', 'note')
+    list_filter = ('employee',)
+
+
+@admin.register(EngagementNotes)
+class EngagementNotesAdmin(admin.ModelAdmin):
+    list_display = ('engagement', 'employee', 'note_date', 'note')
+    list_filter = ('employee',)

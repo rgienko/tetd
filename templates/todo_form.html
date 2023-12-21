@@ -1,0 +1,15 @@
+<form class="" method="POST" action="{% url 'todo-form-view' %}">
+    {% csrf_token %}
+        <label for="engagement-input">Engagement:</label><br>
+        <input name="engagement-input" type="text" id="engagement-input"/><br>
+    {% for field in form %}
+        <div class="fieldWrapper my-3">
+            {{ field.label_tag }} <br>{{ field }}<div id="error-message" class="alert alert-danger" style="display: none;"></div>
+            {% if field.help_text %}
+                <p class="help">{{ field.help_text|safe }}</p>
+            {% endif %}
+        </div>
+    {% endfor %}
+
+    <button type="submit" id="submit-button" class="srg-btn-primary my-2">Add Item</button>
+</form>

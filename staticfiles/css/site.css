@@ -210,6 +210,22 @@
     border-radius: 12px;
 }
 
+.srg-btn-ol-danger {
+    background-color: white;
+    border: 1px solid #8B0000;
+    color: #8B0000;
+    padding: 8px 16px 8px 16px;
+    border-radius: 12px;
+}
+
+.srg-btn-ol-danger:hover {
+    background-color: #8B0000;
+    border: 1px solid #8B0000;
+    color: white;
+    padding: 8px 16px 8px 16px;
+    border-radius: 12px;
+}
+
 .srg-btn-primary {
     background-color: #02308C;
     border: 1px solid #02308C;

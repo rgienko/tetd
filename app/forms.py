@@ -121,6 +121,16 @@ class TodoForm(forms.ModelForm):
             'todo_date_end': DatePickerInput,
         }
 
+    def clean(self):
+        super().clean()
+        todo_date = self.cleaned_data.get("todo_date")
+        todo_date_end = self.cleaned_data.get("todo_date_end")
+
+        if todo_date.year > todo_date_end.year:
+            self.add_error("todo_date_end", "Invalid Date")
+        elif todo_date_end.year - todo_date.year > 1:
+            self.add_error("todo_date_end", "Invalid Date")
+
 
 class EditTodoForm(forms.ModelForm):
     class Meta:

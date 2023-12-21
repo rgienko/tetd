@@ -41,32 +41,32 @@
                         {% endfor %}
                     </div>
                 </div>
-                    <div class="modal fade" id="todo-modal" tabindex="-1" aria-labelledby="todo-modal" aria-hidden="true">
-                        <div class="modal-dialog" id="modal">
-                            <div class="modal-content">
-                                <div class="modal-header srg-bg-primary text-light fs-5">
-                                    Add Item
-                                </div>
-                                <div class="modal-body">
-                                    <form class="" method="POST">
-                                        {% csrf_token %}
-                                            <label for="engagement-input">Engagement:</label><br>
-                                            <input name="engagement-input" type="text" id="engagement-input"/><br>
-                                        {% for field in todo_form %}
-                                            <div class="fieldWrapper my-3">
-                                                {{ field.label_tag }} <br>{{ field }}
-                                                {% if field.help_text %}
-                                                    <p class="help">{{ field.help_text|safe }}</p>
-                                                {% endif %}
-                                            </div>
+                <div class="modal fade" id="todo-modal" tabindex="-1" aria-labelledby="todo-modal" aria-hidden="true">
+                    <div class="modal-dialog" id="modal">
+                        <div class="modal-content">
+                            <div class="modal-header srg-bg-primary text-light fs-5">
+                                Add Item
+                            </div>
+                            <div class="modal-body">
+                                <form class="" method="POST" action="{% url 'employee-todolist' %}">
+                                    {% csrf_token %}
+                                        <label for="engagement-input">Engagement:</label><br>
+                                        <input name="engagement-input" type="text" id="engagement-input"/><br>
+                                    {% for field in todo_form %}
+                                        <div class="fieldWrapper my-3">
+                                            {{ field.label_tag }} <br>{{ field }} <span class="srg-text-danger list-group-item-danger">{{ field.errors|safe }}</span>
+                                            {% if field.help_text %}
+                                                <p class="help">{{ field.help_text|safe }}</p>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
 
-                                        {% endfor %}
-                                        <button class="srg-btn-primary my-2">Add Item</button>
-                                    </form>
-                                </div>
+                                    <button type="submit" class="srg-btn-primary my-2">Add Item</button>
+                                </form>
                             </div>
                         </div>
                     </div>
+                </div>
             </div>
         </div>
 
@@ -171,37 +171,49 @@
                             {% endif %}
                         </ul>
                     </div>
-                        <div class="modal fade" id="edit-modal" tabindex="-1" aria-labelledby="edit-modal" aria-hidden="true">
-                            <div class="modal-dialog" id="modal">
-                                <div class="modal-content">
-                                    <div class="modal-header srg-bg-secondary srg-header fs-5">
-                                        Edit Entry
-                                    </div>
-                                    <div class="modal-body">
-                                        <form class="" method="POST" id="editTodoForm" action="{% url 'update-td' %}">
-                                            {% csrf_token %}
-                                                <label for="td-id">Record #:</label><br>
-                                                <input class="w-50" name="td-id-input" type="text" id="td-id" /><br>
-                                            {% for field in edit_todo_form %}
-                                                <div class="fieldWrapper my-3">
-                                                    {{ field.label_tag }} <br>{{ field }}
-                                                    {% if field.help_text %}
-                                                        <p class="help">{{ field.help_text|safe }}</p>
-                                                    {% endif %}
-                                                </div>
+                    <div class="modal fade" id="edit-modal" tabindex="-1" aria-labelledby="edit-modal" aria-hidden="true">
+                        <div class="modal-dialog" id="modal">
+                            <div class="modal-content">
+                                <div class="modal-header srg-bg-secondary srg-header fs-5">
+                                    Edit Entry
+                                </div>
+                                <div class="modal-body">
+                                    <form class="" method="POST" id="editTodoForm" action="{% url 'update-td' %}">
+                                        {% csrf_token %}
+                                            <label for="td-id">Record #:</label><br>
+                                            <input class="w-50" name="td-id-input" type="text" id="td-id" /><br>
+                                        {% for field in edit_todo_form %}
+                                            <div class="fieldWrapper my-3">
+                                                {{ field.label_tag }} <br>{{ field }}
+                                                {% if field.help_text %}
+                                                    <p class="help">{{ field.help_text|safe }}</p>
+                                                {% endif %}
+                                            </div>
 
-                                            {% endfor %}
-                                            <button name="edit_todo_button" type="submit" class="srg-btn-primary my-2">Save Entry</button>
-                                        </form>
+                                        {% endfor %}
+                                        <button name="edit_todo_button" type="submit" class="srg-btn-primary my-2">Save Entry</button>
+                                    </form>
 
-                                    </div>
                                 </div>
                             </div>
                         </div>
+                    </div>
                 </div>
             </div>
+        </div>
+    </div>
 
 
+    <div class="modal fade" id="cal-modal" tabindex="-1" style="display:none">
+        <div class="modal-dialog" id="modal">
+            <div class="modal-content">
+                <div class="modal-header srg-bg-secondary srg-header fs-5">
+                    Calendar Modal
+                </div>
+                <div class="modal-body">
+                    This is the calendar modal
+                </div>
+            </div>
         </div>
     </div>
 
@@ -345,6 +357,36 @@
                 spinner.style.display = ""; // Change to "none" if you want it to hide initially
             });
         </script>
+
+        <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendarEl = document.getElementById('myCalendar');
+
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                events: [
+                    {% for event in employee_td_entries %}
+                        {
+                            title: '{{ event.engagement }} <br> {{ event.anticipated_hours }} Hours',
+                            start: '{{ event.todo_date|date:'Y-m-d' }}',
+                            end: '{{ event.todo_date|date:'Y-m-d' }}'
+                        },
+                    {% endfor %}
+                    ],
+                eventClick: function (info) {
+                    // When an event is clicked, show the modal using Bootstrap's modal method
+                    $('#cal-modal').modal('show');
+                    }
+                });
+            calendar.render();
+        });
+    </script>
+
+    <script>
+
+    </script>
 
 
 
