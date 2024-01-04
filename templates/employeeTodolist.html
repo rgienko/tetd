@@ -41,14 +41,14 @@
                         {% endfor %}
                     </div>
                 </div>
-                <div class="modal fade" id="todo-modal" tabindex="-1" aria-labelledby="todo-modal" aria-hidden="true">
+                <div class="modal fade" id="todo-modal" tabindex="-1" aria-labelledby="todo-modal-modal" aria-hidden="true">
                     <div class="modal-dialog" id="modal">
                         <div class="modal-content">
                             <div class="modal-header srg-bg-primary text-light fs-5">
                                 Add Item
                             </div>
                             <div class="modal-body">
-                                <form class="" method="POST" action="{% url 'employee-todolist' %}">
+                                <form class="" method="POST" id="td-form" action="{% url 'employee-todolist' %}">
                                     {% csrf_token %}
                                         <label for="engagement-input">Engagement:</label><br>
                                         <input name="engagement-input" type="text" id="engagement-input"/><br>
@@ -61,7 +61,7 @@
                                         </div>
                                     {% endfor %}
 
-                                    <button type="submit" class="srg-btn-primary my-2">Add Item</button>
+                                    <input type="submit" class="srg-btn-primary my-2"/>
                                 </form>
                             </div>
                         </div>
@@ -204,7 +204,7 @@
     </div>
 
 
-    <div class="modal fade" id="cal-modal" tabindex="-1" style="display:none">
+    <div class="modal fade" id="cal-modal" tabindex="-1">
         <div class="modal-dialog" id="modal">
             <div class="modal-content">
                 <div class="modal-header srg-bg-secondary srg-header fs-5">
@@ -385,8 +385,32 @@
     </script>
 
     <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const form = document.getElementById('td-form')
+            if (form) {
+                form.addEventListener('submit', function (event) {
+                    const start_date_elem = document.getElementById('todo_date_id');
+                    const end_date_elem = document.getElementById('todo_date_end_id');
 
-    </script>
+                    if (start_date_elem && end_date_elem) {
+                        const start_date = new Date(start_date_elem.value);
+                        const end_date = new Date(end_date_elem.value);
+                        console.log("Start date: " + start_date);
+                        console.log("End date: " + end_date);
+
+                        if (end_date < start_date) {
+                            alert('End Date is Invalid');
+                            event.preventDefault();
+                        }
+                    } else {
+                        console.error("Could not find one or both date input elements");
+                    }
+                })
+            } else {
+                console.error("Could not find form element");
+            }
+        })
+</script>
 
 
 
