@@ -35,6 +35,8 @@ class TimesheetFilterPrevious(django_filters.FilterSet):
     class Meta:
         model = Time
         fields = {
+            'engagement__time_code': ['exact'],
+            'engagement__parent': ['exact']
 
         }
 

@@ -914,8 +914,9 @@ def EmployeeTimesheetPrevious(request):
     today = date.today()
     week_beg = today - timedelta(days=today.weekday())
     week_end = week_beg + timedelta(days=5)
-
-    queryset = Time.objects.values('ts_date',
+    queryset = Time.objects.none()
+    if request.GET:
+        queryset = Time.objects.values('ts_date',
                                    'employee__user__username',
                                    'engagement__engagement_srg_id',
                                    'engagement__parent__parent_name',
@@ -958,7 +959,7 @@ def EmployeeTimesheetPrevious(request):
 
             return response
 
-    context = {'filter': f, 'page_title': 'Extract Billing Data', 'today': today, 'week_beg': week_beg,
+    context = {'filter': f, 'page_title': 'Extract Timesheeet', 'today': today, 'week_beg': week_beg,
                'week_end': week_end, 'user_info': user_info, 'qs_hours_total_f': qs_hours_total_f}
 
     return render(request, 'employeeTimesheetPrevious.html', context)
@@ -984,7 +985,7 @@ def EmployeeTimesheetReview(request):
         ts_date__gte=last_week_beg).filter(ts_date__lte=last_week_end).order_by('ts_date')
 
     user_engagements = Engagement.objects.select_related().filter(
-        assignments__employee__employee_id=user_info.employee.employee_id)
+        assignments__employee__employee_id=user_info.employee.employee_id).order_by('provider_id')
 
     employee_hours_by_day = employee_ts_entries.values('ts_date').annotate(ts_hours=Sum('hours'))
 
@@ -1067,7 +1068,7 @@ def EmployeeTimesheet(request):
     # '-fye', 'time_code', 'parent_id')
 
     user_engagements = Engagement.objects.select_related().filter(
-        assignments__employee__employee_id=user_info.employee.employee_id)
+        assignments__employee__employee_id=user_info.employee.employee_id).order_by('provider_id')
     # user_engagements = user_engagements.filter(assignments__employee__employee_id=user_info.employee.employee_id)
 
     employee_ts_entries = Time.objects.filter(employee__user__username=request.user.username).filter(
@@ -1151,7 +1152,7 @@ def EmployeeTodolist(request):
     # user_assignments = Assignments.objects.filter(employee_id=user_info.employee.employee_id).values('engagement_id')
     # user_engagements = Engagement.objects.filter(engagement_id__in=user_assignments)
     user_engagements = Engagement.objects.select_related().filter(
-        assignments__employee__employee_id=user_info.employee.employee_id)
+        assignments__employee__employee_id=user_info.employee.employee_id).order_by('provider_id')
 
     employee_td_entries = Todolist.objects.select_related('engagement').filter(
         employee__user__username=user_info.username).filter(

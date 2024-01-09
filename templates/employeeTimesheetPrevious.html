@@ -22,73 +22,71 @@
         </div>
     </div>
     -->
-    <div class="row mt-2 d-flex justify-content-evenly vh-100">
-        <div class="col-3">
-            <div class="card">
-                <div class="card-header srg-bg-primary srg-text-secondary">
-                    <span class="display-6 fs-3">Filter Form</span>
-                </div>
-                <div class="card-body">
-                    <form method="get">
-                        {% for field in filter.form %}
-                            <div class="fieldWrapper mb-3">
-                                <p>{{ field.label_tag }} <br> {{ field }}
-                                {% if field.help_text %}
-                                <p class="help">{{ field.help_text|safe }}</p>
-                                {% endif %}
+    <div class="container-fluid vh-100 p-0 border-0">
+        <div class="row d-flex justify-content-start">
+            <div class="col-xxl-4 col-xl-4 col-lg-4 col-md-12">
+                <div class="card">
+                    <div class="card-header srg-bg-primary srg-text-secondary">
+                        <span class="display-6 fs-3">Filter Form</span>
+                    </div>
+                    <div class="card-body">
+                        <form method="get">
+                            {% for field in filter.form %}
+                                <div class="fieldWrapper mb-3">
+                                    <p>{{ field.label_tag|title }} <br> {{ field }}
+                                    {% if field.help_text %}
+                                    <p class="help">{{ field.help_text|safe }}</p>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                            <div class="card-footer bg-transparent d-flex justify-content-start align-items-center gap-3 px-0 py-2 m-0">
+                                <button class="srg-btn-primary" type="submit"><i class="bi bi-search"></i> Search</button>
+                                <button class="srg-btn-secondary" name='extract_button' type="submit"><i class="bi bi-download"></i> Extract</button>
+                                <a class="srg-link" href="{% url 'employee-timesheet-previous' %}">Clear Form</a>
                             </div>
-                        {% endfor %}
-                        <div class="card-footer bg-transparent d-flex justify-content-start align-items-center gap-3 px-0 py-2 m-0">
-                            <button class="srg-btn-primary" type="submit"><i class="bi bi-search"></i> Search</button>
-                            <!--<button class="srg-btn-secondary" name='extract_button' type="submit"><i class="bi bi-download"></i> Extract</button>-->
-                            <a class="srg-link" href="{% url 'employee-timesheet-previous' %}">Clear Form</a>
-                        </div>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="col-9 vh-100">
-            <div class="card vh-100">
-                <div class="card-header srg-text-secondary srg-bg-primary d-flex justify-content-between">
-                    <span class="display-6 fs-3">Timesheet Entries</span>
-                    <span class="display-6 fs-3">{{ qs_hours_total_f.qs_hours_sum }} Hours</span>
-                </div>
-                <div class="card-body overflow-auto">
-                    <table class="srg-table">
-                        <thead>
-                            <tr class="text-center">
-                                <th>Date</th>
-                                <th>Employee</th>
-                                <th>Engagement ID</th>
-                                <th>Parent</th>
-                                <th>Provider</th>
-                                <th>Scope</th>
-                                <th>Hours</th>
-                            </tr>
-                        </thead>
-                        {% for entry in filter.qs %}
-                            <tr class="text-center align-middle">
-                                <td class="">{{ entry.ts_date|date:'m/d/Y' }}</td>
-                                <td class="text-start">{{ entry.employee__user__username }}</td>
-                                <td class="text-start">{{ entry.engagement__engagement_srg_id }}</td>
-                                <td class="text-start">{{ entry.engagement__parent__parent_name }}</td>
-                                <td class="text-start">{{ entry.engagement__provider }} - {{ entry.engagement__provider__provider_name }}</td>
-                                <td class="text-start">{{ entry.engagement__time_code }} - {{ entry.engagement__time_code__time_code_desc }}</td>
-                                <td>{{ entry.hours }}</td>
-                            </tr>
-                        {% endfor %}
-                            <tr>
-                                <td>
-
-                                </td>
-                            </tr>
-                    </table>
+            <div class="col-xxl-8 col-xl-8 col-lg-8 col-md-12 vh-100">
+                <div class="card vh-100">
+                    <div class="card-header srg-text-secondary srg-bg-primary d-flex justify-content-between">
+                        <span class="display-6 fs-3">Timesheet Entries</span>
+                        <span class="display-6 fs-3">{{ qs_hours_total_f.qs_hours_sum }} Hours</span>
+                    </div>
+                    <div class="card-body overflow-auto">
+                        <table class="srg-table">
+                            <thead>
+                                <tr class="text-center">
+                                    <th>Date</th>
+                                    <th>Employee</th>
+                                    <th>Engagement ID</th>
+                                    <th>Parent</th>
+                                    <th>Provider</th>
+                                    <th>Scope</th>
+                                    <th>Fiscal Year</th>
+                                    <th>Hours</th>
+                                </tr>
+                            </thead>
+                            {% for entry in filter.qs %}
+                                <tr class="text-center align-middle">
+                                    <td class="">{{ entry.ts_date|date:'m/d/Y' }}</td>
+                                    <td class="text-start">{{ entry.employee__user__username }}</td>
+                                    <td class="text-start">{{ entry.engagement__engagement_srg_id }}</td>
+                                    <td class="text-start">{{ entry.engagement__parent__parent_name }}</td>
+                                    <td class="text-start">{{ entry.engagement__provider }} - {{ entry.engagement__provider__provider_name }}</td>
+                                    <td class="text-start">{{ entry.engagement__time_code }} - {{ entry.engagement__time_code__time_code_desc }}</td>
+                                    <td class="text-start">{{ entry.engagement__fye|date:'m/d/Y' }}</td>
+                                    <td>{{ entry.hours }}</td>
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
     </div>
-
+    </div>
     <script>
             // Hide the spinner when the page is fully loaded
             window.onload = function () {
