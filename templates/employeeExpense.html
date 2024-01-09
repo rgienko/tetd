@@ -18,6 +18,7 @@
                                     <th class="">Category</th>
                                     <th class="">Amount</th>
                                     <th class="">Billable</th>
+                                    <th class="">Actions</th>
                                 </tr>
                             </thead>
 
@@ -41,6 +42,16 @@
                                     <td>
                                         {{ entry.time_type_id }}
                                     </td>
+                                    <td class="text-center">
+                                        <a type="button" class="srg-link edit-button" data-bs-toggle="modal" href="#edit-modal" data-expense-id="{{ entry.expense_id }}">
+                                          <i class="bi bi-pencil-square"></i>
+                                        </a>
+
+                                        <a type="button" class="srg-link-danger" data-engagement-id="{{ entry.expense_id }}"
+                                                href="{% url 'delete-expense-entry' entry.expense_id %}">
+                                          <i class="bi bi-trash3"></i>
+                                        </a>
+                                    </td>
                                 </tr>
                             {% endfor %}
                             <tfoot>
@@ -51,18 +62,68 @@
                                     <th>Total</th>
                                     <th>{{ total_expense.expense_amount__sum }}</th>
                                     <td></td>
+                                    <td></td>
                                 </tr>
                             </tfoot>
                         </table>
                     </div>
                 </div>
             </div>
+        </div>
 
+        <div class="modal fade" id="edit-modal" tabindex="-1" aria-labelledby="edit-modal" aria-hidden="true">
+            <div class="modal-dialog" id="modal">
+                <div class="modal-content">
+                    <div class="modal-header srg-bg-secondary srg-header fs-5">
+                        Edit Expense
+                    </div>
+                    <div class="modal-body">
+                        <form class="" method="POST" id="editExpenseForm" action="{% url 'update-expense' %}">
+                            {% csrf_token %}
+                                <label for="expense-id">Record #:</label><br>
+                                <input class="w-50" name="expense-id-input" type="text" id="expense-id" /><br>
+                            {% for field in edit_exp_form %}
+                                <div class="fieldWrapper my-3">
+                                    {{ field.label_tag }} <br>{{ field }}
+                                    {% if field.help_text %}
+                                        <p class="help">{{ field.help_text|safe }}</p>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                            <button name="edit_expense_button" type="submit" class="srg-btn-primary my-2">Save Entry</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
+    <script>
+        $(document).ready(function () {
+            // Handle "Edit" button clicks
+            $('.edit-button').click(function () {
+                let expenseID = $(this).data('expense-id');
+                let editExpenseForm = $('#editExpenseForm')
 
+                // Fetch details using AJAX
+                $.ajax({
+                    url: '/get_expense/' + expenseID + '/',
+                    type: 'GET',
+                    success: function (data) {
+                        //Populate From fields with task details
+                        editExpenseForm.find('#expense-id').val(expenseID)
+                        editExpenseForm.find('#id_date').val(data.expense_date)
+                        editExpenseForm.find('#id_engagement').val(data.engagement)
+                        editExpenseForm.find('#id_expense_category').val(data.category)
+                        editExpenseForm.find('#id_expense_amount').val(data.expense_amount)
+                        editExpenseForm.find('#id_time_type_id').val(data.btype)
+                        editExpenseForm.find('#id_expense_note').val(data.note)
+                    }
+                })
+            })
+        })
+    </script>
         <script>
 
             function searchClients() {

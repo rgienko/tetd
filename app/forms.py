@@ -102,6 +102,27 @@ class ExpenseForm(forms.ModelForm):
         }
 
 
+class EditExpenseForm(forms.ModelForm):
+    class Meta:
+        model = Expense
+
+        fields = ['expense_id', 'date', 'engagement', 'expense_category', 'expense_amount', 'time_type_id', 'expense_note']
+
+        labels = {
+            'engagement': _('Engagement'),
+            'date': _('Date'),
+            'expense_category': _('Category'),
+            'expense_amount': _('Amount'),
+            'time_type_id': _('Type'),
+            'expense_note': _('Note')
+        }
+
+        widgets = {
+            'date': DatePickerInput,
+            'expense_note': forms.Textarea(attrs={'rows': 5, 'cols': 40})
+        }
+
+
 class TodoForm(forms.ModelForm):
     class Meta:
         model = Todolist
@@ -120,16 +141,6 @@ class TodoForm(forms.ModelForm):
             'todo_date': DatePickerInput(attrs={'id': 'todo_date_id'}),
             'todo_date_end': DatePickerInput(attrs={'id': 'todo_date_end_id'}),
         }
-
-    # def clean(self):
-    #    super().clean()
-    #    todo_date = self.cleaned_data.get("todo_date")
-    #    todo_date_end = self.cleaned_data.get("todo_date_end")
-
-    #    if todo_date.year > todo_date_end.year:
-    #        self.add_error("todo_date_end", "Invalid Date")
-    #    elif todo_date_end.year - todo_date.year > 1:
-    #        self.add_error("todo_date_end", "Invalid Date")
 
 
 class EditTodoForm(forms.ModelForm):

@@ -1231,6 +1231,7 @@ def EmployeeExpense(request):
     today = date.today()
     week_beg = today - timedelta(days=today.weekday()) - timedelta(days=1)
     week_end = week_beg + timedelta(days=6)
+    edit_exp_form = EditExpenseForm()
 
     current_employee = get_object_or_404(Employee, user_id=request.user.id)
     employee_expenses = Expense.objects.filter(employee__user__username=request.user.username).filter(
@@ -1239,7 +1240,8 @@ def EmployeeExpense(request):
     total_expense = employee_expenses.aggregate(Sum('expense_amount'))
 
     context = {'employee_expenses': employee_expenses, 'week_beg': week_beg, 'week_end': week_end,
-               'total_expense': total_expense, 'user_info': user_info, 'page_title': 'Expense Report', 'today': today}
+               'edit_exp_form': edit_exp_form, 'total_expense': total_expense, 'user_info': user_info,
+               'page_title': 'Expense Report', 'today': today}
 
     return render(request, 'employeeExpense.html', context)
 
@@ -1391,6 +1393,42 @@ def DeleteTdEntry(request, pk):
     entry_instance.delete()
 
     return redirect('employee-todolist')
+
+
+def GetExpenseEntry(request, expense_id):
+    entry = Expense.objects.get(pk=expense_id)
+    data = {
+        'expense_id': entry.expense_id,
+        'expense_date': entry.date,
+        'expense_amount': entry.expense_amount,
+        'engagement': entry.engagement_id,
+        'category': entry.expense_category_id,
+        'btype': entry.time_type_id_id,
+        'note': entry.expense_note
+    }
+
+    return JsonResponse(data)
+
+
+def UpdateExpenseEntry(request):
+    if request.method == 'POST':
+        form = EditExpenseForm(request.POST)
+        if form.is_valid():
+            entry = Expense.objects.get(pk=request.POST.get('expense-id-input'))
+            entry.date = form.cleaned_data['date']
+            entry.engagement = form.cleaned_data['engagement']
+            entry.expense_category = form.cleaned_data['expense_category']
+            entry.expense_amount = form.cleaned_data['expense_amount']
+            entry.time_type_id = form.cleaned_data['time_type_id']
+            entry.expense_note = form.cleaned_data['expense_note']
+            entry.save()
+    return redirect('employee-expenses')
+
+
+def DeleteExpenseEntry(request, pk):
+    entry_instance = get_object_or_404(Expense, pk=pk)
+    entry_instance.delete()
+    return redirect('employee-expenses')
 
 
 def GetTdEntry(request, td_id):
