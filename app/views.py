@@ -11,6 +11,7 @@ import sendgrid
 import six
 from django.contrib.auth import update_session_auth_hash, logout
 from django.contrib.auth.tokens import PasswordResetTokenGenerator, default_token_generator
+from django.core import serializers
 from django.utils.http import urlsafe_base64_decode
 from sendgrid import Content
 from sendgrid.helpers.mail import Mail, From, To, Subject, DynamicTemplateData
@@ -917,21 +918,21 @@ def EmployeeTimesheetPrevious(request):
     queryset = Time.objects.none()
     if request.GET:
         queryset = Time.objects.values('ts_date',
-                                   'employee__user__username',
-                                   'engagement__engagement_srg_id',
-                                   'engagement__parent__parent_name',
-                                   'engagement__provider',
-                                   'engagement__provider__provider_name',
-                                   'engagement__time_code',
-                                   'engagement__time_code__time_code_desc',
-                                   'engagement__fye',
-                                   'engagement__type_id',
-                                   'engagement__is_rac',
-                                   'engagement__engagement_hourly_rate',
-                                   'hours',
-                                   'note').order_by('ts_date', 'engagement__parent__parent_name',
-                                                    'engagement__provider',
-                                                    'engagement__fye').filter(employee_id=user_info.employee)
+                                       'employee__user__username',
+                                       'engagement__engagement_srg_id',
+                                       'engagement__parent__parent_name',
+                                       'engagement__provider',
+                                       'engagement__provider__provider_name',
+                                       'engagement__time_code',
+                                       'engagement__time_code__time_code_desc',
+                                       'engagement__fye',
+                                       'engagement__type_id',
+                                       'engagement__is_rac',
+                                       'engagement__engagement_hourly_rate',
+                                       'hours',
+                                       'note').order_by('ts_date', 'engagement__parent__parent_name',
+                                                        'engagement__provider',
+                                                        'engagement__fye').filter(employee_id=user_info.employee)
 
     f = TimesheetFilterPrevious(request.GET, queryset=queryset)
     qs = f.qs
@@ -1234,7 +1235,7 @@ def EmployeeExpense(request):
     week_end = week_beg + timedelta(days=6)
     edit_exp_form = EditExpenseForm()
 
-    current_employee = get_object_or_404(Employee, user_id=request.user.id)
+    # current_employee = get_object_or_404(Employee, user_id=request.user.id)
     employee_expenses = Expense.objects.filter(employee__user__username=request.user.username).filter(
         date__gte=week_beg).filter(date__lte=week_end).order_by('date')
 
@@ -1432,17 +1433,43 @@ def DeleteExpenseEntry(request, pk):
     return redirect('employee-expenses')
 
 
+def GetTdDayList(request, dte):
+    tdDayList = list(Todolist.objects.values('engagement__provider', 'engagement__provider__provider_name',
+                                             'engagement__time_code', 'engagement__time_code__time_code_desc',
+                                             'engagement__fye', 'anticipated_hours').filter(
+        employee=request.user.employee).filter(todo_date=dte))
+    # tdDayListJson = serializers.serialize('json', tdDayList)
+    return JsonResponse(tdDayList, safe=False)
+
+
 def GetTdEntry(request, td_id):
     entry = Todolist.objects.get(pk=td_id)
+    entry = get_object_or_404(Todolist, pk=td_id)
+    provider_number = entry.engagement.provider_id
+    provider_name = entry.engagement.provider.provider_name
+    time_code = entry.engagement.time_code_id
+    time_code_desc = entry.engagement.time_code.time_code_desc
+    todo_date = datetime.strptime(str(entry.todo_date), '%Y-%m-%d')
+    todo_date_formatted = todo_date.strftime('%m/%d/%Y')
+    if entry.engagement.fye is None:
+        fiscal_year_formatted = "N/A"
+    else:
+        fiscal_year = datetime.strptime(str(entry.engagement.fye), '%Y-%m-%d')
+        fiscal_year_formatted = fiscal_year.strftime('%m/%d/%Y')
     data = {
         'td_id': entry.todolist_id,
         'engagement': entry.engagement_id,
+        'provider_number': provider_number,
+        'provider_name': provider_name,
+        'time_code': time_code,
+        'time_code_desc': time_code_desc,
+        'todo_date_formatted': todo_date_formatted,
         'todo_date': entry.todo_date,
         'todo_date_end': entry.todo_date_end,
+        'fiscal_year': fiscal_year_formatted,
         'anticipated_hours': entry.anticipated_hours,
         'note': entry.note
     }
-
     return JsonResponse(data)
 
 

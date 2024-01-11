@@ -32,9 +32,9 @@
                                         <div class="btn-group-vertical" role="group" aria-label="Vertical button group">
                                               <a type="button" class="srg-link" data-bs-toggle="modal" data-toggle="tooltip" data-title="Yay"
                                                        data-bs-target="#todo-modal" data-engagement-id="{{ engagement.engagement_srg_id }}"
-                                                       href="#todo-modal" aria-controls="todo-modal"><i class="bi bi-plus-circle fs-4"></i></a>
-                                            </div>
-
+                                                       href="#todo-modal" aria-controls="todo-modal"><i class="bi bi-plus-circle fs-4"></i>
+                                              </a>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -193,7 +193,6 @@
                                         {% endfor %}
                                         <button name="edit_todo_button" type="submit" class="srg-btn-primary my-2">Save Entry</button>
                                     </form>
-
                                 </div>
                             </div>
                         </div>
@@ -203,15 +202,85 @@
         </div>
     </div>
 
+    <div class="row d-flex justify-content-center mt-4">
+        <div class="col-10">
+            <div class="card">
+                <div class="card-header srg-bg-primary srg-text-secondary">
+                    <span class="fs-3 display-6">Calendar</span>
+                </div>
+                <div class="card-body p-2">
+                    <div id="myCalendar"></div>
+                </div>
 
-    <div class="modal fade" id="cal-modal" tabindex="-1">
-        <div class="modal-dialog" id="modal">
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="day-modal" tabindex="-1">
+        <div class="modal-dialog modal-xl" id="dmodal">
             <div class="modal-content">
-                <div class="modal-header srg-bg-secondary srg-header fs-5">
-                    Calendar Modal
+                <div class="modal-header srg-bg-secondary srg-header d-flex justify-content-center gap-2">
+                    <span class="fs-3 display-6" id="day-text"></span> <span class="fs-3 display-6">Schedule</span>
                 </div>
                 <div class="modal-body">
-                    This is the calendar modal
+                    <table class="srg-table" id="day-table">
+                        <thead>
+                            <tr class="">
+                                <th>Provider</th>
+                                <th>Time Code</th>
+                                <th>FYE</th>
+                                <th>Hours</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="modal fade" id="cal-modal" tabindex="-1">
+        <div class="modal-dialog" id="modal" >
+            <div class="modal-content" style="width: 600px">
+                <div class="modal-header srg-bg-secondary srg-header">
+                    <span class="fs-3 display-6">View To-Do Item</span>
+                </div>
+                <div class="modal-body" id="eventModal">
+                    <table class="srg-table">
+                        <tr>
+                            <th>Date:</th>
+                            <td id="dateText"></td>
+                        </tr>
+                        <tr>
+                            <th>Provider:</th>
+                            <td id="pText"></td>
+                        </tr>
+                        <tr>
+                            <th>Scope:</th>
+                            <td id="tcText"></td>
+                        </tr>
+                        <tr>
+                            <th>Fiscal Year:</th>
+                            <td id="fyText"></td>
+                        </tr>
+                        <tr>
+                            <th>Est. Hours:</th>
+                            <td id="hText"></td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <a type="button" class="srg-btn-secondary edit-button text-decoration-none" data-bs-toggle="modal" href="#edit-modal" data-td-id="{{ item.todolist_id }}">
+                      <svg class="bi"><use xlink:href="#edit"/></svg> Edit
+                    </a>
+
+                    <a type="button" class="srg-link-danger" id="td-modal-delete-button" data-engagement-id="{{ item.todolist_id }}"
+                       href="#">
+                        <svg class="bi"><use xlink:href="#trash"/></svg> Delete
+                    </a>
                 </div>
             </div>
         </div>
@@ -229,6 +298,15 @@
             //populate the input field
             $(event.currentTarget).find('input[name="engagement-input"]').val(engagementID)
         });
+
+        const dayModal = document.getElementById('day-modal')
+        dayModal.addEventListener('hidden.bs.modal', event => {
+            let tableBody = document.querySelector("#day-table tbody")
+
+            while (tableBody.firstChild) {
+                tableBody.removeChild(tableBody.firstChild)
+            }
+        })
     </script>
 
     <script>
@@ -240,7 +318,7 @@
 
                 // Fetch details using AJAX
                 $.ajax({
-                    url: '/get_td/' + tdID + '/',
+                    url: '/get_td/',
                     type: 'GET',
                     success: function (data) {
                         //Populate From fields with task details
@@ -366,20 +444,93 @@
 
             const calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next',
+                    center: 'title'
+                },
+                fixedWeekCount: false,
+                aspectRatio: 2.50,
+                navLinks: false,
                 events: [
                     {% for event in employee_td_entries %}
                         {
-                            title: '{{ event.engagement }} <br> {{ event.anticipated_hours }} Hours',
+                            id: '{{ event.todolist_id }}',
+                            title: '{{ event.engagement }} - {{ event.anticipated_hours }} Hours',
                             start: '{{ event.todo_date|date:'Y-m-d' }}',
-                            end: '{{ event.todo_date|date:'Y-m-d' }}'
+                            end: '{{ event.todo_date|date:'Y-m-d' }}',
+                            extendedProps: {
+                                description: 'This is a test.'
+                            }
                         },
                     {% endfor %}
                     ],
+                eventBackgroundColor: '#02308C',
+                eventBorderColor: '#02308C',
+                eventMouseEnter: function() {
+                    document.body.style.cursor = "pointer"
+                },
+                eventMouseLeave: function() {
+                    document.body.style.cursor = "default"
+                },
+                dateClick: function(info) {
+                    $('#day-modal').modal('show');
+                    // alert('Clicked on: ' + info.dateStr);
+                    // document.getElementById('day-text').innerText = monthNumber + "/" + dayName + "/" + date.getFullYear()
+                    document.getElementById('day-text').innerText = info.dateStr
+                    let tableBody = document.querySelector("#day-table tbody")
+                    $.ajax({
+                        url: '/get_td_list/' + info.dateStr + '/',
+                        type: 'GET',
+                        success: function (tdDayList) {
+                            // let tdDayListParsed = JSON.parse(tdDayList)
+                            tdDayList.forEach(item => {
+                                let row = document.createElement('tr')
+                                row.innerHTML = `
+                                                <td>${item.engagement__provider} - ${item.engagement__provider__provider_name}</td>
+                                                <td>${item.engagement__time_code} - ${item.engagement__time_code__time_code_desc}</td>
+                                                <td>${item.engagement__fye}</td>
+                                                <td>${item.anticipated_hours}</td>
+                                                    `
+
+                                tableBody.appendChild(row)// Your code here...
+                            });
+                        }
+                    })
+                },
                 eventClick: function (info) {
                     // When an event is clicked, show the modal using Bootstrap's modal method
                     $('#cal-modal').modal('show');
-                    }
-                });
+                    // $('#edit-modal').modal('show');
+                    let editTdForm = $('#editTodoForm')
+                    // console.log(info.event.id)
+                    $.ajax({
+                        url: '/get_td/' + info.event.id + '/',
+                        type: 'GET',
+                        success: function (data) {
+                            // Populate From fields with task details
+                            // document.getElementById('engagementText').innerText = data.td_id
+                            // document.getElementById('providerText').innerText = data.provider_number + ' - ' + data.provider_name
+                            // document.getElementById('timeCodeText').innerText = data.time_code + ' - ' + data.time_code_desc
+                            // document.getElementById('startDateText').innerText = data.todo_date_formatted
+                            // document.getElementById('FYEText').innerText = data.fiscal_year
+                            // document.getElementById('hoursText').innerText = data.anticipated_hours
+                            document.getElementById('pText').innerText = data.provider_number + ' - ' + data.provider_name
+                            document.getElementById('tcText').innerText = data.time_code + ' - ' + data.time_code_desc
+                            document.getElementById('dateText').innerText = data.todo_date_formatted
+                            document.getElementById('fyText').innerText = data.fiscal_year
+                            document.getElementById('hText').innerText = data.anticipated_hours
+                            let url = `/delete-todo-entry/${info.event.id}/`
+                            document.getElementById('td-modal-delete-button').setAttribute('href', url)
+                            editTdForm.find('#td-id').val(info.event.id)
+                            editTdForm.find('#id_engagement').val(data.engagement)
+                            editTdForm.find('#id_todo_date').val(data.todo_date)
+                            editTdForm.find('#id_todo_date_end').val(data.todo_date_end)
+                            editTdForm.find('#id_anticipated_hours').val(data.anticipated_hours)
+                            editTdForm.find('#id_note').val(data.note)
+                        }
+                    })
+                }
+            });
             calendar.render();
         });
     </script>

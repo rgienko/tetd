@@ -236,6 +236,9 @@ class Todolist(models.Model):
     def getProviderID(self):
         return self.engagement.provider_id
 
+    def getProviderName(self):
+        return self.engagement.provider.provider_name
+
     def getScope(self):
         return self.engagement.time_code
 
