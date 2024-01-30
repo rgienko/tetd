@@ -165,6 +165,11 @@
     color: #d9d9d9
 }
 
+.srg-link-success {
+    text-decoration: none;
+    color: #004000
+}
+
 .srg-list-group-item {
     padding:8px;
     border: 1px solid #a9a9a9;
@@ -176,6 +181,24 @@
     background-color: #d9d9d9;
     border: 1px solid #d9d9d9;
     color: #02308C;
+}
+
+.srg-btn-small-primary {
+    width: 32px;
+    height: 32px;
+    background-color: white;
+    border: 1px solid #02308C;
+    color: #02308C;
+    display: inline-block;
+    text-align: center;
+    border-radius: 50%;
+}
+
+.srg-btn-small-primary:hover {
+    background-color: #02308C;
+    border: 1px solid #02308C;
+    color: white;
+    border-radius: 50%;
 }
 
 .srg-btn-ol-primary {
@@ -192,6 +215,22 @@
     color: white;
     padding: 8px 16px 8px 16px;
     border-radius: 12px;
+}
+
+.srg-btn-small-success {
+    background-color: white;
+    border: 1px solid #004000;
+    color: #004000;
+    border-radius: 50%;
+
+}
+
+.srg-btn-small-success:hover {
+    background-color: #004000;
+    border: 1px solid #004000;
+    color: white;
+    border-radius: 50%;
+
 }
 
 .srg-btn-ol-success {

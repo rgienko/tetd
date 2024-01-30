@@ -695,25 +695,30 @@ def AdminTimesheet(request):
     today = date.today()
     week_beg = today - timedelta(days=today.weekday())
     week_end = week_beg + timedelta(days=5)
-
-    queryset = Time.objects.values('ts_date',
-                                   'employee__user__username',
-                                   'engagement__engagement_srg_id',
-                                   'engagement__parent__parent_name',
-                                   'engagement__provider',
-                                   'engagement__provider__provider_name',
-                                   'engagement__time_code',
-                                   'engagement__time_code__time_code_desc',
-                                   'engagement__fye',
-                                   'engagement__type_id',
-                                   'engagement__is_rac',
-                                   'engagement__engagement_hourly_rate',
-                                   'hours',
-                                   'note').order_by('ts_date', 'engagement__parent__parent_name',
-                                                    'engagement__provider',
-                                                    'engagement__fye')
+    queryset = Time.objects.none()
+    q_total = 0
+    if request.GET:
+        queryset = Time.objects.values('ts_date',
+                                       'employee__user__username',
+                                       'engagement__engagement_srg_id',
+                                       'engagement__parent__parent_name',
+                                       'engagement__provider',
+                                       'engagement__provider__provider_name',
+                                       'engagement__time_code',
+                                       'engagement__time_code__time_code_desc',
+                                       'engagement__fye',
+                                       'engagement__type_id',
+                                       'engagement__is_rac',
+                                       'engagement__engagement_hourly_rate',
+                                       'hours',
+                                       'note').order_by('ts_date', 'engagement__parent__parent_name',
+                                                        'engagement__provider',
+                                                        'engagement__fye')
 
     f = TimesheetFilter(request.GET, queryset=queryset)
+    q_total = f.qs.aggregate(total_hours=Sum('hours')).get('total_hours', 0)
+    q_employees = f.qs.values('employee__user__username').order_by('employee').annotate(hours_sum=Sum('hours')).order_by('-hours_sum')
+    q_engagements = f.qs.values('engagement__engagement_srg_id').order_by('engagement__engagement_srg_id').annotate(hours_sum=Sum('hours')).order_by('-hours_sum')[:3]
 
     f_start_date = f.form['start_date']
     f_end_date = f.form['end_date']
@@ -747,7 +752,8 @@ def AdminTimesheet(request):
             return response
 
     context = {'filter': f, 'page_title': 'Extract Billing Data', 'today': today, 'week_beg': week_beg,
-               'week_end': week_end, 'user_info': user_info}
+               'week_end': week_end, 'user_info': user_info, 'q_total': q_total, 'q_employees': q_employees,
+               'q_engagements': q_engagements}
 
     return render(request, 'adminTimesheet.html', context)
 
@@ -1434,12 +1440,24 @@ def DeleteExpenseEntry(request, pk):
 
 
 def GetTdDayList(request, dte):
-    tdDayList = list(Todolist.objects.values('engagement__provider', 'engagement__provider__provider_name',
-                                             'engagement__time_code', 'engagement__time_code__time_code_desc',
-                                             'engagement__fye', 'anticipated_hours').filter(
-        employee=request.user.employee).filter(todo_date=dte))
+    tdDayList = list(
+        Todolist.objects.values('todolist_id', 'engagement__provider', 'engagement__provider__provider_name',
+                                'engagement__time_code', 'engagement__time_code__time_code_desc',
+                                'engagement__fye', 'anticipated_hours').filter(
+            employee=request.user.employee).filter(todo_date=dte))
     # tdDayListJson = serializers.serialize('json', tdDayList)
     return JsonResponse(tdDayList, safe=False)
+
+
+def GetTdWeekList(request, week_beg, week_end):
+    tdWeekList = list(
+        Todolist.objects.values('todolist_id', 'todo_date', 'engagement__provider',
+                                'engagement__provider__provider_name',
+                                'engagement__time_code', 'engagement__time_code__time_code_desc',
+                                'engagement__fye', 'anticipated_hours').filter(
+            employee=request.user.employee).filter(todo_date__gte=week_beg, todo_date__lte=week_end).order_by(
+            'todo_date'))
+    return JsonResponse(tdWeekList, safe=False)
 
 
 def GetTdEntry(request, td_id):
@@ -1539,7 +1557,7 @@ def overBudgetAlert(pk):
     )
 
     protocol = 'http://'
-    engagement_url = 'localhost:8000/engagement-detail/' + str(engagement_instance.engagement_id) + '/'
+    engagement_url = 'https://tetd.azurewebsites.net/engagement-detail/' + str(engagement_instance.engagement_id) + '/'
 
     msg.template_id = "d-72ebc0569ab6402fa236d9cdc75a860b"
     msg.dynamic_template_data = {

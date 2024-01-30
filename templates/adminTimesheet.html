@@ -46,6 +46,58 @@
                     </form>
                 </div>
             </div>
+
+
+            <div class="card mt-5">
+                <div class="card-header srg-bg-primary srg-text-secondary">
+                    <span class="display-6 fs-3">Search Metrics</span>
+                </div>
+                <div class="card-body">
+
+                    <h5 class="mt-2 srg-header">Top 3 Engagements</h5>
+                    <table class="srg-table-borderless">
+                        <thead>
+                            <tr>
+                                <th>Engagement</th>
+                                <th>Hours</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in q_engagements %}
+                                <tr>
+                                    <td>{{ e.engagement__engagement_srg_id }}</td>
+                                    <td>{{ e.hours_sum }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <h5 class="mt-4 srg-header">By Employee</h5>
+                    <table class="srg-table-borderless">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Hours</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in q_employees %}
+                                <tr>
+                                    <td>{{ e.employee__user__username }}</td>
+                                    <td>{{ e.hours_sum }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="fw-bold srg-link">
+                                <td>Total</td>
+                                <td>{{ q_total }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                </div>
+            </div>
         </div>
 
         <div class="col-xxl-8 col-xl-8 col-lg-8 col-md-12 vh-100">

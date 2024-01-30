@@ -18,28 +18,32 @@
                 </div>
 
                 <div class="card-body px-2 py-2 overflow-auto">
-                    <div class="list-group" role="tablist" id="clientList">
-                        {% for engagement in user_engagements %}
-                            <div class="srg-list-group-item shadow-sm my-2">
-                                <div class="row d-flex align-items-center">
-                                    <div class="col-10" style="font-size:11pt;">
-                                        {{ engagement.parent }}<br>
-                                        {{ engagement.provider }}<br>
-                                        {{ engagement.time_code }}<br>
-                                        {{ engagement.fye|date:'m/d/Y' }}
-                                    </div>
-                                    <div class="col-2 p-0 m-0 d-flex justify-content-center">
-                                        <div class="btn-group-vertical" role="group" aria-label="Vertical button group">
-                                              <a type="button" class="srg-link" data-bs-toggle="modal" data-toggle="tooltip" data-title="Yay"
-                                                       data-bs-target="#todo-modal" data-engagement-id="{{ engagement.engagement_srg_id }}"
-                                                       href="#todo-modal" aria-controls="todo-modal"><i class="bi bi-plus-circle fs-4"></i>
-                                              </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
+                    <table class="srg-table-borderless" id="engagement-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Provider</th>
+                                <th>Time Code</th>
+                                <th>FYE</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for engagement in user_engagements %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ engagement.provider }}</td>
+                                    <td>{{ engagement.time_code }}</td>
+                                    <td>{{ engagement.fye|date:'m/d/Y' }}</td>
+                                    <td class="text-center">
+                                        <a type="button" class="srg-link" data-bs-toggle="modal" data-toggle="tooltip" data-title="Yay"
+                                           data-bs-target="#todo-modal" data-engagement-id="{{ engagement.engagement_srg_id }}"
+                                           href="#todo-modal" aria-controls="todo-modal"><svg class="bi"><use xlink:href="#plus-circle"/></svg>
+                                        </a></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
                 <div class="modal fade" id="todo-modal" tabindex="-1" aria-labelledby="todo-modal-modal" aria-hidden="true">
                     <div class="modal-dialog" id="modal">
@@ -75,102 +79,9 @@
                 <div class="card-header srg-text-secondary srg-bg-primary d-flex justify-content-between align-items-baseline">
                     <span class="display-6 fs-3">Current To-Do List</span>
                 </div>
-                <div class="card-body overflow-auto">
-                    {% for dy in page_obj %}
-                        <div class="row mb-4 shadow-sm" {% if dy == today %}id="today"{% endif %} style="border-bottom-left-radius:12px; border-top-left-radius: 12px;">
-                            <!--
-                            <div class="col-1 p-0 d-flex justify-content-center align-items-center {% if dy == today %}srg-bg-primary srg-text-secondary{% else %}srg-bg-secondary srg-header {% endif %}"
-                            style="border-bottom-left-radius:12px; border-top-left-radius: 12px;">
-                                <div class="card-body text-start">
-                                    <p class="fs-5 text-center">
-                                    {{ dy|date:'D' }}<br>
-                                    {{ dy|date:'m/d/y' }}
-                                </p>
-                                </div>
-                            </div>
-                            -->
-                            <div class="col-12 p-0">
-                                <div class="card">
-                                    <div class="card-header border-bottom-0 {% if dy == today %}srg-bg-primary srg-text-secondary{% else %}srg-bg-secondary srg-header {% endif %}">
-                                        <span class="display-6 fs-4">{{ dy|date:'l' }}
-                                            {{ dy|date:'m/d/y' }}</span>
-                                    </div>
-                                    <div class="card-body p-2">
-                                        <table class="srg-table">
-                                        <thead>
-                                            <tr class="">
-                                                <th>Provider</th>
-                                                <th>Time Code</th>
-                                                <th>FYE</th>
-                                                <th>Hours</th>
-                                                <th class="text-center">Actions</th>
-                                            </tr>
-                                        </thead>
-                                        {% for item in employee_td_entries %}
-                                            {% if item.todo_date == dy %}
-                                                <tr class="p-0 ps-1 my-1 rounded-3" data-bs-html="true" data-toggle="" data-bs-title="{{ item.getProvider }}" data-bs-content="{{ item.getScope }}<br/>{{ item.getFYE|date:'m/d/Y' }}<br/> {{ item.anticipated_hours }} Hours">
-                                                    <td>{{ item.getProvider }}</td>
-                                                    <td>{{ item.getScope }}</td>
-                                                    <td>{{ item.getFYE|date:'Y' }}</td>
-                                                    <td>{{ item.anticipated_hours }}</td>
-                                                    <td class="text-center">
-                                                        <a type="button" class="srg-link edit-button" data-bs-toggle="modal" href="#edit-modal" data-td-id="{{ item.todolist_id }}">
-                                                          <i class="bi bi-pencil-square"></i>
-                                                        </a>
+                <div class="card-body overflow-auto px-1">
+                    <div id="myCalendar"></div>
 
-                                                        <a type="button" class="srg-link-danger" data-engagement-id="{{ item.todolist_id }}"
-                                                                href="{% url 'delete-todo-entry' item.todolist_id %}">
-                                                          <i class="bi bi-trash3"></i>
-                                                        </a>
-                                                    </td>
-                                                </tr>
-                                            {% else %}
-                                            {% endif %}
-                                        {% endfor %}
-                                        {% for total in employee_td_hours_by_day %}
-                                            {% if total.todo_date == dy %}
-                                                <tfoot>
-                                                    <tr>
-                                                        <td></td>
-                                                        <td></td>
-                                                        <td>Total:</td>
-                                                        <td>{{ total.total_day_td_hours }}</td>
-                                                        <td></td>
-                                                    </tr>
-                                                </tfoot>
-                                            {% else %}
-                                            {% endif %}
-                                        {% endfor %}
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-
-                    <style>
-                        .current {
-                            background: #02308C;
-                            color: #d9d9d9;
-                        }
-                    </style>
-
-                    <div class="pagination d-flex justify-content-center">
-                        <ul class="pagination">
-                            {% if page_obj.has_previous %}
-                                <li class="page-item"><a class="d-flex align-items-center page-link srg-link" href="?page=1"><svg class="bi"><use xlink:href="#double-chevron-left"/></svg>First</a></li>
-                                <li class="page-item"><a class="page-link srg-link" href="?page={{ page_obj.previous_page_number }}"><svg class="bi"><use xlink:href="#chevron-left"/></svg>Previous</a></li>
-                            {% endif %}
-                            {% for p in page_obj.paginator.page_range %}
-                                <li class="page-item"><a class="page-link srg-link {% if page_obj.number == p %}current{% endif %}" href="?page={{ p }}">{{ p }}</a></li>
-                            {% endfor %}
-
-                            {% if page_obj.has_next %}
-                                <li class="page-item d-flex"><a class="page-link srg-link" href="?page={{ page_obj.next_page_number }}">Next<svg class="bi"><use xlink:href="#chevron-right"/></svg></a></li>
-                                <li class="page-item d-flex"><a class="page-link srg-link" href="?page={{ page_obj.paginator.num_pages }}">Last<svg class="bi"><use xlink:href="#double-chevron-right"/></svg></a></li>
-                            {% endif %}
-                        </ul>
-                    </div>
                     <div class="modal fade" id="edit-modal" tabindex="-1" aria-labelledby="edit-modal" aria-hidden="true">
                         <div class="modal-dialog" id="modal">
                             <div class="modal-content">
@@ -202,20 +113,6 @@
         </div>
     </div>
 
-    <div class="row d-flex justify-content-center mt-4">
-        <div class="col-10">
-            <div class="card">
-                <div class="card-header srg-bg-primary srg-text-secondary">
-                    <span class="fs-3 display-6">Calendar</span>
-                </div>
-                <div class="card-body p-2">
-                    <div id="myCalendar"></div>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
     <div class="modal fade" id="day-modal" tabindex="-1">
         <div class="modal-dialog modal-xl" id="dmodal">
             <div class="modal-content">
@@ -230,6 +127,7 @@
                                 <th>Time Code</th>
                                 <th>FYE</th>
                                 <th>Hours</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -273,18 +171,48 @@
                     </table>
                 </div>
                 <div class="modal-footer">
-                    <a type="button" class="srg-btn-secondary edit-button text-decoration-none" data-bs-toggle="modal" href="#edit-modal" data-td-id="{{ item.todolist_id }}">
-                      <svg class="bi"><use xlink:href="#edit"/></svg> Edit
+                    <a type="button" id="edit-button" class="srg-btn-secondary edit-button text-decoration-none" data-bs-toggle="modal" href="#edit-modal" data-td-id="">
+                      <svg class="bi"><use xlink:href="#edit"></use></svg> Edit
                     </a>
 
                     <a type="button" class="srg-link-danger" id="td-modal-delete-button" data-engagement-id="{{ item.todolist_id }}"
                        href="#">
-                        <svg class="bi"><use xlink:href="#trash"/></svg> Delete
+                        <svg class="bi"><use xlink:href="#trash"></use></svg> Delete
                     </a>
                 </div>
             </div>
         </div>
     </div>
+
+    <div class="modal fade" id="week-modal" tabindex="-1">
+        <div class="modal-dialog modal-xl" id="wmodal">
+            <div class="modal-content">
+                <div class="modal-header srg-bg-secondary srg-header d-flex justify-content-center gap-2">
+                    <span class="fs-3 display-6" id="week-beg-text"></span>
+                    <span class="fs-3 display-6" id="week-end-text"></span>
+                    <span class="fs-3 display-6">Schedule</span>
+                </div>
+                <div class="modal-body">
+                    <table class="srg-table" id="week-table">
+                        <thead>
+                            <tr class="">
+                                <th>Date</th>
+                                <th>Provider</th>
+                                <th>Time Code</th>
+                                <th>FYE</th>
+                                <th>Hours</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
@@ -306,19 +234,29 @@
             while (tableBody.firstChild) {
                 tableBody.removeChild(tableBody.firstChild)
             }
-        })
+        });
+
+        const weekModal = document.getElementById('week-modal')
+        weekModal.addEventListener('hidden.bs.modal', event => {
+            let weekTableBody = document.querySelector("#week-table tbody")
+
+            while (weekTableBody.firstChild) {
+                weekTableBody.removeChild(weekTableBody.firstChild)
+            }
+        });
     </script>
 
     <script>
         $(document).ready(function () {
             // Handle "Edit" button clicks
-            $('.edit-button').click(function () {
+            $(document).on('click', '.edit-button', function () {
                 let tdID = $(this).data('td-id');
                 let editTdForm = $('#editTodoForm')
+                console.log(tdID)
 
                 // Fetch details using AJAX
                 $.ajax({
-                    url: '/get_td/',
+                    url: '/get_td/' + tdID + '/',
                     type: 'GET',
                     success: function (data) {
                         //Populate From fields with task details
@@ -369,25 +307,29 @@
 
         <script>
             function searchClients() {
-                // Declare Variables
-                let input, filter, ul, li, a, i, txtValue;
+                let input, filter, table, rows, i, j, td, txtValue;
                 input = document.getElementById('searchBar')
                 filter = input.value.toUpperCase();
-                console.log(filter)
-                ul = document.getElementById('clientList')
-                li = ul.getElementsByClassName('srg-list-group-item');
+                table = document.getElementById('engagement-table');
+                rows = table.getElementsByTagName("tr");
 
-                // Loop through elements and display only matches
-                for (i = 0; i < li.length; i++) {
-                    a = li[i].getElementsByTagName("a")[0];
-                    txtValue = li[i].textContent || li[i].innerText;
-                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                        li[i].style.display = "block";
-                    } else {
-                        li[i].style.display = "none";
+                for (i = 1; i < rows.length; i++) {
+                    let tds = rows[i].getElementsByTagName("td");
+                    let rowContainsFilter = false;
+
+                    for (j = 0; j < tds.length; j++) {
+                        td = tds[j];
+                        if (td) {
+                            txtValue = td.textContent || td.innerText;
+                            if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                                rowContainsFilter = true;
+                                break;  // no need to check other TDs, so break the loop
+                            }
+                        }
                     }
-                }
 
+                    rows[i].style.display = rowContainsFilter ? "" : "none";
+                }
             }
         </script>
 
@@ -449,8 +391,9 @@
                     center: 'title'
                 },
                 fixedWeekCount: false,
-                aspectRatio: 2.50,
-                navLinks: false,
+                aspectRatio: 1.5,
+                navLinks: true,
+                weekNumbers: true,
                 events: [
                     {% for event in employee_td_entries %}
                         {
@@ -472,24 +415,77 @@
                 eventMouseLeave: function() {
                     document.body.style.cursor = "default"
                 },
-                dateClick: function(info) {
+                navLinkWeekClick: function (weekStart) {
+                    $('#week-modal').modal('show')
+                    let weekBeg = weekStart
+                    document.getElementById('week-beg-text').innerText = weekStart.toLocaleDateString() + ' - '
+                    let weekEnd = new Date(weekBeg.getTime());
+                    weekEnd.setDate(weekEnd.getDate() + 6);
+                    document.getElementById('week-end-text').innerText = weekEnd.toLocaleDateString()
+
+                    let weekTableBody = document.querySelector("#week-table tbody")
+                    $.ajax({
+                        url: '/get_td_week_list/' + weekBeg.toISOString().split("T")[0] + "/" + weekEnd.toISOString().split("T")[0] + "/",
+                        type: 'GET',
+                        success: function (tdWeekList) {
+                            tdWeekList.forEach(item => {
+                                let row = document.createElement('tr')
+                                let url = `/delete-todo-entry/${item.todolist_id}/`
+                                let tdID = item.todolist_id
+                                let todoDate = new Date(item.todo_date)
+                                row.innerHTML = `
+                                                <td>${todoDate.toLocaleDateString()}</td>
+                                                <td>${item.engagement__provider} - ${item.engagement__provider__provider_name}</td>
+                                                <td>${item.engagement__time_code} - ${item.engagement__time_code__time_code_desc}</td>
+                                                <td>${item.engagement__fye}</td>
+                                                <td>${item.anticipated_hours}</td>
+                                                <td class="text-center">
+                                                        <a type="button" class="srg-link edit-button" data-bs-toggle="modal" href="#edit-modal" data-td-id="${tdID}">
+                                                          <i class="bi bi-pencil-square"></i>
+                                                        </a>
+
+                                                        <a type="button" class="srg-link-danger" id='td-modal-delete-button' data-engagement-id="{{ item.todolist_id }}"
+                                                                href="${url}">
+                                                          <i class="bi bi-trash3"></i>
+                                                        </a>
+                                                    </td>
+                                                    `
+
+                                weekTableBody.appendChild(row)// Your code here...
+                            })
+                        }
+                    })
+                },
+                navLinkDayClick: function(info) {
                     $('#day-modal').modal('show');
                     // alert('Clicked on: ' + info.dateStr);
                     // document.getElementById('day-text').innerText = monthNumber + "/" + dayName + "/" + date.getFullYear()
-                    document.getElementById('day-text').innerText = info.dateStr
+                    document.getElementById('day-text').innerText = info.toLocaleDateString()
                     let tableBody = document.querySelector("#day-table tbody")
                     $.ajax({
-                        url: '/get_td_list/' + info.dateStr + '/',
+                        url: '/get_td_list/' + info.toISOString().split("T")[0] + '/',
                         type: 'GET',
                         success: function (tdDayList) {
                             // let tdDayListParsed = JSON.parse(tdDayList)
                             tdDayList.forEach(item => {
                                 let row = document.createElement('tr')
+                                let url = `/delete-todo-entry/${item.todolist_id}/`
+                                let tdID = item.todolist_id
                                 row.innerHTML = `
                                                 <td>${item.engagement__provider} - ${item.engagement__provider__provider_name}</td>
                                                 <td>${item.engagement__time_code} - ${item.engagement__time_code__time_code_desc}</td>
                                                 <td>${item.engagement__fye}</td>
                                                 <td>${item.anticipated_hours}</td>
+                                                <td class="text-center">
+                                                        <a type="button" class="srg-link edit-button" data-bs-toggle="modal" href="#edit-modal" data-td-id="${tdID}">
+                                                          <i class="bi bi-pencil-square"></i>
+                                                        </a>
+
+                                                        <a type="button" class="srg-link-danger" id='td-modal-delete-button' data-engagement-id="{{ item.todolist_id }}"
+                                                                href="${url}">
+                                                          <i class="bi bi-trash3"></i>
+                                                        </a>
+                                                    </td>
                                                     `
 
                                 tableBody.appendChild(row)// Your code here...
@@ -521,12 +517,14 @@
                             document.getElementById('hText').innerText = data.anticipated_hours
                             let url = `/delete-todo-entry/${info.event.id}/`
                             document.getElementById('td-modal-delete-button').setAttribute('href', url)
-                            editTdForm.find('#td-id').val(info.event.id)
-                            editTdForm.find('#id_engagement').val(data.engagement)
-                            editTdForm.find('#id_todo_date').val(data.todo_date)
-                            editTdForm.find('#id_todo_date_end').val(data.todo_date_end)
-                            editTdForm.find('#id_anticipated_hours').val(data.anticipated_hours)
-                            editTdForm.find('#id_note').val(data.note)
+                            let myButton = document.querySelector('#edit-button');
+                            myButton.dataset.tdId = info.event.id
+                            // editTdForm.find('#td-id').val(info.event.id)
+                            // editTdForm.find('#id_engagement').val(data.engagement)
+                            // editTdForm.find('#id_todo_date').val(data.todo_date)
+                            // editTdForm.find('#id_todo_date_end').val(data.todo_date_end)
+                            // editTdForm.find('#id_anticipated_hours').val(data.anticipated_hours)
+                            // editTdForm.find('#id_note').val(data.note)
                         }
                     })
                 }

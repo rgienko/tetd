@@ -9,7 +9,7 @@
 
     </div>
     <div class="row">
-        <div class="col-xxl-4 col-xl-6">
+        <div class="col-xxl-5 col-xl-6">
             <div class="card vh-100 flex-shrink-1">
                 <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center">
                     <span class="display-6 fs-3">My Engagements</span>
@@ -17,83 +17,90 @@
                 </div>
 
                 <div class="card-body px-2 py-2 overflow-auto">
+                    <table class="srg-table-borderless" id="engagement-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Provider</th>
+                                <th>Time Code</th>
+                                <th>FYE</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for engagement in user_engagements %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ engagement.provider }}</td>
+                                    <td>{{ engagement.time_code }}</td>
+                                    <td>{{ engagement.fye|date:'m/d/Y' }}</td>
+                                    <td class="">
+                                        <div class="btn-group gap-1">
+                                            <button type="button" class="srg-btn-small-primary" data-bs-toggle="modal" data-toggle="tooltip" data-title="Yay"
+                                               data-bs-target="#time-modal" data-engagement-id="{{ engagement.engagement_srg_id }}"
+                                               href="#time-modal" aria-controls="time-modal"><svg class="bi"><use xlink:href="#clock-circle"/></svg>
+                                            </button>
+                                            <button type="button" class="srg-btn-small-success" data-bs-toggle="modal" data-toggle="tooltip" data-title="Yay"
+                                               data-bs-target="#expense-modal" data-engagement-id="{{ engagement.engagement_srg_id }}"
+                                               href="#expense-modal" aria-controls="expense-modal"><svg class="bi"><use xlink:href="#dollar-sign"/></svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
 
-                    <div class="list-group" role="tablist" id="clientList">
-                        {% for engagement in user_engagements %}
-                            <div class="srg-list-group-item shadow-sm my-2">
-                                <div class="row d-flex align-items-center">
-                                    <div class="col-10" style="font-size:11pt;">
-                                        {{ engagement.parent }}<br>
-                                        {{ engagement.provider }}<br>
-                                        {{ engagement.time_code }}<br>
-                                        {{ engagement.fye|date:'m/d/Y' }}
-                                    </div>
-                                    <div class="col-2 p-0 m-0 d-flex justify-content-center">
-                                        <div class="btn-group-vertical p-0" role="group" aria-label="Vertical button group">
-                                              <button type="button" class="btn srg-btn-ol-primary px-3 py-1" data-bs-toggle="modal"
-                                                       data-bs-target="#time-modal" data-engagement-id="{{ engagement.engagement_srg_id }}"
-                                                       href="#time-modal" aria-controls="{{ engagement.engagement }}"><i class="bi bi-clock"></i></button>
-                                              <button type="button" class="btn srg-btn-ol-success px-3 py-1" data-bs-toggle="modal"
-                                                       data-bs-target="#expense-modal" data-engagement-id="{{ engagement.engagement_srg_id }}"
-                                                       href="#expense-modal" aria-controls="{{ engagement.engagement }}"><i class="bi bi-currency-dollar"></i></button>
+
+                    <div class="modal fade" id="time-modal" tabindex="-1" aria-labelledby="time-modal" aria-hidden="true">
+                        <div class="modal-dialog" id="modal">
+                            <div class="modal-content">
+                                <div class="modal-header srg-bg-primary text-light fs-5">
+                                    Record Time
+                                </div>
+                                <div class="modal-body">
+                                    <form class="" method="POST">
+                                        {% csrf_token %}
+                                            <label for="my-input">Engagement:</label><br>
+                                            <input name="engagement-input" type="text" id="my-input" /><br>
+                                        {% for field in time_form %}
+                                            <div class="fieldWrapper my-3">
+                                                {{ field.label_tag }} <br>{{ field }}
+                                                {% if field.help_text %}
+                                                    <p class="help">{{ field.help_text|safe }}</p>
+                                                {% endif %}
                                             </div>
 
-                                    </div>
-                                </div>
-                            </div>
-
-                        {% endfor %}
-
-                        <div class="modal fade" id="time-modal" tabindex="-1" aria-labelledby="time-modal" aria-hidden="true">
-                            <div class="modal-dialog" id="modal">
-                                <div class="modal-content">
-                                    <div class="modal-header srg-bg-primary text-light fs-5">
-                                        Record Time
-                                    </div>
-                                    <div class="modal-body">
-                                        <form class="" method="POST">
-                                            {% csrf_token %}
-                                                <label for="my-input">Engagement:</label><br>
-                                                <input name="engagement-input" type="text" id="my-input" /><br>
-                                            {% for field in time_form %}
-                                                <div class="fieldWrapper my-3">
-                                                    {{ field.label_tag }} <br>{{ field }}
-                                                    {% if field.help_text %}
-                                                        <p class="help">{{ field.help_text|safe }}</p>
-                                                    {% endif %}
-                                                </div>
-
-                                            {% endfor %}
-                                            <button name="time_button" class="srg-btn-primary my-2">Record Time</button>
-                                        </form>
-                                    </div>
+                                        {% endfor %}
+                                        <button name="time_button" class="srg-btn-primary my-2">Record Time</button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="modal fade" id="expense-modal" tabindex="-1" aria-labelledby="expense-modal" aria-hidden="true">
-                            <div class="modal-dialog" id="modal">
-                                <div class="modal-content">
-                                    <div class="modal-header srg-bg-success text-light fs-5">
-                                        Record Expense
-                                    </div>
-                                    <div class="modal-body">
-                                        <form class="" method="POST">
-                                            {% csrf_token %}
-                                                <label for="my-input">Engagement:</label><br>
-                                                <input name="expense-input" type="text" id="my-input" /><br>
-                                            {% for field in expense_form %}
-                                                <div class="fieldWrapper my-3">
-                                                    {{ field.label_tag }} <br>{{ field }}
-                                                    {% if field.help_text %}
-                                                        <p class="help">{{ field.help_text|safe }}</p>
-                                                    {% endif %}
-                                                </div>
+                    <div class="modal fade" id="expense-modal" tabindex="-1" aria-labelledby="expense-modal" aria-hidden="true">
+                        <div class="modal-dialog" id="modal">
+                            <div class="modal-content">
+                                <div class="modal-header srg-bg-success text-light fs-5">
+                                    Record Expense
+                                </div>
+                                <div class="modal-body">
+                                    <form class="" method="POST">
+                                        {% csrf_token %}
+                                            <label for="my-input">Engagement:</label><br>
+                                            <input name="expense-input" type="text" id="my-input" /><br>
+                                        {% for field in expense_form %}
+                                            <div class="fieldWrapper my-3">
+                                                {{ field.label_tag }} <br>{{ field }}
+                                                {% if field.help_text %}
+                                                    <p class="help">{{ field.help_text|safe }}</p>
+                                                {% endif %}
+                                            </div>
 
-                                            {% endfor %}
-                                            <button name="expense_button" class="srg-btn-success my-2">Record Expense</button>
-                                        </form>
-                                    </div>
+                                        {% endfor %}
+                                        <button name="expense_button" class="srg-btn-success my-2">Record Expense</button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -101,7 +108,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-8 vh-100">
+        <div class="col-7 vh-100">
             <div class="card vh-100">
                 <div class="card-header srg-text-secondary srg-bg-primary d-flex justify-content-between align-items-baseline">
                     <span class="display-6 fs-3">Current Entries</span>
@@ -272,29 +279,33 @@
             $(event.currentTarget).find('input[name="expense-input"]').val(engagementID)
         })
     </script>
-        <script>
-            function searchClients() {
-                // Declare Variables
-                let input, filter, ul, li, a, i, txtValue;
-                input = document.getElementById('searchBar')
-                filter = input.value.toUpperCase();
-                console.log(filter)
-                ul = document.getElementById('clientList')
-                li = ul.getElementsByClassName('srg-list-group-item');
+    <script>
+        function searchClients() {
+            let input, filter, table, rows, i, j, td, txtValue;
+            input = document.getElementById('searchBar')
+            filter = input.value.toUpperCase();
+            table = document.getElementById('engagement-table');
+            rows = table.getElementsByTagName("tr");
 
-                // Loop through elements and display only matches
-                for (i = 0; i < li.length; i++) {
-                    a = li[i].getElementsByTagName("a")[0];
-                    txtValue = li[i].textContent || li[i].innerText;
-                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                        li[i].style.display = "block";
-                    } else {
-                        li[i].style.display = "none";
+            for (i = 1; i < rows.length; i++) {
+                let tds = rows[i].getElementsByTagName("td");
+                let rowContainsFilter = false;
+
+                for (j = 0; j < tds.length; j++) {
+                    td = tds[j];
+                    if (td) {
+                        txtValue = td.textContent || td.innerText;
+                        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                            rowContainsFilter = true;
+                            break;  // no need to check other TDs, so break the loop
+                        }
                     }
                 }
 
+                rows[i].style.display = rowContainsFilter ? "" : "none";
             }
-        </script>
+        }
+    </script>
 
         <script>
           // Initialize the popover

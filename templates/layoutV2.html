@@ -292,6 +292,10 @@
         <symbol id="trash" viewBox="0 0 16 16">
             <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5"/>
         </symbol>
+        <symbol id="clock-circle" viewBox="0 0 16 16">
+          <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z"/>
+          <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0"/>
+        </symbol>
     </svg>
 
     <div class="container-fluid">
@@ -299,9 +303,9 @@
             <div class="sidebar border-right col-md-3 col-lg-2 col-xl-2 col-xxl-2 p-0 srg-bg-secondary h-auto">
                 <div class="srg-sidebar-header srg-bg-primary pb-2">
                     <div class="ps-3">
-                        <span class="srg-text-secondary display-6 fs-2">TESS - </span><span class="srg-text-secondary display-6 fs-3">{{ page_title }}</span><br>
-                        <span class="srg-text-secondary display-6 fs-3">{{ user_info.first_name }} {{ user_info.last_name }}</span><br>
-                        <span class="srg-text-secondary display-6 fs-4">{{ today|date:'D, F d, Y' }}</span><br>
+                        <span class="srg-text-secondary display-6 fs-3">TESS - </span> <span class="srg-text-secondary display-6 fs-3">{{ page_title }}</span><br>
+                        <span class="srg-text-secondary display-6 fs-4">{{ user_info.first_name }} {{ user_info.last_name }}</span><br>
+                        <span class="srg-text-secondary display-6 fs-4">{{ today|date:'D, M d, Y' }}</span><br>
                         <span class="srg-text-secondary display-6 fs-4">Period: {{ week_beg|date:"m/d/y" }} - {{ week_end|date:"m/d/y" }}</span><br>
                     </div>
                     <ul class="navbar-nav flex-row d-md-none">
@@ -429,7 +433,7 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-9 col-lg-10">
+            <div class="col-md-9 col-lg-10 col-xl-10 col-xxl-10">
                   {% block content %}
                   {% endblock %}
             </div>
