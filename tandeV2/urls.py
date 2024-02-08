@@ -44,6 +44,7 @@ urlpatterns = [
     path('renew-engagement/<pk>', views.RenewEngagement, name='renew-engagement'),
     path('add-engagement-assign/<int:eng>/<emp>/', views.AddAssignment, name='add-engagement-assign'),
     path('remove-engagement-assign/<int:eng>/<emp>/', views.RemoveAssignment, name='remove-engagement-assign'),
+    path('delete-engagement-note/<int:pk>/', views.DeleteEngagementNote, name='delete-engagement-note'),
     path('delete-time-entry/<pk>/', views.DeleteTimesheetEntry, name='delete-time-entry'),
     path('get_ts/<int:ts_id>/', views.GetTsEntry, name='get-task'),
     path('update_cur_entry', views.UpdateTsEntry, name='update-ts'),

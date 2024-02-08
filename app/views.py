@@ -717,15 +717,17 @@ def AdminTimesheet(request):
 
     f = TimesheetFilter(request.GET, queryset=queryset)
     q_total = f.qs.aggregate(total_hours=Sum('hours')).get('total_hours', 0)
-    q_employees = f.qs.values('employee__user__username').order_by('employee').annotate(hours_sum=Sum('hours')).order_by('-hours_sum')
-    q_engagements = f.qs.values('engagement__engagement_srg_id').order_by('engagement__engagement_srg_id').annotate(hours_sum=Sum('hours')).order_by('-hours_sum')[:3]
+    q_employees = f.qs.values('employee__user__username').order_by('employee').annotate(
+        hours_sum=Sum('hours')).order_by('-hours_sum')
+    q_engagements = f.qs.values('engagement__engagement_srg_id').order_by('engagement__engagement_srg_id').annotate(
+        hours_sum=Sum('hours')).order_by('-hours_sum')[:3]
 
     f_start_date = f.form['start_date']
     f_end_date = f.form['end_date']
 
     if request.method == 'GET' and 'extract_button' in request.GET:
-        matching_expenses = Expense.objects.filter(date__gte=datetime.strptime(f_start_date.value(), "%m/%d/%Y"),
-                                                   date__lte=datetime.strptime(f_end_date.value(), "%m/%d/%Y"))
+        matching_expenses = Expense.objects.filter(date__gte=datetime.strptime(f_start_date.value(), "%Y-%m-%d"),
+                                                   date__lte=datetime.strptime(f_end_date.value(), "%Y-%m-%d"))
         ts_data = read_frame(f.qs)
         ts_data = ts_data.rename(columns={'ts_date': 'Date', 'engagement__engagement_srg_id': 'SRG_ID',
                                           'engagement__parent__parent_name': 'Parent',
@@ -949,8 +951,8 @@ def EmployeeTimesheetPrevious(request):
     f_end_date = f.form['end_date']
 
     if request.method == 'GET' and 'extract_button' in request.GET:
-        matching_expenses = Expense.objects.filter(date__gte=datetime.strptime(f_start_date.value(), "%m/%d/%Y"),
-                                                   date__lte=datetime.strptime(f_end_date.value(), "%m/%d/%Y"))
+        matching_expenses = Expense.objects.filter(date__gte=datetime.strptime(f_start_date.value(), "%Y-%m-%d"),
+                                                   date__lte=datetime.strptime(f_end_date.value(), "%Y-%m-%d"))
         ts_data = read_frame(f.qs)
 
         ex_data = read_frame(matching_expenses)
@@ -1401,6 +1403,13 @@ def DeleteTdEntry(request, pk):
     entry_instance.delete()
 
     return redirect('employee-todolist')
+
+
+def DeleteEngagementNote(request, pk):
+    engagement_note_instance = get_object_or_404(EngagementNotes, pk=pk)
+    engagement_note_instance.delete()
+
+    return redirect('engagement-detail', engagement_note_instance.engagement_id)
 
 
 def GetExpenseEntry(request, expense_id):
