@@ -332,6 +332,11 @@
                     -->
                     <div class="offcanvas-body d-md-flex flex-column p-0 pt-lg-3 overflow-y-auto">
                         <ul class="nav flex-column">
+                            {% if ts_is_submitted == False %}
+                                <li class="nav-item d-flex justify-content-center">
+                                    <a type="button" class="srg-btn-danger text-center gap-3" href="{% url 'employee-timesheet-review' %}">Review / Submit Timesheet</a>
+                                </li>
+                            {% endif %}
                             <li class="nav-item">
                                 <a class="nav-link d-flex align-items-center gap-2" href="{% url 'dashboard' %}">
                                     <svg class="bi"><use xlink:href="#house-fill"/></svg>

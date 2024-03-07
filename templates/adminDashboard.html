@@ -469,7 +469,7 @@
                                 <td colspan="4">
                                     X 40 hrs / week
                                 </td>
-                                <td>{{ billable_weeks|mul:40|floatformat:0 }}</td>
+                                <td>{{ monthly_billable_hours|floatformat:0 }}</td>
                                 <td></td>
                                 <td class="fw-bold">Billable %</td>
                                 <td class="fw-bold">{{ srg_billable_percentage }} %</td>
@@ -478,13 +478,13 @@
                                 <td colspan="4">
                                     X # of Employees
                                 </td>
-                                <td>19</td>
+                                <td>{{ number_of_employees }}</td>
                             </tr>
                             <tr>
                                 <td colspan="4">
                                     Total Billable @ 100%
                                 </td>
-                                <td>{{ billable_weeks|mul:40|mul:19|intcomma }}</td>
+                                <td>{{ total_monthly_billable_hours|intcomma }}</td>
                             </tr>
                         </tbody>
                     </table>

@@ -43,7 +43,7 @@
                                         {{ entry.time_type_id }}
                                     </td>
                                     <td class="text-center">
-                                        <a type="button" class="srg-link edit-button" data-bs-toggle="modal" href="#edit-modal" data-expense-id="{{ entry.expense_id }}">
+                                        <a type="button" class="srg-link edit-button" data-bs-toggle="modal" href="#edit-expense-modal" data-expense-id="{{ entry.expense_id }}">
                                           <i class="bi bi-pencil-square"></i>
                                         </a>
 
@@ -71,7 +71,7 @@
             </div>
         </div>
 
-        <div class="modal fade" id="edit-modal" tabindex="-1" aria-labelledby="edit-modal" aria-hidden="true">
+        <div class="modal fade" id="edit-expense-modal" tabindex="-1" aria-labelledby="edit-expense-modal" aria-hidden="true">
             <div class="modal-dialog" id="modal">
                 <div class="modal-content">
                     <div class="modal-header srg-bg-secondary srg-header fs-5">

@@ -44,23 +44,28 @@
 
                             <script>
                                 function searchEngagement{{ parent.parent_id }}() {
-                                    let input, filter, table, rows, a, i, txtValue;
+                                    let input, filter, table, rows, i, j, td, txtValue;
                                     input = document.getElementById("search{{ parent.parent_id }}");
                                     filter = input.value.toUpperCase();
                                     table = document.getElementById('table{{ parent.parent_id }}');
                                     rows = table.getElementsByTagName("tr");
 
-                                    for (i = 0; i < rows.length; i++) {
-                                        a = rows[i].getElementsByTagName("td")[0];
-                                        if (a) {
-                                            txtValue = a.textContent || a.innerText;
-                                            if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                                                rows[i].style.display = "";
-                                            } else {
-                                                rows[i].style.display = "none";
+                                    for (i = 1; i < rows.length; i++) {
+                                        let tds = rows[i].getElementsByTagName("td");
+                                        let rowContainsFilter = false;
+                        
+                                        for (j = 0; j < tds.length; j++) {
+                                            td = tds[j];
+                                            if (td) {
+                                                txtValue = td.textContent || td.innerText;
+                                                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                                                    rowContainsFilter = true;
+                                                    break;  // no need to check other TDs, so break the loop
+                                                }
                                             }
                                         }
-
+                        
+                                        rows[i].style.display = rowContainsFilter ? "" : "none";
                                     }
                                 }
                             </script>

@@ -24,10 +24,10 @@
     <div class="container-fluid vh-100">
         <div class=" vh-100 overflow-auto">
             <div class="row d-flex justify-content-center my-4">
-                <div class="col-xl-4 col-lg-4 col-md-12">
+                <div class="col-xl-6 col-lg-4 col-md-12">
                     <div class="card shadow-sm" style="min-height:400px;max-height:500px">
                         <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline">
-                            <span class="display-6 fs-3">{{ first_name }}'s Time</span>
+                            <span class="display-6 fs-3">{{ first_name }}'s Time vs To-Do List</span>
                             <!--<a href="{% url 'employee-timesheet' %}" class="srg-link">View Timesheet</a>-->
                         </div>
                         <div class="card-body overflow-auto pt-0">
@@ -37,17 +37,17 @@
                                 const config = {
                                     type: 'bar',
                                     data: {
-                                        labels: ['Billable', 'Non-Billable', 'Total'],
+                                        labels: ['Timesheet', 'To-Do List'],
                                         datasets: [{
                                             label: [],
                                             backgroundColor: ['rgb(2,48,140)', 'rgb(217,217,217)','rgb(0,64,0)' ],
                                             borderColor: ['rgb(2,48,140)', 'rgb(217,217,217)','rgb(0,64,0)' ],
-                                            data: [{{ billable_hours_sum.amount }}, {{ non_billable_hours_sum.amount }}, {{ non_billable_hours_sum.amount|add:billable_hours_sum.amount }}],
+                                            data: [{{ timesheet_hours.amount }}, {{ todolist_hours.amount }}],
                                             fill: false
                                         }]
                                     },
                                     options: {
-                                        indexAxis:'x',
+                                        indexAxis:'y',
                                         responsive: true,
                                         plugins: {
                                           legend: {
@@ -58,11 +58,11 @@
                                         scales: {
                                             x: {
                                                 stacked:false,
-                                                max:40
+                                                max:100
                                             },
                                             y: {
                                                 stacked:false,
-                                                max: 40,
+                                                max: 100,
                                                 ticks: {
                                                     stepSize: 4
                                                 }
@@ -89,19 +89,21 @@
                                     }
                                 };
                                 window.onload = function () {
+
                                     const ctx = document.getElementById('myChart').getContext('2d');
                                     window.myLine = new Chart(ctx, config);
 
                                 }
+
                             </script>
                         </div>
                     </div>
                 </div>
 
-                <div class="col-xl-8 col-lg-8 mt-lg-0 col-md-12 mt-md-4">
+                <div class="col-xl-6 col-lg-8 mt-lg-0 col-md-12 mt-md-4">
                     <div class="card shadow-sm" style="min-height:400px;max-height:500px">
                         <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline">
-                            <span class="display-6 fs-3">{{ first_name }}'s Schedule</span>
+                            <span class="display-6 fs-3">{{ first_name }}'s Schedule - {{ today|date:'m/d/Y' }}</span>
                             <!--<a href="{% url 'employee-todolist' %}" class="srg-link">View To-Do List</a>-->
                         </div>
                         <div class="card-body overflow-auto p-2">
@@ -125,6 +127,55 @@
                                     {% endfor %}
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row my-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between d-flex align-items-baseline">
+                            <span class="display-6 fs-3">Weekly Analysis - {{ week_beg|date:'M d' }} - {{ week_end|date:'d, Y' }}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-2">
+                                    <div class="card">
+                                        <div class="card-header srg-bg-primary srg-text-secondary text-start">
+                                            Hours Scheduled
+                                        </div>
+                                        <div class="card-body display-1 srg-link text-center">
+                                            {{ todolist_hours.amount|floatformat:0 }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-10">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <table class="srg-table-borderless">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Parent</th>
+                                                        <th>Provider</th>
+                                                        <th>Scope</th>
+                                                        <th>FYE</th>
+                                                        <th>Hours</th>
+                                                    </tr>
+                                                </thead>
+                                                {% for i in todolist_hours_by_engagement %}
+                                                    <tr>
+                                                        <td>{{ i.engagement__parent__parent_name }}</td>
+                                                        <td>{{ i.engagement__provider }} - {{ i.engagement__provider__provider_name }}</td>
+                                                        <td>{{ i.engagement__time_code }} - {{ i.engagement__time_code__time_code_desc }}</td>
+                                                        <td>{{ i.engagement__fye|date:'m/d/Y' }}</td>
+                                                        <td>{{ i.amount }}</td>
+                                                    </tr>
+                                                {% endfor %}
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -185,7 +236,31 @@
                 </div>
             </div>
         </div>
+        <div class="modal fade" id="day-modal" tabindex="-1">
+            <div class="modal-dialog modal-xl" id="dmodal">
+                <div class="modal-content">
+                    <div class="modal-header srg-bg-secondary srg-header d-flex justify-content-center gap-2">
+                        <span class="fs-3 display-6" id="day-text"></span> <span class="fs-3 display-6">Schedule</span>
+                    </div>
+                    <div class="modal-body">
+                        <table class="srg-table" id="day-table">
+                            <thead>
+                                <tr class="">
+                                    <th>Provider</th>
+                                    <th>Time Code</th>
+                                    <th>FYE</th>
+                                    <th>Hours</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
 
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
 
     </div>
 
@@ -269,20 +344,71 @@
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
 
     <script>
-      document.addEventListener('DOMContentLoaded', function() {
-          const calendarEl = document.getElementById('myCalendar');
-          const calendar = new FullCalendar.Calendar(calendarEl, {
-              initialView: 'dayGridMonth',
-              height:650,
-              events: [
-                  {% for event in employee_td_entries_all %}
-                      {
-                          title: '{{ event.engagement__provider_id|safe }} - {{ event.engagement__time_code }} - {{ event.hsum }} Hours',
-                          start: '{{ event.todo_date|date:'Y-m-d' }}',
-                          end: '{{ event.todo_date|date:'Y-m-d' }}'
-                      },
-                  {% endfor %}
-              ]
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendarEl = document.getElementById('myCalendar');
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'listWeek',
+                height: 1000,
+                headerToolbar: {
+                    left: 'prev,next',
+                    center: 'title'
+                },
+                fixedWeekCount: false,
+                aspectRatio: 2.5,
+                navLinks: true,
+                weekNumbers: true,
+                events: [
+                    {% for event in employee_td_entries_all %}
+                          {
+                            title: '{{ event.engagement__engagement_srg_id}}: {{ event.engagement__parent_id__parent_name }}; {{ event.engagement__provider_id }} - {{ event.engagement__provider_id__provider_name }}; {{ event.engagement__time_code }} - {{ event.engagement__time_code__time_code_desc }} - {{ event.hsum }} Hours',
+                            start: '{{ event.todo_date|date:'Y-m-d' }}',
+                            end: '{{ event.todo_date|date:'Y-m-d' }}'
+                            },
+                    {% endfor %}
+                ],
+                eventBackgroundColor: '#02308C',
+                eventBorderColor: '#02308C',
+                listDayFormat: {
+                    month: 'long',
+                    year: 'numeric',
+                    day: 'numeric',
+                    weekday: 'long'
+                },
+                listDaySideFormat: false,
+                navLinkDayClick: function (info) {
+                    $('#day-modal').modal('show');
+                    document.getElementById('day-text').innerText = info.toLocaleDateString();
+                    let tableBody = document.querySelector("#day-table tbody");
+                    $.ajax({
+                        url: '/get_td_list/' + info.toISOString().split("T")[0] + '/',
+                        type: 'GET',
+                        success: function (tdDayList) {
+                            tdDayList.forEach(item => {
+                                let row = document.createElement('tr')
+                                let url = `/delete-todo-entry/${item.todolist_id}`
+                                let tdID = item.todolist_id
+                                row.innerHTML = `
+                                                <td>${item.engagement__provider} - ${item.engagement__provider__provider_name}</td>
+                                                <td>${item.engagement__time_code} - ${item.engagement__time_code__time_code_desc}</td>
+                                                <td>${item.engagement__fye}</td>
+                                                <td>${item.anticipated_hours}</td>
+                                                <td class="text-center">
+                                                        <a type="button" class="srg-link edit-button" data-bs-toggle="modal" href="#edit-modal" data-td-id="${tdID}">
+                                                          <i class="bi bi-pencil-square"></i>
+                                                        </a>
+
+                                                        <a type="button" class="srg-link-danger" id='td-modal-delete-button' data-engagement-id="{{ item.todolist_id }}"
+                                                                href="${url}">
+                                                          <i class="bi bi-trash3"></i>
+                                                        </a>
+                                                    </td>
+                                                    `
+                                tableBody.appendChild(row)
+                            })
+                        }
+                    })
+                }
+
           });
           calendar.render();
       });

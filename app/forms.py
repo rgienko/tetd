@@ -106,7 +106,7 @@ class EditExpenseForm(forms.ModelForm):
     class Meta:
         model = Expense
 
-        fields = ['expense_id', 'date', 'engagement', 'expense_category', 'expense_amount', 'time_type_id', 'expense_note']
+        fields = ['date', 'engagement', 'expense_category', 'expense_amount', 'time_type_id', 'expense_note']
 
         labels = {
             'engagement': _('Engagement'),

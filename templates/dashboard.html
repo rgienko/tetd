@@ -3,6 +3,7 @@
 
 {% block content %}
     <div class="container-fluid vh-100">
+        <!--
         {% if ts_is_submitted == False %}
         <div class="row">
             <div class="col-12">
@@ -11,6 +12,7 @@
         </div>
         {% else %}
         {% endif %}
+        -->
     <div class="row d-flex justify-content-center">
         <div class="col-xl-4 col-lg-4 col-md-12">
             <div class="card shadow-sm" style="min-height:500px;max-height:500px">
@@ -127,7 +129,7 @@
                     <span class="display-6 fs-3">My Engagements</span>
                     <input class="search-box" type="text" id="searchBar" onkeyup="searchEngagements()" placeholder="Search for engagements.." title="Type in a name">
                 </div>
-                <div class="card-body d-flex justify-content-center overflow-auto" style="min-height: 500px; max-height: 500px">
+                <div class="card-body d-flex justify-content-center overflow-auto" style="min-height: 500px; max-height: 675px">
                     <table class="srg-table" id="srg-table">
                         <thead class="srg-bg-secondary srg-header">
                             <tr>

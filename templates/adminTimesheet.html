@@ -1,4 +1,5 @@
 {% extends 'layoutV2.html' %}
+{% load humanize %}
 
 {% block content %}
     <!--
@@ -22,8 +23,8 @@
         </div>
     </div>
     -->
-    <div class="row mt-2 d-flex justify-content-evenly vh-100">
-        <div class="col-xxl-4 col-xl-4 col-lg-4 col-md-12">
+    <div class="row d-flex justify-content-evenly vh-100">
+        <div class="col-xxl-6 col-xl-5 col-lg-5 col-md-6">
             <div class="card">
                 <div class="card-header srg-bg-primary srg-text-secondary">
                     <span class="display-6 fs-3">Filter Form</span>
@@ -46,66 +47,11 @@
                     </form>
                 </div>
             </div>
-
-
-            <div class="card mt-5">
-                <div class="card-header srg-bg-primary srg-text-secondary">
-                    <span class="display-6 fs-3">Search Metrics</span>
-                </div>
-                <div class="card-body">
-
-                    <h5 class="mt-2 srg-header">Top 3 Engagements</h5>
-                    <table class="srg-table-borderless">
-                        <thead>
-                            <tr>
-                                <th>Engagement</th>
-                                <th>Hours</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for e in q_engagements %}
-                                <tr>
-                                    <td>{{ e.engagement__engagement_srg_id }}</td>
-                                    <td>{{ e.hours_sum }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-
-                    <h5 class="mt-4 srg-header">By Employee</h5>
-                    <table class="srg-table-borderless">
-                        <thead>
-                            <tr>
-                                <th>Employee</th>
-                                <th>Hours</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for e in q_employees %}
-                                <tr>
-                                    <td>{{ e.employee__user__username }}</td>
-                                    <td>{{ e.hours_sum }}</td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                        <tfoot>
-                            <tr class="fw-bold srg-link">
-                                <td>Total</td>
-                                <td>{{ q_total }}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xxl-8 col-xl-8 col-lg-8 col-md-12 vh-100">
-            <div class="card vh-100">
+            <div class="card mt-2">
                 <div class="card-header srg-text-secondary srg-bg-primary">
                     <span class="display-6 fs-3">Timesheet Entries</span>
                 </div>
-                <div class="card-body overflow-auto">
+                <div class="card-body overflow-auto" style="max-height:700px;">
                     <table class="srg-table">
                         <thead>
                             <tr class="text-center">
@@ -130,6 +76,72 @@
                             </tr>
                         {% endfor %}
                     </table>
+                </div>
+            </div>
+
+
+        </div>
+
+        <div class="col-6">
+            <div class="card">
+                <div class="card-header srg-bg-primary srg-text-secondary">
+                    <span class="display-6 fs-3">Search Metrics</span>
+                </div>
+                <div class="card-body">
+                    <h5 class="mt-2 srg-header">Top 3 Engagements</h5>
+                    <table class="srg-table-borderless">
+                        <thead>
+                            <tr>
+                                <th>Engagement</th>
+                                <th>Parent</th>
+                                <th>Provider</th>
+                                <th>Scope</th>
+                                <th>Hours</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in q_engagements %}
+                                <tr>
+                                    <td><a class="srg-link" href="{% url 'engagement-detail' e.engagement__engagement_id %}">{{ e.engagement__engagement_srg_id }}</a> </td>
+                                    <td>{{ e.engagement__parent__parent_name }}</td>
+                                    <td>{{ e.engagement__provider }} - {{ e.engagement__provider__provider_name }}</td>
+                                    <td>{{ e.engagement__time_code }} - {{ e.engagement__time_code__time_code_desc }}</td>
+                                    <td>{{ e.hours_sum }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                    <h5 class="mt-4 srg-header">By Employee</h5>
+                    <table class="srg-table-borderless">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Hours</th>
+                                <th>@Rate</th>
+                                <th>Dollars</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in q_employees %}
+                                <tr>
+                                    <td>{{ e.employee__user__username }}</td>
+                                    <td>{{ e.hours_sum }}</td>
+                                    <td>{{ e.employee__title__rate }}</td>
+                                    <td>{{ e.dollars_sum|intcomma }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="fw-bold srg-link">
+                                <td>Total</td>
+                                <td>{{ q_total|intcomma }}</td>
+                                <td></td>
+                                <td>{{ q_dollars_total|intcomma }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
                 </div>
             </div>
         </div>

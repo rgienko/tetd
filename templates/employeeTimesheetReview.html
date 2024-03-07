@@ -103,6 +103,33 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="modal fade" id="view-expense-modal" tabindex="-1" aria-labelledby="view-expense-modal" aria-hidden="true">
+                        <div class="modal-dialog modal-lg" id="modal">
+                            <div class="modal-content">
+                                <div class="modal-header srg-bg-success text-light fs-5">
+                                    Expenses <span id="expense-day-text"></span>
+                                </div>
+                                <div class="modal-body">
+                                    <table class="srg-table" id="expense-table">
+                                        <thead>
+                                            <tr>
+                                                <th class="">Provider</th>
+                                                <th class="">Scope</th>
+                                                <th class="">Category</th>
+                                                <th class="">Amount</th>
+                                                <th class="">Billable</th>
+                                                <th class="">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -126,9 +153,13 @@
                             </div>
                             -->
                             <div class="col-12 p-0">
-                                <div class="card-header border-bottom-0 {% if dy == today %}srg-bg-primary srg-text-secondary{% else %}srg-bg-secondary srg-header {% endif %}">
+                                <div class="card-header border-bottom-0 d-flex justify-content-between srg-bg-secondary srg-header align-items-baseline">
                                     <span class="display-6 fs-4">{{ dy|date:'l' }}
                                             {{ dy|date:'m/d/y' }}</span>
+
+                                    <a class="srg-link-success" data-bs-toggle="modal" data-toggle="tooltip" data-title="Yay"
+                                               data-bs-target="#view-expense-modal" data-dt="{{ dy|date:'Y-m-d' }}"
+                                               href="#view-expense-modal" aria-controls="view-expense-modal"><svg class="bi"><use xlink:href="#dollar-sign"/></svg>View Expense</a>
                                 </div>
                                 <div class="card-body p-2">
                                     <table class="srg-table">
@@ -224,6 +255,31 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="modal fade" id="edit-expense-modal" tabindex="-1" aria-labelledby="edit-expense-modal" aria-hidden="true">
+                            <div class="modal-dialog" id="modal">
+                                <div class="modal-content">
+                                    <div class="modal-header srg-bg-success text-white fs-5">
+                                        Edit Expense
+                                    </div>
+                                    <div class="modal-body">
+                                        <form class="" method="POST" id="editExpForm" action="{% url 'update-expense-review' %}">
+                                            {% csrf_token %}
+                                                <label for="exp-id">Record #:</label><br>
+                                                <input class="w-50" name="exp-id-input" type="text" id="exp-id" /><br>
+                                            {% for field in editExpForm %}
+                                                <div class="fieldWrapper my-3">
+                                                    {{ field.label_tag }} <br>{{ field }}
+                                                    {% if field.help_text %}
+                                                        <p class="help">{{ field.help_text|safe }}</p>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                            <button name="edit_expense_button" type="submit" class="srg-btn-primary my-2">Save Entry</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     {% if total_weekly_hours.hours_sum >= 40 %}
                         <div class="row mb-4">
                             <div class="col-12 d-flex justify-content-center">
@@ -265,6 +321,50 @@
         })
     </script>
     <script>
+        const expenseDayModal = document.getElementById('view-expense-modal');
+        expenseDayModal.addEventListener('hidden.bs.modal', event=> {
+            let expenseTableBody = document.querySelector("#expense-table tbody")
+            while (expenseTableBody.firstChild) {
+                expenseTableBody.removeChild(expenseTableBody.firstChild)
+            }
+        })
+
+        expenseDayModal.addEventListener('show.bs.modal', event => {
+            let dte = $(event.relatedTarget).data("dt")
+            let tableBody = document.querySelector("#expense-table tbody")
+            document.getElementById('expense-day-text').innerText = dte
+
+            $.ajax({
+                url:'/get_expense_list/' + dte + "/",
+                type: 'GET',
+                success: function (expenseDayList) {
+                    expenseDayList.forEach(item => {
+                        let row = document.createElement('tr')
+                        let expenseID = item.expense_id
+                        let url = `/delete-expense-review/${item.expense_id}/`
+                        row.innerHTML = `
+                                        <td>${item.engagement__provider} - ${item.engagement__provider__provider_name}</td>
+                                        <td>${item.engagement__time_code} - ${item.engagement__time_code__time_code_desc }</td>
+                                        <td>${item.expense_category__expense_category}</td>
+                                        <td>${item.expense_amount}</td>
+                                        <td>${item.time_type_id}</td>
+                                        <td class="text-center">
+                                                        <a type="button" class="srg-link edit-expense-button" data-bs-toggle="modal" href="#edit-expense-modal" data-exp-id="${expenseID}">
+                                                          <i class="bi bi-pencil-square"></i>
+                                                        </a>
+
+                                                        <a type="button" class="srg-link-danger" href="${url}">
+                                                          <i class="bi bi-trash3"></i>
+                                                        </a>
+                                                    </td>
+                                        `
+                        tableBody.appendChild(row)
+                    })
+                }
+            })
+        })
+    </script>
+    <script>
         const myModal = document.getElementById('time-modal')
         myModal.addEventListener('show.bs.modal', event => {
             //get data-id attribute of clicked event
@@ -279,6 +379,31 @@
             //populate the input field
             $(event.currentTarget).find('input[name="expense-input"]').val(engagementID)
         });
+    </script>
+
+    <script>
+        const editExpenseModal = document.getElementById('edit-expense-modal');
+        editExpenseModal.addEventListener('show.bs.modal', event => {
+                let expID = $(event.relatedTarget).data("exp-id");
+                let editExpForm = $('#editExpForm')
+                console.log(expID)
+
+                // Fetch details using AJAX
+                $.ajax({
+                    url: '/get_expense/' + expID + '/',
+                    type: 'GET',
+                    success: function (data) {
+                        //Populate From fields with task details
+                        editExpForm.find('#exp-id').val(expID)
+                        editExpForm.find('#id_date').val(data.expense_date)
+                        editExpForm.find('#id_engagement').val(data.engagement)
+                        editExpForm.find('#id_expense_category').val(data.category)
+                        editExpForm.find('#id_expense_amount').val(data.expense_amount)
+                        editExpForm.find('#id_time_type_id').val(data.btype)
+                        editExpForm.find('#id_expense_note').val(data.note)
+                    }
+                })
+            })
     </script>
         <script>
             function searchClients() {
