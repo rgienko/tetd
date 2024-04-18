@@ -57,21 +57,21 @@
                             <tr class="text-center">
                                 <th>Date</th>
                                 <th>Employee</th>
-                                <th>Engagement ID</th>
                                 <th>Parent</th>
                                 <th>Provider</th>
                                 <th>Scope</th>
+                                <th>FYE</th>
                                 <th>Hours</th>
                             </tr>
                         </thead>
                         {% for entry in filter.qs %}
-                            <tr class="text-center align-middle">
+                            <tr class="text-center align-middle"">
                                 <td class="">{{ entry.ts_date|date:'m/d/Y' }}</td>
                                 <td class="text-start">{{ entry.employee__user__username }}</td>
-                                <td class="text-start">{{ entry.engagement__engagement_srg_id }}</td>
                                 <td class="text-start">{{ entry.engagement__parent__parent_name }}</td>
                                 <td class="text-start">{{ entry.engagement__provider }} - {{ entry.engagement__provider__provider_name }}</td>
                                 <td class="text-start">{{ entry.engagement__time_code }} - {{ entry.engagement__time_code__time_code_desc }}</td>
+                                <td class="text-start">{{ entry.engagement__fye|date:'m/d/Y' }}</td>
                                 <td>{{ entry.hours }}</td>
                             </tr>
                         {% endfor %}
@@ -96,6 +96,7 @@
                                 <th>Parent</th>
                                 <th>Provider</th>
                                 <th>Scope</th>
+                                <th>FYE</th>
                                 <th>Hours</th>
                             </tr>
                         </thead>
@@ -106,6 +107,7 @@
                                     <td>{{ e.engagement__parent__parent_name }}</td>
                                     <td>{{ e.engagement__provider }} - {{ e.engagement__provider__provider_name }}</td>
                                     <td>{{ e.engagement__time_code }} - {{ e.engagement__time_code__time_code_desc }}</td>
+                                    <td>{{ e.engagement__fye|date:'m/d/Y' }}</td>
                                     <td>{{ e.hours_sum }}</td>
                                 </tr>
                             {% endfor %}

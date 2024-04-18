@@ -49,6 +49,7 @@ urlpatterns = [
     path('get_ts/<int:ts_id>/', views.GetTsEntry, name='get-task'),
     path('update_cur_entry', views.UpdateTsEntry, name='update-ts'),
     path('update_prev_entry', views.UpdateRevTsEntry, name='update-rev-ts'),
+    path('delete_prev_entry/<pk>/', views.DeleteRevTimesheetEntry, name='delete-rev-ts'),
     path('delete-todo-entry/<pk>/', views.DeleteTdEntry, name='delete-todo-entry'),
     path('get_td_list/<dte>/', views.GetTdDayList, name='get-td-list'),
     path('get_td_week_list/<week_beg>/<week_end>/', views.GetTdWeekList, name='get-td-week-list'),

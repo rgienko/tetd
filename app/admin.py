@@ -8,6 +8,8 @@ admin.site.register(Parent)
 
 admin.site.register(Provider)
 
+admin.site.register(ExpenseCategory)
+
 
 @admin.register(Time)
 class TimeAdmin(admin.ModelAdmin):

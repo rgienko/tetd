@@ -96,7 +96,7 @@ def dashboard(request):
                                                  "time_code__time_code_desc",
                                                  "is_complete", "fye", "budget_hours", "budget_amount").annotate(
         engagement_hours_sum=Coalesce(Sum('time__hours'), 0, output_field=DecimalField(0.00)),
-        budget_calc=Max('budget_amount') / 250).filter(
+        budget_calc=Max('budget_amount') / 250).filter(time_code__lt=900,
         engagement_id__in=user_assignments).order_by('-engagement_hours_sum', '-fye', 'time_code',
                                                      'provider_id')
 
@@ -726,6 +726,7 @@ def AdminTimesheet(request):
                                        'engagement__type_id',
                                        'engagement__is_rac',
                                        'engagement__engagement_hourly_rate',
+                                       'employee__title__rate',
                                        'hours',
                                        'note').order_by('ts_date', 'engagement__parent__parent_name',
                                                         'engagement__provider',
@@ -751,7 +752,8 @@ def AdminTimesheet(request):
         matching_expenses = Expense.objects.filter(date__gte=datetime.strptime(f_start_date.value(), "%Y-%m-%d"),
                                                    date__lte=datetime.strptime(f_end_date.value(), "%Y-%m-%d"))
         ts_data = read_frame(f.qs)
-        ts_data = ts_data.rename(columns={'ts_date': 'Date', 'engagement__engagement_srg_id': 'SRG_ID',
+        ts_data = ts_data.rename(columns={'ts_date': 'Date', 'employee__user__username': 'Employee',
+                                          'engagement__engagement_srg_id': 'SRG_ID',
                                           'engagement__parent__parent_name': 'Parent',
                                           'engagement__provider': 'Provider #',
                                           'engagement__provider__provider_name': 'Provider Name',
@@ -760,6 +762,7 @@ def AdminTimesheet(request):
                                           'engagement__fye': 'FYE', 'engagement__type_id': 'Bill Type',
                                           'engagement__is_rac': 'RAC Y/N',
                                           'engagement__engagement_hourly_rate': 'Engagement Rate',
+                                          'employee__title__rate': 'Employee Rate',
                                           'hours': 'Hours', 'note': 'Note'})
 
         ex_data = read_frame(matching_expenses)
@@ -1000,7 +1003,8 @@ def EmployeeTimesheetPrevious(request):
     f_end_date = f.form['end_date']
 
     if request.method == 'GET' and 'extract_button' in request.GET:
-        matching_expenses = Expense.objects.filter(date__gte=datetime.strptime(f_start_date.value(), "%Y-%m-%d"),
+        matching_expenses = Expense.objects.filter(employee_id=user_info.employee,
+                                                   date__gte=datetime.strptime(f_start_date.value(), "%Y-%m-%d"),
                                                    date__lte=datetime.strptime(f_end_date.value(), "%Y-%m-%d"))
         ts_data = read_frame(f.qs)
 
@@ -1409,6 +1413,13 @@ def DeleteTimesheetEntry(request, pk):
     return redirect('employee-timesheet')
 
 
+def DeleteRevTimesheetEntry(request, pk):
+    entry_instance = get_object_or_404(Time, pk=pk)
+    entry_instance.delete()
+
+    return redirect('employee-timesheet-review')
+
+
 def GetTsEntry(request, ts_id):
     entry = Time.objects.get(pk=ts_id)
     data = {
@@ -1525,7 +1536,7 @@ def RevDeleteExpenseEntry(request, pk):
 
 def GetExpenseDayList(request, dte):
     expenseDayList = list(
-        Expense.objects.values('expense_id','engagement__provider','engagement__provider__provider_name',
+        Expense.objects.values('expense_id', 'engagement__provider', 'engagement__provider__provider_name',
                                'engagement__time_code', 'engagement__time_code__time_code_desc',
                                'expense_category__expense_category', 'expense_amount', 'time_type_id').filter(
             employee=request.user.employee).filter(date=dte)
