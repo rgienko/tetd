@@ -1,11 +1,35 @@
 {% extends 'layoutV2.html' %}
+{% load humanize %}
 
 {% block content %}
     <div class="row d-flex justify-content-center vh-100">
+        <div class="col-3 mt-2">
+            <div class="card">
+                <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center">
+                    <span class="display-6 fs-3">Filter</span>
+                </div>
+                <div class="card-body">
+                    <form method="get">
+                        {% for field in filter.form %}
+                            <div class="fieldWrapper mb-3">
+                                <p>{{ field.label_tag|title }} <br> {{ field }}
+                                {% if field.help_text %}
+                                <p class="help">{{ field.help_text|safe }}</p>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        <div class="card-footer bg-transparent d-flex justify-content-start align-items-center gap-3 px-0 py-2 m-0">
+                            <button class="srg-btn-primary" type="submit"><i class="bi bi-search"></i> Search</button>
+                            <a class="srg-link" href="{% url 'employee-expenses' %}">Clear Form</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
         <div class="col-9 mt-2">
             <div class="card">
                 <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center">
-                    <span class="display-6 fs-3">Current Expenses</span>
+                    <span class="display-6 fs-3">Expenses</span>
                 </div>
                 <div class="card-body">
                     <div class="">
@@ -22,22 +46,22 @@
                                 </tr>
                             </thead>
 
-                            {% for entry in employee_expenses %}
+                            {% for entry in filter.qs %}
                                 <tr>
                                     <td>
                                         {{ entry.date|date:'m/d/Y' }}
                                     </td>
                                     <td>
-                                        {{ entry.getProvider }}
+                                        {{ entry.engagement__provider }} - {{ entry.engagement__provider__provider_name }}
                                     </td>
                                     <td>
-                                        {{ entry.getScope }}
+                                        {{ entry.engagement__time_code }} - {{ entry.engagement__time_code__time_code_desc }}
                                     </td>
                                     <td>
-                                        {{ entry.expense_category }}
+                                        {{ entry.expense_category__expense_category }}
                                     </td>
                                     <td>
-                                        {{ entry.expense_amount }}
+                                        {{ entry.expense_amount|intcomma }}
                                     </td>
                                     <td>
                                         {{ entry.time_type_id }}
@@ -60,7 +84,7 @@
                                     <td></td>
                                     <td></td>
                                     <th>Total</th>
-                                    <th>{{ total_expense.expense_amount__sum }}</th>
+                                    <th>{{ qs_expense_total.expense_sum|intcomma }}</th>
                                     <td></td>
                                     <td></td>
                                 </tr>

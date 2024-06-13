@@ -1,0 +1,165 @@
+{% extends 'layoutV2.html' %}
+
+{% block content %}
+    <div class="container-fluid vh-100 overflow-auto">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header srg-text-secondary srg-bg-primary border-bottom-0">
+                        <span class="display-6 fs-3">Filter Engagements Form</span>
+                    </div>
+                    <div class="card-body">
+                        <form method="GET">
+                            {% for field in filter.form %}
+                                <p class="">{{ field.label_tag|title }} <br> {{ field }}</p>
+                                {% if field.help_text %}
+                                    <p class="help">{{ field.help_text|safe }}</p>
+                                {% endif %}
+                            {% endfor %}
+                            <div class="bg-transparent d-flex justify-content-start align-items-center gap-3 px-0 pt-2 m-0">
+                                <button class="srg-btn-primary" type="submit"><i class="bi bi-search"></i> Search</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header srg-text-secondary srg-bg-primary border-bottom-0 d-flex justify-content-between align-items-center">
+                        <span class="display-6 fs-3">Results</span>
+                        <!--<a class="srg-link-secondary m-0" id="select-all-button" onclick="checkAll()"><svg class="bi"><use xlink:href="#plus"/></svg> Select All</a>-->
+                        <a class="srg-link-secondary m-0" id="assign-button" style="display:none"><svg class="bi"><use xlink:href="#plus"/></svg> Assign</a>
+                    </div>
+                    <div class="card-body">
+                        <table class="srg-table">
+                            <thead>
+                                <tr class="text-center">
+                                    <th>Select</th>
+                                    <th>Engagement ID</th>
+                                    <th>Parent</th>
+                                    <th>Provider</th>
+                                    <th>Scope</th>
+                                    <th>FYE</th>
+                                    <th>Assigned</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in filter.qs %}
+                                    <tr class="text-center align-middle my-row" data-row-id="{{ entry.engagement_id }}">
+                                        <td><input type="checkbox"></td>
+                                        <td>{{ entry.engagement_srg_id }}</td>
+                                        <td class="text-start">{{ entry.parent__parent_name }}</td>
+                                        <td class="text-start">{{ entry.provider }} - {{ entry.provider__provider_name }}</td>
+                                        <td class="text-start">{{ entry.time_code }} - {{ entry.time_code__time_code_desc }}</td>
+                                        <td>{{ entry.fye|date:'m/d/Y' }}</td>
+                                        <td>{{ entry.assignment_count }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="choose-emp-modal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header srg-bg-secondary srg-header d-flex justify-content-center gap-2">
+                    <span class="fs-3 display-6">Pick Employee</span>
+                </div>
+                <div class="modal-body p-2">
+                    <form method="get">
+                        {{ form.employee }}
+                    </form>
+                </div>
+                <button class="srg-btn-primary m-2" id="submit-assignments-button">Submit Assignments</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function createAssignments(employee, engagement) {
+            $.ajax({
+                url:'/bulk-add-assignments/' + engagement +'/' + employee + '/',
+                type:'GET',
+                success: function (response) {
+                    $('#choose-emp-modal').modal('hide');
+                    location.reload()
+                },
+                error: function (response) {
+                    console.log(response)
+                }
+            });
+        }
+
+        function isCheckboxChecked() {
+            const checkboxes = document.querySelectorAll("table input[type='checkbox']");
+
+            for(let i=0; i < checkboxes.length; i++) {
+                if(checkboxes[i].checked){
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        let checkboxes = document.querySelectorAll("table input[type='checkbox']");
+        let button = document.getElementById('assign-button');
+        let submitAssignmentButton = document.getElementById('submit-assignments-button')
+        let select = document.getElementById('id_employee')
+        const chooseEmpModal = document.getElementById('choose-emp-modal')
+
+        function checkAll() {
+            for (let i = 0; i <checkboxes.length; i++) {
+                checkboxes[i].checked = true;
+            }
+        }
+
+        let data = ''
+
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('click', function() {
+                let isAnyCheckboxChecked = isCheckboxChecked();
+                if (isAnyCheckboxChecked) {
+                    button.style.display = '';
+                } else {
+                    button.style.display = 'none'
+                }
+                console.log(isAnyCheckboxChecked); // prints true if any checkbox is checked else prints false
+            });
+        });
+
+        button.addEventListener('click', function() {
+            let rows = document.querySelectorAll("table .my-row");
+            let checkedRows = [];
+
+            rows.forEach(function(row) {
+                let checkbox = row.querySelector("input[type='checkbox']");
+                if (checkbox.checked) {
+                    // checkedRows.push(row);
+                    //let data = row.cells[1].textContent;
+                    data = row.getAttribute('data-row-id');
+                    checkedRows.push(data)
+                }
+            });
+
+            $('#choose-emp-modal').modal('show');
+
+            // Now checkedRows contains all rows with a checked checkbox
+
+            console.log(checkedRows);
+            submitAssignmentButton.addEventListener('click', function() {
+                let emp = select.value;
+                for (let i=0; i < checkedRows.length; i++) {
+                    createAssignments(emp, checkedRows[i])
+                }
+            })
+        })
+
+
+    </script>
+{% endblock %}

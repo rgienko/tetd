@@ -41,16 +41,19 @@
 #srg-table tr > td:last-child {
     background-color: #ccd9cc;
     color:black;
+    width:100px;
 }
 
 #srg-table tr > td:nth-last-child(2) {
     background-color: #ccd6e8;
     color:black;
+    width:100px;
 }
 
 #srg-table tr > td:nth-last-child(3) {
     background-color: #d9d9d9;
     color:black;
+    width:100px;
 }
 
 .srg-table th {

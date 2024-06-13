@@ -2,7 +2,7 @@
 {% load mathfilters %}
 
 {% block content %}
-    <div class="container-fluid vh-100">
+    <div class="container-fluid">
         <!--
         {% if ts_is_submitted == False %}
         <div class="row">
@@ -12,159 +12,231 @@
         </div>
         {% else %}
         {% endif %}
-        -->
-    <div class="row d-flex justify-content-center">
-        <div class="col-xl-4 col-lg-4 col-md-12">
-            <div class="card shadow-sm" style="min-height:500px;max-height:500px">
+            -->
+        <div class="row vh-50">
+            <div class="col-12 card p-0">
                 <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline">
                     <span class="display-6 fs-3">My Time</span>
-                    <a href="{% url 'employee-timesheet' %}" class="srg-link-light">View Timesheet</a>
+                    <a href="{% url 'employee-timesheet' %}" class="srg-link-light">Go To Timesheet</a>
                 </div>
-                <div class="card-body overflow-auto pt-0">
-                    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
-                    <canvas class="my-4 w-100 text-light" height="350px" id="myChart"></canvas>
-            <script>
-                const config = {
-                    type: 'bar',
-                    data: {
-                        labels: ['Billable', 'Non-Billable', 'Total'],
-                        datasets: [{
-                            label: [],
-                            backgroundColor: ['rgb(2,48,140)', 'rgb(217,217,217)','rgb(0,64,0)' ],
-                            borderColor: ['rgb(2,48,140)', 'rgb(217,217,217)','rgb(0,64,0)' ],
-                            data: [{{ billable_hours_sum.amount }}, {{ non_billable_hours_sum.amount }}, {{ non_billable_hours_sum.amount|add:billable_hours_sum.amount }}],
-                            fill: false
-                        }]
-                    },
-                    options: {
-                        indexAxis:'x',
-                        responsive: true,
-                        plugins: {
-                          legend: {
-                              display: false,
-                              position: 'bottom'
-                          }
-                        },
-                        scales: {
-                            x: {
-                                stacked:false,
-                                max:40
-                            },
-                            y: {
-                                stacked:false,
-                                max: 50,
-                                ticks: {
-                                    stepSize: 2
-                                }
-                            },
-                            yAxes: [{
-                                ticks: {
-                                    fontColor: "black",
-                                    beginAtZero: true,
-                                },
-                                gridLines: {
-                                    color:"rgb(56, 60, 74)"
-                                }
-                            }],
-                            xAxes: [{
-                                ticks: {
-                                    fontColor: "black"
-                                },
-                                gridLines: {
-                                    color:"rgb(56, 60, 74)"
-                                }
-                            }]
-                        }
-                    }
-                };
-                window.onload = function () {
-                    const ctx = document.getElementById('myChart').getContext('2d');
-                    window.myLine = new Chart(ctx, config);
+                <div class="row d-flex justify-content-between p-2 py-4">
+                    <div class="col-xl-4 col-lg-6 col-md-12">
+                        <div class="card shadow border-0">
+                            <div class="card-header border-bottom-0 bg-transparent text-center text-muted fw-semibold">
+                                Current Week
+                            </div>
+                            <div class="card-body overflow-auto py-0 d-flex justify-content-between">
+                                <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+                                <canvas class="my-1 text-light" height="150px;" id="myChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
 
-                }
-            </script>
+                    <div class="col-xl-4 col-lg-6 col-md-12 shadow" style="min-height:100px">
+                        <div class="card border-0">
+                            <div class="card-header border-bottom-0 bg-transparent text-center text-muted fw-semibold">
+                                YTD Performance
+                            </div>
+                            <div class="card-body py-0">
+                                <div class="row d-flex justify-content-between mt-4">
+                                    <div class="col-3 card p-0 text-center">
+                                        <div class="card-header srg-bg-secondary srg-header fw-semibold">
+                                            YTD Billed
+                                        </div>
+                                        <div class="card-body fs-4">
+                                            {{ ytd_billable_hours_sum.amount }}
+                                        </div>
+                                    </div>
+                                    <div class="col-3 card p-0 text-center">
+                                        <div class="card-header srg-bg-secondary srg-header fw-semibold">
+                                            YTD Hours
+                                        </div>
+                                        <div class="card-body fs-4">
+                                            {{ monthly_billable_hours }}
+                                        </div>
+                                    </div>
+                                    <div class="col-3 card p-0 text-center">
+                                        <div class="card-header srg-bg-secondary srg-header fw-semibold">
+                                            Billable %
+                                        </div>
+                                        <div class="card-body fs-4">
+                                            {{ billable_percentage }}%
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-xl-4 col-lg-6 col-md-12">
+                        <div class="card shadow border-0">
+                            <div class="card-header border-bottom-0 bg-transparent text-center text-muted fw-semibold">
+                                Hours by Month
+                            </div>
+                            <div class="card-body overflow-auto py-0 d-flex justify-content-between">
+                                <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+                                <canvas class="my-1 text-light" height="150" id="myChart2"></canvas>
+                        <script>
+                            const config = {
+                                type: 'bar',
+                                data: {
+                                    labels: ['Billable', 'Non-Billable', 'Total'],
+                                    datasets: [{
+                                        label: [],
+                                        backgroundColor: ['rgb(2,48,140)', 'rgb(217,217,217)','rgb(0,64,0)' ],
+                                        borderColor: ['rgb(2,48,140)', 'rgb(217,217,217)','rgb(0,64,0)' ],
+                                        data: [{{ billable_hours_sum.amount }}, {{ non_billable_hours_sum.amount }}, {{ total_hours_sum }}],
+                                        fill: false
+                                    }]
+                                },
+                                options: {
+                                    indexAxis:'x',
+                                    responsive: true,
+                                    plugins: {
+                                        legend: {
+                                            display: false,
+                                            position: 'bottom'
+                                        }
+                                    },
+                                    scales: {
+                                        x: {
+                                            stacked:false,
+                                            max:40
+                                        },
+                                        y: {
+                                            stacked:false,
+                                            max: 50,
+                                            ticks: {
+                                                stepSize: 2
+                                            }
+                                        },
+                                        yAxes: [{
+                                            ticks: {
+                                                fontColor: "black",
+                                                beginAtZero: true,
+                                            },
+                                            gridLines: {
+                                                color:"rgb(56, 60, 74)"
+                                            }
+                                        }],
+                                        xAxes: [{
+                                            ticks: {
+                                                fontColor: "black"
+                                            },
+                                            gridLines: {
+                                                color:"rgb(56, 60, 74)"
+                                            }
+                                        }]
+                                    }
+                                }
+                            };
+                            let months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP",
+                                "OCT", "NOV", "DEC"];
+                            const ytdConfig = {
+                                type: 'line',
+                                data: {
+                                    labels: months,
+                                    datasets: [{
+                                        label: ['Monthly Hours'],
+                                        backgroundColor: ['rgb(2,48,140)',],
+                                        borderColor: ['rgb(2,48,140)',],
+                                        data: [{% for item in hours_per_month %}{{ item.total }}, {% endfor %}],
+                                        fill: false,
+                                        tension: 0.1,
+                                    }]
+                                },
+                                options: {
+                                    responsive: true,
+                                    plugins: {
+                                        legend: {
+                                            display: false,
+                                            position: 'bottom'
+                                        }
+                                    },
+                                },
+                            };
+                            window.onload = function () {
+                                const ctx = document.getElementById('myChart').getContext('2d');
+                                window.myLine = new Chart(ctx, config);
+
+                                const ctx2 = document.getElementById('myChart2').getContext('2d');
+                                window.myLine = new Chart(ctx2, ytdConfig);
+                            }
+                        </script>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <div class="col-xl-8 col-lg-8 mt-lg-0 col-md-12 mt-md-4">
-            <div class="card shadow-sm" style="min-height:500px;max-height:500px">
-                <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline">
-                    <span class="display-6 fs-3">Today's Schedule</span>
-                    <a href="{% url 'employee-todolist' %}" class="srg-link-light">View To-Do List</a>
-                </div>
-                <div class="card-body overflow-auto p-2">
-                    <table class="srg-table">
-                            <thead>
-                            <tr class="srg-bg-secondary srg-header">
-                                <th>Parent</th>
-                                <th>Provider</th>
-                                <th>Scope</th>
-                                <th>Hours</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+        <div class="row p-0 mt-2" style="min-height: 500px; max-height: 725px">
+            <div class="col-xl-5 p-0">
+                <div class="card p-0">
+                    <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline">
+                        <span class="display-6 fs-3">To-Do List</span>
+                        <a href="{% url 'employee-todolist' %}" class="srg-link-light">View To-Do List</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
                             {% for entry in employee_td_entries %}
-                                <tr>
-                                    <td>{{ entry.engagement__parent_id }} - {{ entry.engagement__parent_id__parent_name }}</td>
-                                    <td>{{ entry.engagement__provider_id }} - {{ entry.engagement__provider_id__provider_name }}</td>
-                                    <td>{{ entry.engagement__time_code }} - {{ entry.engagement__time_code__time_code_desc }}</td>
-                                    <td class="text-center">{{ entry.hsum }}</td>
-                                </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="4" class="text-center">Nothing scheduled for today...</td>
-                                </tr>
+                                <div class="col-12 mt-2">
+                                    <div class="card srg-bg-secondary border-top-0 border-end-0 border-bottom-0 p-2 shadow" style="border-left:3px solid #02308C">
+                                        <div class="row d-flex justify-content-between">
+                                            <div class="col-10">
+                                                {{ entry.engagement__provider_id }} - {{ entry.engagement__provider_id__provider_name }}<br>
+                                                {{ entry.engagement__parent_id }} - {{ entry.engagement__parent_id__parent_name }}<br>
+                                                {{ entry.engagement__time_code }} - {{ entry.engagement__time_code__time_code_desc }}<br>
+                                                {{ entry.engagement__fye|date:'m/d/Y' }}
+                                            </div>
+                                            <div class="col-2 text-center d-flex align-items-center fs-2 fw-light">
+                                                {{ entry.hsum }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             {% endfor %}
-                        </tbody>
-                    </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-7 overflow-auto pe-0">
+                <div class="card shadow-sm p-0">
+                    <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center">
+                        <span class="display-6 fs-3">My Engagements</span>
+                        <input class="search-box" type="text" id="searchBar" onkeyup="searchEngagements()" placeholder="Search for engagements.." title="Type in a name">
+                    </div>
+                    <div class="card-body d-flex justify-content-center overflow-auto p-1 pt-0" style="min-height: 500px; max-height: 725px">
+                        <table class="srg-table-borderless" id="srg-table" style="border-spacing: 0 16px; border-collapse: separate;">
+                            <thead class="srg-bg-secondary">
+                                <tr >
+                                    <th>Engagement</th>
+                                    <th>FYE</th>
+                                    <th>HTD</th>
+                                    <th>Budget</th>
+                                    <th>Variance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for engagement in user_engagements %}
+                                    <tr class="shadow-sm" style="border:1px solid #02308C">
+                                        <td style="border:0;border-left:3px solid #02308C">
+                                            {{ engagement.provider_id }} - {{ engagement.provider__provider_name }}<br>
+                                            {{ engagement.parent_id }} - {{ engagement.parent__parent_name }}<br>
+                                            {{ engagement.time_code }}-{{ engagement.time_code__time_code_desc }}
+                                        </td>
+                                        <td style="border:0;">{{ engagement.fye|date:'m/d/Y' }}</td>
+                                        <td class="" style="border:0;">{{ engagement.engagement_hours_sum }}</td>
+                                        <td class="" style="border:0;">{{ engagement.budget_calc }}</td>
+                                        <td class="" style="border:0;">{{ engagement.budget_calc|sub:engagement.engagement_hours_sum|floatformat:0 }}</td>
+
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center">
-                    <span class="display-6 fs-3">My Engagements</span>
-                    <input class="search-box" type="text" id="searchBar" onkeyup="searchEngagements()" placeholder="Search for engagements.." title="Type in a name">
-                </div>
-                <div class="card-body d-flex justify-content-center overflow-auto" style="min-height: 500px; max-height: 675px">
-                    <table class="srg-table" id="srg-table">
-                        <thead class="srg-bg-secondary srg-header">
-                            <tr>
-                                <th>Parent</th>
-                                <th>Provider</th>
-                                <th>Scope</th>
-                                <th>FYE</th>
-                                <th>HTD</th>
-                                <th>Budget</th>
-                                <th class="text-center">Variance</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for engagement in user_engagements %}
-                                <tr>
-                                    <td>{{ engagement.parent_id }} - {{ engagement.parent__parent_name }}</td>
-                                    <td>{{ engagement.provider_id }} - {{ engagement.provider__provider_name }}</td>
-                                    <td>{{ engagement.time_code }}-{{ engagement.time_code__time_code_desc }}</td>
-                                    <td>{{ engagement.fye|date:'m/d/Y' }}</td>
-                                    <td class="text-center">{{ engagement.engagement_hours_sum }}</td>
-                                    <td class="text-center">{{ engagement.budget_calc }}</td>
-                                    <td class="text-center">{{ engagement.budget_calc|sub:engagement.engagement_hours_sum|floatformat:0 }}</td>
-
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-
-
-
     </div>
 
 

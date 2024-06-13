@@ -51,7 +51,7 @@
                 <div class="card-header srg-text-secondary srg-bg-primary">
                     <span class="display-6 fs-3">Timesheet Entries</span>
                 </div>
-                <div class="card-body overflow-auto" style="max-height:700px;">
+                <div class="card-body overflow-auto" style="max-height:600px;">
                     <table class="srg-table">
                         <thead>
                             <tr class="text-center">
@@ -65,7 +65,7 @@
                             </tr>
                         </thead>
                         {% for entry in filter.qs %}
-                            <tr class="text-center align-middle"">
+                            <tr class="text-center align-middle">
                                 <td class="">{{ entry.ts_date|date:'m/d/Y' }}</td>
                                 <td class="text-start">{{ entry.employee__user__username }}</td>
                                 <td class="text-start">{{ entry.engagement__parent__parent_name }}</td>
@@ -82,8 +82,8 @@
 
         </div>
 
-        <div class="col-6">
-            <div class="card">
+        <div class="col-xxl-6 col-xl-5 col-lg-5 col-md-6" style="max-height: 500px;">
+            <div class="card overflow-auto">
                 <div class="card-header srg-bg-primary srg-text-secondary">
                     <span class="display-6 fs-3">Search Metrics</span>
                 </div>

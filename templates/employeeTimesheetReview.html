@@ -1,4 +1,5 @@
 {% extends 'layoutV2.html' %}
+{% load humanize %}
 
 {% block content %}
     <div id="loading-screen">
@@ -9,7 +10,7 @@
 
     </div>
     <div class="row border vh-100">
-        <div class="col-xxl-4 col-xl-6 vh-100">
+        <div class="col-xxl-5 col-xl-6 vh-100">
             <div class="card vh-100 flex-shrink-1">
                 <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center">
                     <span class="display-6 fs-3">My Engagements</span>
@@ -17,7 +18,7 @@
                 </div>
 
                 <div class="card-body px-2 py-2 overflow-auto">
-                    <table class="srg-table-borderless" id="engagement-table">
+                    <table class="srg-table-borderless" id="engagement-table" style="font-size:.875rem">
                         <thead>
                             <tr>
                                 <th>#</th>
@@ -34,16 +35,16 @@
                                     <td>{{ engagement.provider }}</td>
                                     <td>{{ engagement.time_code }}</td>
                                     <td>{{ engagement.fye|date:'m/d/Y' }}</td>
-                                    <td class="">
-                                        <div class="btn-group gap-1">
-                                            <button type="button" class="srg-btn-small-primary" data-bs-toggle="modal" data-toggle="tooltip" data-title="Yay"
+                                    <td class="align-middle text-center">
+                                        <div class="btn-group gap-2 align-middle">
+                                            <a type="button" class="srg-link" data-bs-toggle="modal" data-toggle="tooltip" data-title="Yay"
                                                data-bs-target="#time-modal" data-engagement-id="{{ engagement.engagement_srg_id }}"
                                                href="#time-modal" aria-controls="time-modal"><svg class="bi"><use xlink:href="#clock-circle"/></svg>
-                                            </button>
-                                            <button type="button" class="srg-btn-small-success" data-bs-toggle="modal" data-toggle="tooltip" data-title="Yay"
+                                            </a>
+                                            <a type="button" class="srg-link-success" data-bs-toggle="modal" data-toggle="tooltip" data-title="Yay"
                                                data-bs-target="#expense-modal" data-engagement-id="{{ engagement.engagement_srg_id }}"
                                                href="#expense-modal" aria-controls="expense-modal"><svg class="bi"><use xlink:href="#dollar-sign"/></svg>
-                                            </button>
+                                            </a>
                                         </div>
                                     </td>
                                 </tr>
@@ -103,7 +104,7 @@
                             </div>
                         </div>
                     </div>
-
+                
                     <div class="modal fade" id="view-expense-modal" tabindex="-1" aria-labelledby="view-expense-modal" aria-hidden="true">
                         <div class="modal-dialog modal-lg" id="modal">
                             <div class="modal-content">
@@ -123,21 +124,22 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-
                                         </tbody>
                                     </table>
                                 </div>
                             </div>
                         </div>
                     </div>
+                
                 </div>
             </div>
         </div>
-        <div class="col-8 vh-100">
+        <div class="col-7 vh-100">
             <div class="card vh-100">
                 <div class="card-header srg-text-secondary srg-bg-primary d-flex justify-content-between align-items-baseline">
                     <span class="display-6 fs-3">Submit Timesheet for Period: {{ last_week_beg|date:'m/d/Y' }} - {{ last_week_end|date:'m/d/Y' }}</span>
                     <span class="display-6 fs-3">{{ total_available_hours }} hrs. avail</span>
+                    <span class="display-6 fs-3">${{ total_weekly_expenses.expense_sum|intcomma }} expenses</span>
                 </div>
                 <div class="card-body overflow-auto">
                     {% for dy in current_week %}
@@ -162,7 +164,7 @@
                                                href="#view-expense-modal" aria-controls="view-expense-modal"><svg class="bi"><use xlink:href="#dollar-sign"/></svg>View Expense</a>
                                 </div>
                                 <div class="card-body p-2">
-                                    <table class="srg-table">
+                                    <table class="srg-table" style="font-size: .875rem">
                                         <thead>
                                             <tr class="">
                                                 <th class="">Provider</th>
@@ -229,63 +231,63 @@
                         </div>
                     {% endfor %}
                     <div class="modal fade" id="edit-modal" tabindex="-1" aria-labelledby="edit-modal" aria-hidden="true">
-                            <div class="modal-dialog" id="modal">
-                                <div class="modal-content">
-                                    <div class="modal-header srg-bg-secondary srg-header fs-5">
-                                        Edit Entry
-                                    </div>
-                                    <div class="modal-body">
-                                        <form class="" method="POST" id="editTimeForm" action="{% url 'update-rev-ts' %}">
-                                            {% csrf_token %}
-                                                <label for="ts-id">Record #:</label><br>
-                                                <input class="w-50" name="ts-id-input" type="text" id="ts-id" /><br>
-                                            {% for field in edit_time_form %}
-                                                <div class="fieldWrapper my-3">
-                                                    {{ field.label_tag }} <br>{{ field }}
-                                                    {% if field.help_text %}
-                                                        <p class="help">{{ field.help_text|safe }}</p>
-                                                    {% endif %}
-                                                </div>
+                        <div class="modal-dialog" id="modal">
+                            <div class="modal-content">
+                                <div class="modal-header srg-bg-secondary srg-header fs-5">
+                                    Edit Entry
+                                </div>
+                                <div class="modal-body">
+                                    <form class="" method="POST" id="editTimeForm" action="{% url 'update-rev-ts' %}">
+                                        {% csrf_token %}
+                                            <label for="ts-id">Record #:</label><br>
+                                            <input class="w-50" name="ts-id-input" type="text" id="ts-id" /><br>
+                                        {% for field in edit_time_form %}
+                                            <div class="fieldWrapper my-3">
+                                                {{ field.label_tag }} <br>{{ field }}
+                                                {% if field.help_text %}
+                                                    <p class="help">{{ field.help_text|safe }}</p>
+                                                {% endif %}
+                                            </div>
 
-                                            {% endfor %}
-                                            <button name="edit_time_button" type="submit" class="srg-btn-primary my-2">Save Entry</button>
-                                        </form>
+                                        {% endfor %}
+                                        <button name="edit_time_button" type="submit" class="srg-btn-primary my-2">Save Entry</button>
+                                    </form>
 
-                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="modal fade" id="edit-expense-modal" tabindex="-1" aria-labelledby="edit-expense-modal" aria-hidden="true">
-                            <div class="modal-dialog" id="modal">
-                                <div class="modal-content">
-                                    <div class="modal-header srg-bg-success text-white fs-5">
-                                        Edit Expense
-                                    </div>
-                                    <div class="modal-body">
-                                        <form class="" method="POST" id="editExpForm" action="{% url 'update-expense-review' %}">
-                                            {% csrf_token %}
-                                                <label for="exp-id">Record #:</label><br>
-                                                <input class="w-50" name="exp-id-input" type="text" id="exp-id" /><br>
-                                            {% for field in editExpForm %}
-                                                <div class="fieldWrapper my-3">
-                                                    {{ field.label_tag }} <br>{{ field }}
-                                                    {% if field.help_text %}
-                                                        <p class="help">{{ field.help_text|safe }}</p>
-                                                    {% endif %}
-                                                </div>
-                                            {% endfor %}
-                                            <button name="edit_expense_button" type="submit" class="srg-btn-primary my-2">Save Entry</button>
-                                        </form>
-                                    </div>
+                    </div>
+                    <div class="modal fade" id="edit-expense-modal" tabindex="-1" aria-labelledby="edit-expense-modal" aria-hidden="true">
+                        <div class="modal-dialog" id="modal">
+                            <div class="modal-content">
+                                <div class="modal-header srg-bg-success text-white fs-5">
+                                    Edit Expense
+                                </div>
+                                <div class="modal-body">
+                                    <form class="" method="POST" id="editExpForm" action="{% url 'update-expense-review' %}">
+                                        {% csrf_token %}
+                                            <label for="exp-id">Record #:</label><br>
+                                            <input class="w-50" name="exp-id-input" type="text" id="exp-id" /><br>
+                                        {% for field in editExpForm %}
+                                            <div class="fieldWrapper my-3">
+                                                {{ field.label_tag }} <br>{{ field }}
+                                                {% if field.help_text %}
+                                                    <p class="help">{{ field.help_text|safe }}</p>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                        <button name="edit_expense_button" type="submit" class="srg-btn-primary my-2">Save Entry</button>
+                                    </form>
                                 </div>
                             </div>
                         </div>
+                    </div>
                     {% if total_weekly_hours.hours_sum >= 40 %}
                         <div class="row mb-4">
-                            <div class="col-12 d-flex justify-content-center">
-                                <form method="POST">
-                                    {% csrf_token %}
-                                    <button name="submit_button" class="srg-btn-ol-primary w-100 text-center">Submit Timesheet</button>
+                            <div class="col-12 d-flex justify-content-center gap-2">
+                                <form class="mt-2" method="POST">
+                                        {% csrf_token %}
+                                        <button name="submit_button" class="srg-btn-ol-primary w-100 text-center">Submit Timesheet</button>
                                     </form>
                             </div>
                         </div>

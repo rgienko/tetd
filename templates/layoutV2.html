@@ -170,7 +170,7 @@
 
     {% load mathfilters %}
 </head>
-<body class="overflow-auto">
+<body class="">
     <svg xmlns="http://www.w3.org/2000/svg" class="d-none">
         <symbol id="calendar3" viewBox="0 0 16 16">
             <path d="M14 0H2a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zM1 3.857C1 3.384 1.448 3 2 3h12c.552 0 1 .384 1 .857v10.286c0 .473-.448.857-1 .857H2c-.552 0-1-.384-1-.857V3.857z"></path>
@@ -298,8 +298,8 @@
         </symbol>
     </svg>
 
-    <div class="container-fluid">
-        <div class="row">
+    <div class="container-fluid ">
+        <div class="row vh-100">
             <div class="sidebar border-right col-md-3 col-lg-2 col-xl-2 col-xxl-2 p-0 srg-bg-secondary h-auto">
                 <div class="srg-sidebar-header srg-bg-primary pb-2">
                     <div class="ps-3">
@@ -389,6 +389,12 @@
                                     <a class="nav-link d-flex align-items-center gap-2" href="{% url 'engagement-dashboard' %}">
                                         <svg class="bi"><use xlink:href="#file-earmark-text"/></svg>
                                         Engagements
+                                  </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link d-flex align-items-center gap-2" href="{% url 'admin-assignments' %}">
+                                        <svg class="bi"><use xlink:href="#person-add"/></svg>
+                                        Assignments
                                   </a>
                                 </li>
                                 <li class="nav-item">

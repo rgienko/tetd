@@ -207,3 +207,8 @@ class MonthSelectForm(forms.Form):
 
     month = forms.ChoiceField(choices=MONTH_CHOICES,
                               widget=forms.Select(attrs={'class': 'form-select', 'onchange': 'submit()'}))
+
+
+class EmployeeFilterForm(forms.Form):
+    employee = forms.ModelChoiceField(queryset=Employee.objects.all(), to_field_name='employee_id',
+                                      widget=forms.Select(attrs={'class': 'form-select'}))
