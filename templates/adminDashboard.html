@@ -72,7 +72,7 @@
                         </thead>
                         {% for emp in vps %}
                             <tr>
-                                <td class="text-start">{{ emp.user }}</td>
+                                <td class="text-start">{{ emp.user__last_name }}, {{ emp.user__first_name }}</td>
                                 <td>
                                     {% for item in vp_fixed_hours_by_employee %}
                                         {% if item.employee_id == emp.employee_id %}
@@ -155,7 +155,7 @@
                         <tr><td colspan="10" class="srg-bg-secondary"></td></tr>
                         {% for emp in smgrs %}
                             <tr>
-                                <td class="text-start">{{ emp }}</td>
+                                <td class="text-start">{{ emp.user__last_name }}, {{ emp.user__first_name }}</td>
                                 <td>
                                     {% for item in smgr_fixed_hours_by_employee %}
                                         {% if item.employee_id == emp.employee_id %}
@@ -238,7 +238,7 @@
                         <tr><td colspan="10" class="srg-bg-secondary"></td></tr>
                         {% for emp in mgrs %}
                             <tr>
-                                <td class="text-start">{{ emp }}</td>
+                                <td class="text-start">{{ emp.user__last_name }}, {{ emp.user__first_name }}</td>
                                 <td>
                                     {% for item in mgr_fixed_hours_by_employee %}
                                         {% if item.employee_id == emp.employee_id %}
@@ -321,7 +321,7 @@
                         <tr><td colspan="10" class=srg-bg-secondary></td></tr>
                         {% for emp in consultants %}
                             <tr>
-                                <td class="text-start">{{ emp }}</td>
+                                <td class="text-start">{{ emp.user__last_name }}, {{ emp.user__first_name }}</td>
                                 <td>
                                     {% for item in c_fixed_hours_by_employee %}
                                         {% if item.employee_id == emp.employee_id %}

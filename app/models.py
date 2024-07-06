@@ -23,6 +23,7 @@ class Employee(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     title = models.ForeignKey(EmployeeTitles, on_delete=models.CASCADE)
     ts_is_submitted = models.BooleanField(default=False)
+    is_billable = models.BooleanField(default=True)
 
     def __str__(self):
         return self.user.username
@@ -86,7 +87,8 @@ class Engagement(models.Model):
     time_code = models.ForeignKey(Timecode, on_delete=models.CASCADE)
     type = models.ForeignKey(BillingTypes, on_delete=models.CASCADE)
     is_rac = models.BooleanField(default=True)
-    engagement_hourly_rate = models.IntegerField(null=True, blank=True, default=0, validators=[MinValueValidator(0), MaxValueValidator(1000)])
+    engagement_hourly_rate = models.IntegerField(null=True, blank=True, default=0,
+                                                 validators=[MinValueValidator(0), MaxValueValidator(1000)])
     notes = models.TextField(blank=True, null=True)
     alert = models.BooleanField(default=True)
 

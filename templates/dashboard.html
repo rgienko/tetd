@@ -1,4 +1,5 @@
 {% extends 'layoutV2.html' %}
+{% load humanize %}
 {% load mathfilters %}
 
 {% block content %}
@@ -13,14 +14,14 @@
         {% else %}
         {% endif %}
             -->
-        <div class="row vh-50">
+        <div class="row vh-50 border-primary">
             <div class="col-12 card p-0">
                 <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline">
                     <span class="display-6 fs-3">My Time</span>
                     <a href="{% url 'employee-timesheet' %}" class="srg-link-light">Go To Timesheet</a>
                 </div>
                 <div class="row d-flex justify-content-between p-2 py-4">
-                    <div class="col-xl-4 col-lg-6 col-md-12">
+                    <div class="col-xl-4 col-lg-6 col-md-6 col-sm-6 col-xs-6">
                         <div class="card shadow border-0">
                             <div class="card-header border-bottom-0 bg-transparent text-center text-muted fw-semibold">
                                 Current Week
@@ -32,34 +33,34 @@
                         </div>
                     </div>
 
-                    <div class="col-xl-4 col-lg-6 col-md-12 shadow" style="min-height:100px">
-                        <div class="card border-0">
+                    <div class="my-xl-0 my-2 col-xl-4 col-lg-6 col-md-6 col-sm-6 col-xs-6 shadow-xxl shadow-xl shadow-lg shadow-md shadow-sm-none" style="min-height:100px">
+                        <div class="card border-0 ">
                             <div class="card-header border-bottom-0 bg-transparent text-center text-muted fw-semibold">
                                 YTD Performance
                             </div>
                             <div class="card-body py-0">
-                                <div class="row d-flex justify-content-between mt-4">
+                                <div class="row d-flex justify-content-between mt-4 pb-1">
                                     <div class="col-3 card p-0 text-center">
-                                        <div class="card-header srg-bg-secondary srg-header fw-semibold">
+                                        <div class="fs-6 card-header srg-bg-secondary srg-header fw-semibold ">
                                             YTD Billed
                                         </div>
-                                        <div class="card-body fs-4">
-                                            {{ ytd_billable_hours_sum.amount }}
+                                        <div class="card-body fs-5">
+                                            {{ ytd_billable_hours_sum.amount|intcomma }}
                                         </div>
                                     </div>
                                     <div class="col-3 card p-0 text-center">
-                                        <div class="card-header srg-bg-secondary srg-header fw-semibold">
+                                        <div class="fs-6 card-header srg-bg-secondary srg-header fw-semibold">
                                             YTD Hours
                                         </div>
-                                        <div class="card-body fs-4">
-                                            {{ monthly_billable_hours }}
+                                        <div class="card-body fs-5">
+                                            {{ monthly_billable_hours|intcomma }}
                                         </div>
                                     </div>
                                     <div class="col-3 card p-0 text-center">
-                                        <div class="card-header srg-bg-secondary srg-header fw-semibold">
+                                        <div class="fs-6 card-header srg-bg-secondary srg-header fw-semibold">
                                             Billable %
                                         </div>
-                                        <div class="card-body fs-4">
+                                        <div class="card-body fs-5">
                                             {{ billable_percentage }}%
                                         </div>
                                     </div>
@@ -68,7 +69,7 @@
                         </div>
                     </div>
 
-                    <div class="col-xl-4 col-lg-6 col-md-12">
+                    <div class="col-xl-4 col-lg-6 col-md-6 col-sm-6 col-xs-6">
                         <div class="card shadow border-0">
                             <div class="card-header border-bottom-0 bg-transparent text-center text-muted fw-semibold">
                                 Hours by Month
@@ -174,22 +175,24 @@
                 <div class="card p-0">
                     <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline">
                         <span class="display-6 fs-3">To-Do List</span>
-                        <a href="{% url 'employee-todolist' %}" class="srg-link-light">View To-Do List</a>
+                        <a href="{% url 'employee-todolist' %}" class="srg-link-light display-6 fs-5">View To-Do List</a>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body p-xxl-2 p-xl-2 p-lg-2 p-md-2 p-sm-2 p-1">
                         <div class="row">
                             {% for entry in employee_td_entries %}
                                 <div class="col-12 mt-2">
                                     <div class="card srg-bg-secondary border-top-0 border-end-0 border-bottom-0 p-2 shadow" style="border-left:3px solid #02308C">
                                         <div class="row d-flex justify-content-between">
                                             <div class="col-10">
+                                                <span class="fs-6">
                                                 {{ entry.engagement__provider_id }} - {{ entry.engagement__provider_id__provider_name }}<br>
                                                 {{ entry.engagement__parent_id }} - {{ entry.engagement__parent_id__parent_name }}<br>
                                                 {{ entry.engagement__time_code }} - {{ entry.engagement__time_code__time_code_desc }}<br>
                                                 {{ entry.engagement__fye|date:'m/d/Y' }}
+                                                    </span>
                                             </div>
-                                            <div class="col-2 text-center d-flex align-items-center fs-2 fw-light">
-                                                {{ entry.hsum }}
+                                            <div class="col-2 text-center d-flex align-items-center">
+                                                <span class="display-6 fs-3">{{ entry.hsum }}</span>
                                             </div>
                                         </div>
                                     </div>

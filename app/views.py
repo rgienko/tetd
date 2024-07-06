@@ -96,7 +96,7 @@ def dashboard(request):
                                                  "time_code__time_code_desc",
                                                  "is_complete", "fye", "budget_hours", "budget_amount").annotate(
         engagement_hours_sum=Coalesce(Sum('time__hours'), 0, output_field=DecimalField(0.00)),
-        budget_calc=Max('budget_amount') / 250).filter(time_code__lt=900,
+        budget_calc=Max('budget_amount') / 250).filter(time_code__lt=900, is_complete=False,
                                                        engagement_id__in=user_assignments).order_by(
         '-engagement_hours_sum', '-fye', 'time_code',
         'provider_id')
@@ -112,8 +112,10 @@ def dashboard(request):
     timesheet_entries = Time.objects.all().filter(employee__user__username=request.user.username).filter(
         ts_date__year=today.year)
 
-    hours_per_month = timesheet_entries.annotate(month=ExtractMonth('ts_date')).values('month').annotate(total=Sum(
-        'hours')).values('month', 'total').order_by('month')
+    hours_per_month = timesheet_entries.annotate(month=ExtractMonth('ts_date')).values('month').annotate(total=Coalesce(
+        Sum('hours'), 0, output_field=DecimalField())).values('month', 'total').order_by('month')
+
+    # Coalesce(Sum('hours'), 0, output_field=DecimalField())
 
     cw_timesheet_entries = timesheet_entries.filter(employee__user__username=request.user.username).filter(
         ts_date__gte=week_beg).filter(ts_date__lte=week_end)
@@ -165,36 +167,29 @@ def getCompilationData(mnth):
     number_of_workdays = 0
     billable_weeks = 0
     if mnth == 'YTD':
-        fixed_hours_by_employee = Time.objects.filter(engagement__type_id='F', ts_date__year=date.today().year).values(
-            'employee_id', 'employee__title').annotate(
-            fixed_hours_by_employee_sum=Sum('hours')
-        )
+        current_year = datetime.now().year
+        ytd_hours_by_employee = Time.objects.filter(employee__is_billable=True, ts_date__year=current_year).values(
+            'employee_id', 'employee__title', 'employee__user__username')
 
-        hourly_hours_by_employee = Time.objects.filter(engagement__type_id='H', time_type_id='B',
-                                                       ts_date__year=date.today().year).values(
-            'employee_id', 'employee__title').annotate(
-            hourly_hours_by_employee_sum=Sum('hours')
-        )
+        fixed_hours_by_employee = ytd_hours_by_employee.filter(engagement__type_id='F').annotate(
+            fixed_hours_by_employee_sum=Sum('hours'))
 
-        cgy_hours_by_employee = Time.objects.filter(engagement__type_id='C', ts_date__year=date.today().year).values(
-            'employee_id').annotate(
-            cgy_hours_by_employee_sum=Sum('hours')
-        )
+        hourly_hours_by_employee = ytd_hours_by_employee.filter(engagement__type_id='H').annotate(
+            hourly_hours_by_employee_sum=Sum('hours'))
 
-        non_billable_hours_by_employee = Time.objects.filter(Q(time_type_id='N') | Q(engagement__type_id='N'),
-                                                             ts_date__year=date.today().year).exclude(
+        cgy_hours_by_employee = ytd_hours_by_employee.filter(engagement__type_id='C').annotate(
+            cgy_hours_by_employee_sum=Sum('hours'))
+
+        non_billable_hours_by_employee = ytd_hours_by_employee.filter(engagement__type_id='N').exclude(
             engagement__time_code__gte=980).values('employee_id').annotate(non_billable_hours_sum=Sum('hours'))
 
-        pto_hours_by_employee = Time.objects.filter(engagement__time_code__gte=980,
-                                                    ts_date__year=date.today().year).values(
-            'employee_id').annotate(pto_hours_by_employee_sum=Sum('hours')
-                                    )
+        pto_hours_by_employee = ytd_hours_by_employee.filter(engagement__time_code__gte=980).annotate(
+            pto_hours_by_employee_sum=Sum('hours'))
 
-        billable_hours_by_employee = Time.objects.filter(time_type_id='B', ts_date__year=date.today().year).values(
-            'employee_id').annotate(billable_hours_sum=Sum('hours'))
+        billable_hours_by_employee = ytd_hours_by_employee.exclude(engagement__type_id='N').annotate(
+            billable_hours_sum=Sum('hours'))
 
-        total_hours_by_employee = Time.objects.filter(ts_date__year=date.today().year).values('employee_id').annotate(
-            total_hours_sum=Sum('hours'))
+        total_hours_by_employee = ytd_hours_by_employee.annotate(total_hours_sum=Sum('hours'))
 
         today = date.today()
         ytd_start = date(today.year, 1, 1)
@@ -203,34 +198,33 @@ def getCompilationData(mnth):
         monthly_billable_hours = billable_weeks * 40
 
     else:
-        fixed_hours_by_employee = Time.objects.filter(engagement__type_id='F', ts_date__month=mnth).values(
-            'employee_id', 'employee__title').annotate(fixed_hours_by_employee_sum=Sum('hours')
-                                                       ).order_by('employee__user__last_name')
+        current_year = datetime.now().year
 
-        hourly_hours_by_employee = Time.objects.filter(engagement__type_id='H', time_type_id='B',
-                                                       ts_date__month=mnth).values(
-            'employee_id', 'employee__title', 'employee__user__username').annotate(
+        month_hours_by_employee = Time.objects.filter(employee__is_billable=True, ts_date__month=mnth,
+                                                      ts_date__year=current_year).values(
+            'employee_id', 'employee__title', 'employee__user__username')
+
+        fixed_hours_by_employee = month_hours_by_employee.filter(engagement__type_id='F').annotate(
+            fixed_hours_by_employee_sum=Sum('hours')).order_by('employee__user__last_name')
+
+        hourly_hours_by_employee = month_hours_by_employee.filter(engagement__type_id='H').annotate(
             hourly_hours_by_employee_sum=Sum('hours')).order_by('employee__user__last_name')
 
-        cgy_hours_by_employee = Time.objects.filter(engagement__type_id='C', ts_date__month=mnth).values(
-            'employee_id', 'employee__title').annotate(cgy_hours_by_employee_sum=Sum('hours'))
+        cgy_hours_by_employee = month_hours_by_employee.filter(engagement__type_id='C').annotate(
+            cgy_hours_by_employee_sum=Sum('hours'))
 
-        non_billable_hours_by_employee = Time.objects.filter(Q(time_type_id='N') | Q(engagement__type_id='N'),
-                                                             ts_date__month=mnth).exclude(
-            engagement__time_code__gte=980).values(
-            'employee_id').annotate(non_billable_hours_sum=Sum('hours'))
+        non_billable_hours_by_employee = month_hours_by_employee.filter(engagement__type_id='N', ).exclude(
+            engagement__time_code__gte=980).annotate(non_billable_hours_sum=Sum('hours'))
 
-        pto_hours_by_employee = Time.objects.filter(engagement__time_code__gte=980, ts_date__month=mnth).values(
-            'employee_id').annotate(pto_hours_by_employee_sum=Sum('hours'))
+        pto_hours_by_employee = month_hours_by_employee.filter(engagement__time_code__gte=980).annotate(
+            pto_hours_by_employee_sum=Sum('hours'))
 
-        billable_hours_by_employee = Time.objects.filter(time_type_id='B', ts_date__month=mnth).values(
-            'employee_id').annotate(billable_hours_sum=Sum('hours'))
+        billable_hours_by_employee = month_hours_by_employee.exclude(engagement__type_id='N').annotate(
+            billable_hours_sum=Sum('hours'))
 
-        total_hours_by_employee = Time.objects.filter(ts_date__month=mnth).values('employee_id').annotate(
-            total_hours_sum=Sum('hours'))
+        total_hours_by_employee = month_hours_by_employee.annotate(total_hours_sum=Sum('hours'))
 
         next_month = int(mnth) + 1
-        current_year = datetime.now().year
         next_year = current_year + 1
         if int(mnth) < 9:
             number_of_workdays = np.busday_count(str(current_year) + '-0' + str(mnth),
@@ -400,7 +394,8 @@ def AdminDashboard(request):
     # today_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     week_beg = today - timedelta(days=today.weekday())
     week_end = week_beg + timedelta(days=5)
-    employees = Employee.objects.all().order_by('title', 'user__last_name')
+    employees = Employee.objects.values('employee_id', 'user', 'title', 'user__first_name',
+                                        'user__last_name').filter(is_billable=True).order_by('title', 'user__last_name')
     vps = employees.filter(title='VP')
     smgrs = employees.filter(title='SM')
     mgrs = employees.filter(title='M')
@@ -1105,7 +1100,7 @@ def EmployeeTimesheetReview(request):
         ts_date__gte=last_week_beg).filter(ts_date__lte=last_week_end).order_by('ts_date')
 
     user_engagements = Engagement.objects.select_related().filter(
-        assignments__employee__employee_id=user_info.employee.employee_id).order_by('provider_id')
+        is_complete=False, assignments__employee__employee_id=user_info.employee.employee_id).order_by('provider_id')
 
     employee_hours_by_day = employee_ts_entries.values('ts_date').annotate(ts_hours=Sum('hours'))
 
@@ -1178,7 +1173,8 @@ def EmployeeTimesheetReview(request):
     context = {'user_info': user_info, 'page_title': 'Submit Timesheet', 'today': today, 'last_week_beg': last_week_beg,
                'last_week_end': last_week_end, 'week_beg': last_week_beg, 'week_end': last_week_end,
                'current_week': current_week, 'employee_ts_entries': employee_ts_entries,
-               'ts_is_submitted': ts_is_submitted, 'editExpForm': editExpForm, 'total_weekly_expenses': total_weekly_expenses,
+               'ts_is_submitted': ts_is_submitted, 'editExpForm': editExpForm,
+               'total_weekly_expenses': total_weekly_expenses,
                'employee_hours_by_day': employee_hours_by_day, 'user_engagements': user_engagements,
                'total_weekly_hours': total_weekly_hours, 'total_available_hours': total_available_hours,
                'time_form': time_form, 'edit_time_form': edit_time_form, 'expense_form': expense_form
@@ -1200,7 +1196,7 @@ def EmployeeTimesheet(request):
     # '-fye', 'time_code', 'parent_id')
 
     user_engagements = Engagement.objects.select_related().filter(
-        assignments__employee__employee_id=user_info.employee.employee_id).order_by('provider_id')
+        is_complete=False, assignments__employee__employee_id=user_info.employee.employee_id).order_by('provider_id')
     # user_engagements = user_engagements.filter(assignments__employee__employee_id=user_info.employee.employee_id)
 
     employee_ts_entries = Time.objects.filter(employee__user__username=request.user.username).filter(
@@ -1219,7 +1215,8 @@ def EmployeeTimesheet(request):
                                                       'time_type_id').filter(employee=request.user.employee).filter(
         date__gte=week_beg).filter(date__lte=week_end).order_by('date')
 
-    total_weekly_expenses = employee_weekly_expenses.aggregate(expense_sum=Coalesce(Sum('expense_amount'), 0, output_field=DecimalField()))
+    total_weekly_expenses = employee_weekly_expenses.aggregate(
+        expense_sum=Coalesce(Sum('expense_amount'), 0, output_field=DecimalField()))
 
     total_available_hours = 40 - total_weekly_hours['hours_sum']
 
@@ -1296,8 +1293,9 @@ def EmployeeTodolist(request):
     week_end = week_beg + timedelta(days=5)
     # user_assignments = Assignments.objects.filter(employee_id=user_info.employee.employee_id).values('engagement_id')
     # user_engagements = Engagement.objects.filter(engagement_id__in=user_assignments)
-    user_engagements = Engagement.objects.select_related().filter(
-        assignments__employee__employee_id=user_info.employee.employee_id).order_by('provider_id')
+    user_engagements = Engagement.objects.select_related().filter(is_complete=False,
+                                                                  assignments__employee__employee_id=user_info.employee.employee_id).order_by(
+        'provider_id')
 
     employee_td_entries = Todolist.objects.select_related('engagement').filter(
         employee__user__username=user_info.username).filter(
