@@ -54,6 +54,7 @@ urlpatterns = [
     path('delete-todo-entry/<pk>/', views.DeleteTdEntry, name='delete-todo-entry'),
     path('get_td_list/<dte>/', views.GetTdDayList, name='get-td-list'),
     path('get_td_week_list/<week_beg>/<week_end>/', views.GetTdWeekList, name='get-td-week-list'),
+    path('get_staff_td_list/<emp_id>/', views.getStaffToDoList, name='get-staff-td-list'),
     path('get_td/<int:td_id>/', views.GetTdEntry, name='get-td'),
     path('update_td/', views.UpdateTdEntry, name='update-td'),
     path('get_expense/<expense_id>/', views.GetExpenseEntry, name='get-expense'),

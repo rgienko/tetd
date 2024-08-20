@@ -800,6 +800,7 @@ def AdminTimesheet(request):
         matching_expenses = Expense.objects.filter(date__gte=datetime.strptime(f_start_date.value(), "%Y-%m-%d"),
                                                    date__lte=datetime.strptime(f_end_date.value(), "%Y-%m-%d"))
         ts_data = read_frame(f.qs)
+        ts_data['hours'] = pandas.to_numeric(ts_data['hours'], errors='coerce')
         ts_data = ts_data.rename(columns={'ts_date': 'Date', 'employee__user__username': 'Employee',
                                           'engagement__engagement_srg_id': 'SRG_ID',
                                           'engagement__parent__parent_name': 'Parent',
@@ -814,7 +815,7 @@ def AdminTimesheet(request):
                                           'hours': 'Hours', 'note': 'Note'})
 
         ex_data = read_frame(matching_expenses)
-
+        ex_data['expense_amount'] = pandas.to_numeric(ex_data['expense_amount'], errors='coerce')
         fname = 'EmployeeTimesheetCompilation'
 
         response = HttpResponse(content_type='application/vns.ms-excel')
@@ -862,6 +863,18 @@ def getStaffNotInTodoList(per_beg, per_end):
 
     return data_none
 
+def getStaffToDoList(request, emp_id):
+    emp = get_object_or_404(Employee, pk=emp_id)
+    today = datetime.now()
+    week_beg  = today - timedelta(days=today.weekday())
+    emp_td_list = list(Todolist.objects.values('todolist_id', 'todo_date', 'engagement__provider',
+                                'engagement__provider__provider_name',
+                                'engagement__time_code', 'engagement__time_code__time_code_desc',
+                                'engagement__fye', 'anticipated_hours').filter(todo_date__year=datetime.now().year,
+                                                                               employee=emp_id).order_by('todo_date'))
+
+    return JsonResponse(emp_td_list, today, safe=False)
+
 
 def AdminPlanning(request):
     user_info = get_object_or_404(User, pk=request.user.id)
@@ -872,14 +885,20 @@ def AdminPlanning(request):
     period_days = []
     for i in range(180):
         period_days.append(period_beg + timedelta(days=i))
-    employees = Employee.objects.values('user__username')
+
+    employees = Employee.objects.values('user__username', 'employee_id', 'user__last_name').filter(is_billable=True).order_by('user__last_name')
+    # todolists = Todolist.objects.values('employee__user__username', 'engagement__provider',
+    #                                    'engagement__provider__provider_name', 'todo_date',
+    #                                    'engagement__engagement_srg_id', 'anticipated_hours').order_by('todo_date',
+    #                                                                                                   'employee__user__username')
+    '''
     todolists = Todolist.objects.values('employee__user__username', 'engagement__provider',
                                         'engagement__provider__provider_name', 'todo_date',
                                         'engagement__engagement_srg_id', 'anticipated_hours').order_by('todo_date',
                                                                                                        'employee__user__username')
 
     current_employees = User.objects.values('username')
-
+    
     current_week_hours = getStaffWeekHours(week_beg, week_end)
     current_week_no_hours = getStaffNotInTodoList(week_beg, week_end)
 
@@ -900,8 +919,10 @@ def AdminPlanning(request):
 
     three_week_hours = getStaffWeekHours(three_week_beg, three_week_end)
     three_week_no_hours = getStaffNotInTodoList(three_week_beg, three_week_end)
+    
+    '''
 
-    todo_filter = AdminTodoListFilter(request.GET, queryset=todolists)
+    # todo_filter = AdminTodoListFilter(request.GET, queryset=todolists)
 
     if request.method == 'GET' and 'extract_button' in request.GET:
         ts_data = read_frame(todo_filter.qs)
@@ -917,25 +938,11 @@ def AdminPlanning(request):
 
             return response
 
-    context = {'todolists': todolists, 'employees': employees, 'period_days': period_days,
-               'todo_filter': todo_filter, 'week_beg': week_beg, 'week_end': week_end,
-               'page_title': 'Admin Planning',
-               'current_week_no_hours': current_week_no_hours,
-               'current_week_hours': current_week_hours,
-               'next_week_beg': next_week_beg, 'next_week_end': next_week_end,
-               'next_week_no_hours': next_week_no_hours,
-               'next_week_hours': next_week_hours,
-               'two_week_beg': two_week_beg,
-               'two_week_end': two_week_end,
-               'two_week_no_hours': two_week_no_hours,
-               'two_week_hours': two_week_hours,
-               'three_week_beg': three_week_beg,
-               'three_week_end': three_week_end,
-               'three_week_no_hours': three_week_no_hours,
-               'three_week_hours': three_week_hours,
-               'current_employees': current_employees, 'today': today, 'user_info': user_info
+    context = {'employees': employees, 'period_days': period_days,
+               'week_beg': week_beg, 'week_end': week_end,
+               'page_title': 'Admin Planning','today': today, 'user_info': user_info
                }
-    return render(request, 'adminPlanning.html', context)
+    return render(request, 'adminPlanningUpdate.html', context)
 
 
 def AdminEmployeeDashboard(request, pk, per_beg, per_end):
