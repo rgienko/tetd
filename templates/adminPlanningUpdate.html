@@ -1,0 +1,411 @@
+{% extends 'layoutV2.html' %}
+{% load mathfilters %}
+
+{% block content %}
+    <div id="loading-screen">
+        <div class="">
+            <div class="spinner"></div><br>
+            <p>Loading...</p>
+        </div>
+    </div>
+    <!--
+        <div class="row p-0">
+            <div class="col-12 p-0">
+                <div class="srg-bg-primary px-4 py-2 shadow-sm d-flex justify-content-between">
+                    <span class="srg-text-secondary display-6 fs-2 lh-base">Admin Scheduling</span>
+
+                    <span class="srg-text-secondary display-6 fs-2 lh-base">{{ today|date:'l, F d, Y' }} </span>
+                </div>          
+            </div>
+        </div>
+    -->
+    <div class="container-fluid vh-100">
+        <div class="row mt-1 d-flex justify-content-center vh-lg-100">
+            <div class="col-2 px-1">
+                <div class="card srg-border vh-100 overflow-auto">
+                    <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center sticky-top">
+                        <span class="display-6 fs-3 srg-text-secondary">Staff</span>
+                        <input class="search-box" type="text" id="searchBar" onkeyup="searchClients()" placeholder="Search for clients.." title="Type in a name">
+                        <a type="button" class="srg-link-secondary srg-text-secondary" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><svg class="bi" height=""><use xlink:href="#plus"/></svg></a>
+                    </div>
+
+                    <div class="card-body">
+                        <div class="list-group" role="tablist" id="clientList">
+                            {% for emp in employees %}
+                                <a href="#td-detail" data-bs-emp="{{ emp.user__username }}" data-bs-emp-id="{{ emp.employee_id }}" class="srg-link srg-list-group-item text-decoration-none mb-2" data-bs-toggle="list" type="button" role="tab" aria-controls="tab-pane" aria-selected="true">
+                                    {{ emp.user__username }}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xxl-10 col-xl-10 col-lg-8 col-md-8 col-8">
+
+                <div class="card">
+                    <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline">
+                        <span class="display-5 fs-3">Staff Availability</span>
+                    </div>
+                    <div class="card-body px-0">
+                        <span class="display-5 fs-5">
+                        </span>
+                        <!--<div id="myCalendar"></div>-->
+
+                        <div class="tab-content" id="nav-tabContent">
+                            <div class="tab-pane" id="td-detail" role="tabpanel" aria-labelledby="td-detail">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <span id="emp-name-text"></span>'s To-Do List
+                                    </div>
+                                    <div class="card-body">
+                                        <table class="srg-table" id="emp-td-table">
+                                            <thead>
+                                                <tr class="">
+                                                    <th>Date</th>
+                                                    <th>Provider</th>
+                                                    <th>Time Code</th>
+                                                    <th>FYE</th>
+                                                    <th>Hours</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('a[data-bs-toggle="list"]').on('shown.bs.tab', function (e) {
+                $(e.target).css("color", "#ffffff");
+                $(e.target).css("background-color", "#02308C");
+                $(e.target).css("border-color", "#02308C");
+                $(e.relatedTarget).css("color", "#02308C");
+                $(e.relatedTarget).css("background-color", "#ffffff");
+                $(e.relatedTarget).css("border-color", "#a9a9a9");
+            })
+        })
+    </script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('a[data-bs-toggle="list"]').on('show.bs.tab', function (e) {
+                let employee = $(e.target).attr('data-bs-emp')
+                let employee_id = $(e.target).attr('data-bs-emp-id')
+                $('#emp-name-text').text(employee)
+                let empTableBody = document.querySelector("#emp-td-table tbody")
+
+                while(empTableBody.firstChild) {
+                    empTableBody.removeChild(empTableBody.firstChild)
+                }
+
+                $.ajax({
+                    url:'/get_staff_td_list/' + employee_id + "/",
+                    type: 'GET',
+                    success: function (emp_td_list) {
+                        emp_td_list.forEach(item => {
+                            let row = document.createElement('tr')
+                            let todoDate = new Date(item.todo_date)
+                            let fyeDate;
+                            if (item.engagement__fye == null) {
+                                fyeDate = ""
+                            } else {
+                                fyeDate = new Date(item.engagement__fye).toLocaleDateString()
+                            }
+
+                            row.innerHTML = `
+                                            <td>${todoDate.toLocaleDateString()}</td>
+                                            <td>${item.engagement__provider} - ${item.engagement__provider__provider_name}</td>
+                                            <td>${item.engagement__time_code} - ${item.engagement__time_code__time_code_desc}</td>
+                                            <td>${fyeDate}</td>
+                                            <td>${item.anticipated_hours}</td>
+                                            <td class="text-center">
+                                                    None
+                                                </td>
+                                                `
+
+                            empTableBody.appendChild(row)
+                        })
+                    }
+                })
+            })
+        })
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendarEl = document.getElementById('myCalendar');
+
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next',
+                    center: 'title'
+                },
+                fixedWeekCount: false,
+                aspectRatio: 1.5,
+                navLinks: true,
+                weekNumbers: true,
+                events: [
+                    {% for event in todolists %}
+                        {
+                            id: '{{ event.todolist_id }}',
+                            title: '{{ event.employee__user__username }}-{{ event.engagement__engagement_srg_id }} - {{ event.anticipated_hours }} Hours',
+                            start: '{{ event.todo_date|date:'Y-m-d' }}',
+                            end: '{{ event.todo_date|date:'Y-m-d' }}',
+                            extendedProps: {
+                                description: 'This is a test.'
+                            }
+                        },
+                    {% endfor %}
+                    ],
+                eventBackgroundColor: '#02308C',
+                eventBorderColor: '#02308C',
+                eventMouseEnter: function() {
+                    document.body.style.cursor = "pointer"
+                },
+                eventMouseLeave: function() {
+                    document.body.style.cursor = "default"
+                },
+                navLinkWeekClick: function (weekStart) {
+                    $('#week-modal').modal('show')
+                    let weekBeg = weekStart
+                    document.getElementById('week-beg-text').innerText = weekStart.toLocaleDateString() + ' - '
+                    let weekEnd = new Date(weekBeg.getTime());
+                    weekEnd.setDate(weekEnd.getDate() + 6);
+                    document.getElementById('week-end-text').innerText = weekEnd.toLocaleDateString()
+
+                    let weekTableBody = document.querySelector("#week-table tbody")
+                    $.ajax({
+                        url: '/get_td_week_list/' + weekBeg.toISOString().split("T")[0] + "/" + weekEnd.toISOString().split("T")[0] + "/",
+                        type: 'GET',
+                        success: function (tdWeekList) {
+                            tdWeekList.forEach(item => {
+                                let row = document.createElement('tr')
+                                let url = `/delete-todo-entry/${item.todolist_id}/`
+                                let tdID = item.todolist_id
+                                let todoDate = new Date(item.todo_date)
+                                row.innerHTML = `
+                                                <td>${todoDate.toLocaleDateString()}</td>
+                                                <td>${item.engagement__provider} - ${item.engagement__provider__provider_name}</td>
+                                                <td>${item.engagement__time_code} - ${item.engagement__time_code__time_code_desc}</td>
+                                                <td>${item.engagement__fye}</td>
+                                                <td>${item.anticipated_hours}</td>
+                                                <td class="text-center">
+                                                        <a type="button" class="srg-link edit-button" data-bs-toggle="modal" href="#edit-modal" data-td-id="${tdID}">
+                                                          <i class="bi bi-pencil-square"></i>
+                                                        </a>
+
+                                                        <a type="button" class="srg-link-danger" id='td-modal-delete-button' data-engagement-id="{{ item.todolist_id }}"
+                                                                href="${url}">
+                                                          <i class="bi bi-trash3"></i>
+                                                        </a>
+                                                    </td>
+                                                    `
+
+                                weekTableBody.appendChild(row)// Your code here...
+                            })
+                        }
+                    })
+                },
+                navLinkDayClick: function(info) {
+                    $('#day-modal').modal('show');
+                    // alert('Clicked on: ' + info.dateStr);
+                    // document.getElementById('day-text').innerText = monthNumber + "/" + dayName + "/" + date.getFullYear()
+                    document.getElementById('day-text').innerText = info.toLocaleDateString()
+                    let tableBody = document.querySelector("#day-table tbody")
+                    $.ajax({
+                        url: '/get_td_list/' + info.toISOString().split("T")[0] + '/',
+                        type: 'GET',
+                        success: function (tdDayList) {
+                            // let tdDayListParsed = JSON.parse(tdDayList)
+                            tdDayList.forEach(item => {
+                                let row = document.createElement('tr')
+                                let url = `/delete-todo-entry/${item.todolist_id}/`
+                                let tdID = item.todolist_id
+                                row.innerHTML = `
+                                                <td>${item.engagement__provider} - ${item.engagement__provider__provider_name}</td>
+                                                <td>${item.engagement__time_code} - ${item.engagement__time_code__time_code_desc}</td>
+                                                <td>${item.engagement__fye}</td>
+                                                <td>${item.anticipated_hours}</td>
+                                                <td class="text-center">
+                                                        <a type="button" class="srg-link edit-button" data-bs-toggle="modal" href="#edit-modal" data-td-id="${tdID}">
+                                                          <i class="bi bi-pencil-square"></i>
+                                                        </a>
+
+                                                        <a type="button" class="srg-link-danger" id='td-modal-delete-button' data-engagement-id="{{ item.todolist_id }}"
+                                                                href="${url}">
+                                                          <i class="bi bi-trash3"></i>
+                                                        </a>
+                                                    </td>
+                                                    `
+
+                                tableBody.appendChild(row)// Your code here...
+                            });
+                        }
+                    })
+                },
+                eventClick: function (info) {
+                    // When an event is clicked, show the modal using Bootstrap's modal method
+                    $('#cal-modal').modal('show');
+                    // $('#edit-modal').modal('show');
+                    let editTdForm = $('#editTodoForm')
+                    // console.log(info.event.id)
+                    $.ajax({
+                        url: '/get_td/' + info.event.id + '/',
+                        type: 'GET',
+                        success: function (data) {
+                            // Populate From fields with task details
+                            // document.getElementById('engagementText').innerText = data.td_id
+                            // document.getElementById('providerText').innerText = data.provider_number + ' - ' + data.provider_name
+                            // document.getElementById('timeCodeText').innerText = data.time_code + ' - ' + data.time_code_desc
+                            // document.getElementById('startDateText').innerText = data.todo_date_formatted
+                            // document.getElementById('FYEText').innerText = data.fiscal_year
+                            // document.getElementById('hoursText').innerText = data.anticipated_hours
+                            document.getElementById('pText').innerText = data.provider_number + ' - ' + data.provider_name
+                            document.getElementById('tcText').innerText = data.time_code + ' - ' + data.time_code_desc
+                            document.getElementById('dateText').innerText = data.todo_date_formatted
+                            document.getElementById('fyText').innerText = data.fiscal_year
+                            document.getElementById('hText').innerText = data.anticipated_hours
+                            let url = `/delete-todo-entry/${info.event.id}/`
+                            document.getElementById('td-modal-delete-button').setAttribute('href', url)
+                            let myButton = document.querySelector('#edit-button');
+                            myButton.dataset.tdId = info.event.id
+                            // editTdForm.find('#td-id').val(info.event.id)
+                            // editTdForm.find('#id_engagement').val(data.engagement)
+                            // editTdForm.find('#id_todo_date').val(data.todo_date)
+                            // editTdForm.find('#id_todo_date_end').val(data.todo_date_end)
+                            // editTdForm.find('#id_anticipated_hours').val(data.anticipated_hours)
+                            // editTdForm.find('#id_note').val(data.note)
+                        }
+                    })
+                }
+            });
+            calendar.render();
+        });
+    </script>
+
+
+        <script>
+
+            function searchClients() {
+                // Declare Variables
+                let input, filter, ul, li, a, i, txtValue;
+                input = document.getElementById('searchBar')
+                filter = input.value.toUpperCase();
+                console.log(filter)
+                ul = document.getElementById('clientList')
+                li = ul.getElementsByClassName('srg-list-group-item');
+
+                // Loop through elements and display only matches
+                for (i = 0; i < li.length; i++) {
+                    a = li[i].getElementsByTagName("a")[0];
+                    txtValue = li[i].textContent || li[i].innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        li[i].style.display = "block";
+                    } else {
+                        li[i].style.display = "none";
+                    }
+                }
+
+            }
+        </script>
+
+        <script>
+          // Initialize the popover
+          $(document).ready(function(){
+            $('[data-toggle="popover"]').popover();
+          });
+        </script>
+
+        <script>
+            let sortingOrder = 1
+            function sortTable(columnIndex, table_id) {
+                let table, rows, switching, i, x, y, shouldSwitch;
+                table = document.getElementById(table_id);
+                switching = true;
+                while (switching) {
+                    switching = false;
+                    rows = table.getElementsByTagName("tr");
+
+                    for (i=1; i < (rows.length - 1); i++) {
+                        shouldSwitch = false;
+
+                        x = parseFloat(rows[i].getElementsByTagName("td")[columnIndex].textContent);
+                        y = parseFloat(rows[i + 1].getElementsByTagName("td")[columnIndex].textContent);
+
+                        if (!isNaN(x) && !isNaN(y) && sortingOrder * x < sortingOrder * y) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+
+                    if (shouldSwitch) {
+                        rows[i].parentNode.insertBefore(rows[i+1], rows[i]);
+                        switching = true;
+                    }
+                }
+                sortingOrder *= -1
+
+            }
+        </script>
+
+        <script>
+            let toggleButton = document.getElementById("toggleButton")
+            let myDiv = document.getElementById("myDiv")
+
+            toggleButton.addEventListener("click", function () {
+                if (myDiv.style.display === 'none') {
+                    myDiv.style.display = 'block'
+                } else {
+                    myDiv.style.display= 'none'
+                }
+            })
+        </script>
+
+        <script>
+            // Hide the spinner when the page is fully loaded
+            window.onload = function () {
+                  // Hide the loading screen when the entire page is loaded
+                const loadingScreen = document.getElementById("loading-screen");
+                loadingScreen.style.display = "none";
+                const scrollToElement = document.getElementById("today");
+
+                if (scrollToElement) {
+                   scrollToElement.scrollIntoView({
+                       behavior: "smooth",
+                       block: "start"
+                   })
+                }
+            };
+
+            </script>
+
+            <script>
+                // Hide the spinner when the page is fully loaded
+                window.addEventListener("beforeunload", function() {
+                    const spinner = document.getElementById("loading-screen");
+                    spinner.style.display = ""; // Change to "none" if you want it to hide initially
+                });
+        </script>
+
+
+
+
+{% endblock %}
