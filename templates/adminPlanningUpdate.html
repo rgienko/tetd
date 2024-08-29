@@ -45,40 +45,135 @@
 
                 <div class="card">
                     <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline">
-                        <span class="display-5 fs-3">Staff Availability</span>
+                        <span class="display-5 fs-3"><span id="emp-name-text"></span>'s Availability</span>
                     </div>
                     <div class="card-body px-0">
                         <span class="display-5 fs-5">
                         </span>
-                        <!--<div id="myCalendar"></div>-->
 
                         <div class="tab-content" id="nav-tabContent">
                             <div class="tab-pane" id="td-detail" role="tabpanel" aria-labelledby="td-detail">
-                                <div class="card">
-                                    <div class="card-header">
-                                        <span id="emp-name-text"></span>'s To-Do List
-                                    </div>
-                                    <div class="card-body">
-                                        <table class="srg-table" id="emp-td-table">
-                                            <thead>
-                                                <tr class="">
-                                                    <th>Date</th>
-                                                    <th>Provider</th>
-                                                    <th>Time Code</th>
-                                                    <th>FYE</th>
-                                                    <th>Hours</th>
-                                                    <th>Actions</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
+                                <div class="row d-flex justify-content-evenly">
+                                    <div class="col-4">
+                                        <div class="card border-0">
+                                            <div class="card-header srg-bg-primary-light fw-bolder d-flex justify-content-between">
+                                                <span>Current Week</span> <span id="current-week-text"></span>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <table class="srg-table" id="current-td-table">
+                                                    <thead>
+                                                        <tr class="srg-bg-primary-light" style="background: #afc0df">
+                                                            <th class="text-center" style="background: #afc0df">Billable</th>
+                                                            <th class="text-center" style="background: #afc0df">Non-Billable</th>
+                                                            <th class="text-center" style="background: #afc0df">Total</th>
+                                                            <th class="text-center" style="background: #afc0df">HPW</th>
+                                                            <th class="text-center" style="background: #afc0df">Avail.</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
 
-                                            </tbody>
-                                        </table>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
                                     </div>
 
+                                    <div class="col-4">
+                                        <div class="card border-0">
+                                            <div class="card-header srg-bg-secondary fw-bolder d-flex justify-content-between">
+                                                <span>Next Week</span> <span id="next-week-text"></span>
+                                            </div>
+                                            <div class="card-body p-0">
+                                                <table class="srg-table" id="next-td-table">
+                                                    <thead>
+                                                        <tr class="srg-bg-secondary">
+                                                            <th class="text-center srg-bg-secondary">Billable</th>
+                                                            <th class="text-center srg-bg-secondary">Non-Billable</th>
+                                                            <th class="text-center srg-bg-secondary">Total</th>
+                                                            <th class="text-center srg-bg-secondary">HPW</th>
+                                                            <th class="text-center srg-bg-secondary">Avail.</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
+
+                                <div class="row">
+                                    <div class="col-12 p-4">
+                                        <div class="card">
+                                            <div class="card-header srg-bg-primary srg-text-secondary d-flex align-items-baseline display-5 fs-3">
+                                                <span class="display-5 fs-3" id="emp-name-text"></span>'s Calendar
+                                            </div>
+                                            <div class="card-body">
+                                                <div id="myCalendar"></div>
+
+                                            </div>
+
+                                        </div>
+
+                                    </div>
+                                </div>
+
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="week-modal" tabindex="-1">
+            <div class="modal-dialog modal-xl" id="wmodal">
+                <div class="modal-content">
+                    <div class="modal-header srg-bg-secondary srg-header d-flex justify-content-center gap-2">
+                        <span class="fs-3 display-6" id="week-beg-text"></span>
+                        <span class="fs-3 display-6" id="week-end-text"></span>
+                        <span class="fs-3 display-6">Schedule</span>
+                    </div>
+                    <div class="modal-body">
+                        <table class="srg-table" id="week-table">
+                            <thead>
+                                <tr class="">
+                                    <th>Date</th>
+                                    <th>Provider</th>
+                                    <th>Time Code</th>
+                                    <th>FYE</th>
+                                    <th>Hours</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="day-modal" tabindex="-1">
+            <div class="modal-dialog modal-xl" id="dmodal">
+                <div class="modal-content">
+                    <div class="modal-header srg-bg-secondary srg-header d-flex justify-content-center gap-2">
+                        <span class="fs-3 display-6" id="day-text"></span> <span class="fs-3 display-6">Schedule</span>
+                    </div>
+                    <div class="modal-body">
+                        <table class="srg-table" id="day-table">
+                            <thead>
+                                <tr class="">
+                                    <th>Provider</th>
+                                    <th>Time Code</th>
+                                    <th>FYE</th>
+                                    <th>Hours</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -103,203 +198,237 @@
         })
     </script>
 
+    <script>
+
+
+        const dayModal = document.getElementById('day-modal')
+        dayModal.addEventListener('hidden.bs.modal', event => {
+            let tableBody = document.querySelector("#day-table tbody")
+
+            while (tableBody.firstChild) {
+                tableBody.removeChild(tableBody.firstChild)
+            }
+        });
+
+        const weekModal = document.getElementById('week-modal')
+        weekModal.addEventListener('hidden.bs.modal', event => {
+            let weekTableBody = document.querySelector("#week-table tbody")
+
+            while (weekTableBody.firstChild) {
+                weekTableBody.removeChild(weekTableBody.firstChild)
+            }
+        });
+    </script>
+
     <script type="text/javascript">
         $(document).ready(function () {
             $('a[data-bs-toggle="list"]').on('show.bs.tab', function (e) {
                 let employee = $(e.target).attr('data-bs-emp')
                 let employee_id = $(e.target).attr('data-bs-emp-id')
-                $('#emp-name-text').text(employee)
-                let empTableBody = document.querySelector("#emp-td-table tbody")
+                let empTexts = document.querySelectorAll("#emp-name-text")
+                empTexts.forEach((empText) => empText.textContent = employee.split(".")[0])
+                // $('#emp-name-text').text(employee)
+                let currentTdTableBody = document.querySelector("#current-td-table tbody")
+                let nextTdTableBody = document.querySelector("#next-td-table tbody")
 
-                while(empTableBody.firstChild) {
-                    empTableBody.removeChild(empTableBody.firstChild)
+                while(nextTdTableBody.firstChild) {
+                    nextTdTableBody.removeChild(nextTdTableBody.firstChild)
                 }
+
+                while(currentTdTableBody.firstChild) {
+                    currentTdTableBody.removeChild(currentTdTableBody.firstChild)
+                }
+
+                let calendarEl = document.getElementById('myCalendar');
 
                 $.ajax({
                     url:'/get_staff_td_list/' + employee_id + "/",
                     type: 'GET',
-                    success: function (emp_td_list) {
-                        emp_td_list.forEach(item => {
-                            let row = document.createElement('tr')
-                            let todoDate = new Date(item.todo_date)
-                            let fyeDate;
-                            if (item.engagement__fye == null) {
-                                fyeDate = ""
-                            } else {
-                                fyeDate = new Date(item.engagement__fye).toLocaleDateString()
+                    success: function (data) {
+                        let week_beg = new Date(data.week_beg)
+                        let week_end = new Date(data.week_end)
+                        let curent_week_text = (week_beg.toLocaleDateString() + " - " + week_end.toLocaleDateString())
+                        let next_week_beg = new Date(data.next_week_beg)
+                        let next_week_end = new Date(data.next_week_end)
+                        let next_week_text = (next_week_beg.toLocaleDateString() + " - " + next_week_end.toLocaleDateString())
+
+                        $('#current-week-text').text(curent_week_text)
+                        $('#next-week-text').text(next_week_text)
+                        let emp_td_list = data.emp_td_list;
+                        let calendar = new FullCalendar.Calendar(calendarEl, {
+                            initialView: 'dayGridMonth',
+                            headerToolbar: {
+                                left: 'prev,next',
+                                center: 'title'
+                            },
+                            fixedWeekCount: false,
+                            aspectRatio: 1.5,
+                            navLinks: true,
+                            weekNumbers: true,
+                            eventDidMount: function(info) {
+                                let tooltip = new Tooltip(info.el, {
+                                    title: info.event.extendedProps.description,
+                                    placement: 'bottom',
+                                    trigger: 'hover',
+                                    container: 'body'
+                                    });
+                                },
+                            events:
+                                emp_td_list.map( event =>
+                                    (
+                                        {
+                                            id: event.todolist_id,
+                                            title: event.engagement__engagement_srg_id + " - " + event.anticipated_hours,
+                                            start: event.todo_date,
+                                            end: event.todo_date_end,
+                                            description: event.engagement__provider__provider_name + ' - ' + event.engagement__time_code__time_code_desc
+                                        }
+                                    )
+                                ),
+                            eventBackgroundColor: '#02308C',
+                            eventBorderColor: '#02308C',
+                            eventMouseEnter: function() {
+                                document.body.style.cursor = "pointer"
+                            },
+                            eventMouseLeave: function() {
+                                document.body.style.cursor = "default"
+                            },
+                            navLinkWeekClick: function (weekStart) {
+                                $('#week-modal').modal('show')
+                                let weekBeg = weekStart
+                                document.getElementById('week-beg-text').innerText = weekStart.toLocaleDateString() + ' - '
+                                let weekEnd = new Date(weekBeg.getTime());
+                                weekEnd.setDate(weekEnd.getDate() + 6);
+                                document.getElementById('week-end-text').innerText = weekEnd.toLocaleDateString()
+
+                                let weekTableBody = document.querySelector("#week-table tbody")
+                                $.ajax({
+                                    url: '/admin_get_td_week_list/' + weekBeg.toISOString().split("T")[0] + "/" + weekEnd.toISOString().split("T")[0] + "/" + employee_id + "/",
+                                    type: 'GET',
+                                    success: function (adminTdWeekList) {
+                                        adminTdWeekList.forEach(item => {
+                                            let td_wk_row = document.createElement('tr')
+                                            let tdID = item.todolist_id
+                                            let todoDate = new Date(item.todo_date)
+                                            td_wk_row.innerHTML = `
+                                                            <td>${todoDate.toLocaleDateString()}</td>
+                                                            <td>${item.engagement__provider} - ${item.engagement__provider__provider_name}</td>
+                                                            <td>${item.engagement__time_code} - ${item.engagement__time_code__time_code_desc}</td>
+                                                            <td>${item.engagement__fye}</td>
+                                                            <td>${item.anticipated_hours}</td>
+                                                            `
+
+                                            weekTableBody.appendChild(td_wk_row)// Your code here...
+                                        })
+                                    }
+                                })
+                            },
+                            navLinkDayClick: function(info) {
+                                $('#day-modal').modal('show');
+                                // alert('Clicked on: ' + info.dateStr);
+                                // document.getElementById('day-text').innerText = monthNumber + "/" + dayName + "/" + date.getFullYear()
+                                document.getElementById('day-text').innerText = info.toLocaleDateString()
+                                let tableBody = document.querySelector("#day-table tbody")
+                                $.ajax({
+                                    url: '/admin_get_td_list/' + info.toISOString().split("T")[0] + '/' + employee_id + '/',
+                                    type: 'GET',
+                                    success: function (AdminTdDayList) {
+                                        // let tdDayListParsed = JSON.parse(tdDayList)
+                                        AdminTdDayList.forEach(item => {
+                                            let row = document.createElement('tr')
+                                            row.innerHTML = `
+                                                            <td>${item.engagement__provider} - ${item.engagement__provider__provider_name}</td>
+                                                            <td>${item.engagement__time_code} - ${item.engagement__time_code__time_code_desc}</td>
+                                                            <td>${item.engagement__fye}</td>
+                                                            <td>${item.anticipated_hours}</td>
+                                                            `
+
+                                            tableBody.appendChild(row)// Your code here...
+                                        });
+                                    }
+                                })
+                            },
+                            eventClick: function (info) {
+                                // When an event is clicked, show the modal using Bootstrap's modal method
+                                $('#cal-modal').modal('show');
+                                // $('#edit-modal').modal('show');
+                                let editTdForm = $('#editTodoForm')
+                                // console.log(info.event.id)
+                                $.ajax({
+                                    url: '/get_td/' + info.event.id + '/',
+                                    type: 'GET',
+                                    success: function (data) {
+                                        // Populate From fields with task details
+                                        // document.getElementById('engagementText').innerText = data.td_id
+                                        // document.getElementById('providerText').innerText = data.provider_number + ' - ' + data.provider_name
+                                        // document.getElementById('timeCodeText').innerText = data.time_code + ' - ' + data.time_code_desc
+                                        // document.getElementById('startDateText').innerText = data.todo_date_formatted
+                                        // document.getElementById('FYEText').innerText = data.fiscal_year
+                                        // document.getElementById('hoursText').innerText = data.anticipated_hours
+                                        document.getElementById('pText').innerText = data.provider_number + ' - ' + data.provider_name
+                                        document.getElementById('tcText').innerText = data.time_code + ' - ' + data.time_code_desc
+                                        document.getElementById('dateText').innerText = data.todo_date_formatted
+                                        document.getElementById('fyText').innerText = data.fiscal_year
+                                        document.getElementById('hText').innerText = data.anticipated_hours
+                                        let url = `/delete-todo-entry/${info.event.id}/`
+                                        document.getElementById('td-modal-delete-button').setAttribute('href', url)
+                                        let myButton = document.querySelector('#edit-button');
+                                        myButton.dataset.tdId = info.event.id
+                                        // editTdForm.find('#td-id').val(info.event.id)
+                                        // editTdForm.find('#id_engagement').val(data.engagement)
+                                        // editTdForm.find('#id_todo_date').val(data.todo_date)
+                                        // editTdForm.find('#id_todo_date_end').val(data.todo_date_end)
+                                        // editTdForm.find('#id_anticipated_hours').val(data.anticipated_hours)
+                                        // editTdForm.find('#id_note').val(data.note)
+                                    }
+                                })
                             }
 
-                            row.innerHTML = `
-                                            <td>${todoDate.toLocaleDateString()}</td>
-                                            <td>${item.engagement__provider} - ${item.engagement__provider__provider_name}</td>
-                                            <td>${item.engagement__time_code} - ${item.engagement__time_code__time_code_desc}</td>
-                                            <td>${fyeDate}</td>
-                                            <td>${item.anticipated_hours}</td>
-                                            <td class="text-center">
-                                                    None
-                                                </td>
-                                                `
+                        });
+                        calendar.render();
 
-                            empTableBody.appendChild(row)
-                        })
+
+
+                        let total_hours = data.total_hours;
+                        let total_billable_hours = data.total_billable_hours
+                        let total_non_billable_hours = data.total_non_billable_hours
+                        let total_hours_available = data.hours_avail
+                        let new_row = document.createElement('tr')
+                        new_row.innerHTML = `
+                                        <td>${total_billable_hours.total_billable_hours_sum}</td>
+                                        <td>${total_non_billable_hours.total_non_billable_hours_sum}</td>
+                                        <td>${total_hours.total_hours_sum}</td>
+                                        <td>40</td>
+                                        <td>${total_hours_available}</td>
+                        `
+                        currentTdTableBody.append(new_row)
+                        let url_row = document.createElement('tr')
+                        let url = '/admin-employee-dashboard/' + employee_id + "/" + week_beg.toISOString().split("T")[0] + "/" + week_end.toISOString().split("T")[0] + "/"
+                        url_row.innerHTML = `
+                                         <td colspan="5" class="text-end srg-link"><a href="${url}">View Details</a></td>
+                        `
+                        currentTdTableBody.append(url_row)
+
+                        let next_total_hours = data.next_hours;
+                        let next_billable_hours = data.next_billable_hours
+                        let next_non_billable_hours = data.next_non_billable_hours
+                        let next_hours_available = data.next_avail
+                        let new_next_row = document.createElement('tr')
+                        new_next_row.innerHTML = `
+                                        <td>${next_billable_hours.next_billable_hours_sum}</td>
+                                        <td>${next_non_billable_hours.next_non_billable_hours_sum}</td>
+                                        <td>${next_total_hours.next_hours_sum}</td>
+                                        <td>40</td>
+                                        <td>${next_hours_available}</td>
+                        `
+                        nextTdTableBody.append(new_next_row)
                     }
                 })
             })
         })
     </script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const calendarEl = document.getElementById('myCalendar');
 
-            const calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
-                headerToolbar: {
-                    left: 'prev,next',
-                    center: 'title'
-                },
-                fixedWeekCount: false,
-                aspectRatio: 1.5,
-                navLinks: true,
-                weekNumbers: true,
-                events: [
-                    {% for event in todolists %}
-                        {
-                            id: '{{ event.todolist_id }}',
-                            title: '{{ event.employee__user__username }}-{{ event.engagement__engagement_srg_id }} - {{ event.anticipated_hours }} Hours',
-                            start: '{{ event.todo_date|date:'Y-m-d' }}',
-                            end: '{{ event.todo_date|date:'Y-m-d' }}',
-                            extendedProps: {
-                                description: 'This is a test.'
-                            }
-                        },
-                    {% endfor %}
-                    ],
-                eventBackgroundColor: '#02308C',
-                eventBorderColor: '#02308C',
-                eventMouseEnter: function() {
-                    document.body.style.cursor = "pointer"
-                },
-                eventMouseLeave: function() {
-                    document.body.style.cursor = "default"
-                },
-                navLinkWeekClick: function (weekStart) {
-                    $('#week-modal').modal('show')
-                    let weekBeg = weekStart
-                    document.getElementById('week-beg-text').innerText = weekStart.toLocaleDateString() + ' - '
-                    let weekEnd = new Date(weekBeg.getTime());
-                    weekEnd.setDate(weekEnd.getDate() + 6);
-                    document.getElementById('week-end-text').innerText = weekEnd.toLocaleDateString()
-
-                    let weekTableBody = document.querySelector("#week-table tbody")
-                    $.ajax({
-                        url: '/get_td_week_list/' + weekBeg.toISOString().split("T")[0] + "/" + weekEnd.toISOString().split("T")[0] + "/",
-                        type: 'GET',
-                        success: function (tdWeekList) {
-                            tdWeekList.forEach(item => {
-                                let row = document.createElement('tr')
-                                let url = `/delete-todo-entry/${item.todolist_id}/`
-                                let tdID = item.todolist_id
-                                let todoDate = new Date(item.todo_date)
-                                row.innerHTML = `
-                                                <td>${todoDate.toLocaleDateString()}</td>
-                                                <td>${item.engagement__provider} - ${item.engagement__provider__provider_name}</td>
-                                                <td>${item.engagement__time_code} - ${item.engagement__time_code__time_code_desc}</td>
-                                                <td>${item.engagement__fye}</td>
-                                                <td>${item.anticipated_hours}</td>
-                                                <td class="text-center">
-                                                        <a type="button" class="srg-link edit-button" data-bs-toggle="modal" href="#edit-modal" data-td-id="${tdID}">
-                                                          <i class="bi bi-pencil-square"></i>
-                                                        </a>
-
-                                                        <a type="button" class="srg-link-danger" id='td-modal-delete-button' data-engagement-id="{{ item.todolist_id }}"
-                                                                href="${url}">
-                                                          <i class="bi bi-trash3"></i>
-                                                        </a>
-                                                    </td>
-                                                    `
-
-                                weekTableBody.appendChild(row)// Your code here...
-                            })
-                        }
-                    })
-                },
-                navLinkDayClick: function(info) {
-                    $('#day-modal').modal('show');
-                    // alert('Clicked on: ' + info.dateStr);
-                    // document.getElementById('day-text').innerText = monthNumber + "/" + dayName + "/" + date.getFullYear()
-                    document.getElementById('day-text').innerText = info.toLocaleDateString()
-                    let tableBody = document.querySelector("#day-table tbody")
-                    $.ajax({
-                        url: '/get_td_list/' + info.toISOString().split("T")[0] + '/',
-                        type: 'GET',
-                        success: function (tdDayList) {
-                            // let tdDayListParsed = JSON.parse(tdDayList)
-                            tdDayList.forEach(item => {
-                                let row = document.createElement('tr')
-                                let url = `/delete-todo-entry/${item.todolist_id}/`
-                                let tdID = item.todolist_id
-                                row.innerHTML = `
-                                                <td>${item.engagement__provider} - ${item.engagement__provider__provider_name}</td>
-                                                <td>${item.engagement__time_code} - ${item.engagement__time_code__time_code_desc}</td>
-                                                <td>${item.engagement__fye}</td>
-                                                <td>${item.anticipated_hours}</td>
-                                                <td class="text-center">
-                                                        <a type="button" class="srg-link edit-button" data-bs-toggle="modal" href="#edit-modal" data-td-id="${tdID}">
-                                                          <i class="bi bi-pencil-square"></i>
-                                                        </a>
-
-                                                        <a type="button" class="srg-link-danger" id='td-modal-delete-button' data-engagement-id="{{ item.todolist_id }}"
-                                                                href="${url}">
-                                                          <i class="bi bi-trash3"></i>
-                                                        </a>
-                                                    </td>
-                                                    `
-
-                                tableBody.appendChild(row)// Your code here...
-                            });
-                        }
-                    })
-                },
-                eventClick: function (info) {
-                    // When an event is clicked, show the modal using Bootstrap's modal method
-                    $('#cal-modal').modal('show');
-                    // $('#edit-modal').modal('show');
-                    let editTdForm = $('#editTodoForm')
-                    // console.log(info.event.id)
-                    $.ajax({
-                        url: '/get_td/' + info.event.id + '/',
-                        type: 'GET',
-                        success: function (data) {
-                            // Populate From fields with task details
-                            // document.getElementById('engagementText').innerText = data.td_id
-                            // document.getElementById('providerText').innerText = data.provider_number + ' - ' + data.provider_name
-                            // document.getElementById('timeCodeText').innerText = data.time_code + ' - ' + data.time_code_desc
-                            // document.getElementById('startDateText').innerText = data.todo_date_formatted
-                            // document.getElementById('FYEText').innerText = data.fiscal_year
-                            // document.getElementById('hoursText').innerText = data.anticipated_hours
-                            document.getElementById('pText').innerText = data.provider_number + ' - ' + data.provider_name
-                            document.getElementById('tcText').innerText = data.time_code + ' - ' + data.time_code_desc
-                            document.getElementById('dateText').innerText = data.todo_date_formatted
-                            document.getElementById('fyText').innerText = data.fiscal_year
-                            document.getElementById('hText').innerText = data.anticipated_hours
-                            let url = `/delete-todo-entry/${info.event.id}/`
-                            document.getElementById('td-modal-delete-button').setAttribute('href', url)
-                            let myButton = document.querySelector('#edit-button');
-                            myButton.dataset.tdId = info.event.id
-                            // editTdForm.find('#td-id').val(info.event.id)
-                            // editTdForm.find('#id_engagement').val(data.engagement)
-                            // editTdForm.find('#id_todo_date').val(data.todo_date)
-                            // editTdForm.find('#id_todo_date_end').val(data.todo_date_end)
-                            // editTdForm.find('#id_anticipated_hours').val(data.anticipated_hours)
-                            // editTdForm.find('#id_note').val(data.note)
-                        }
-                    })
-                }
-            });
-            calendar.render();
-        });
-    </script>
 
 
         <script>

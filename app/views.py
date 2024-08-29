@@ -797,8 +797,13 @@ def AdminTimesheet(request):
     f_end_date = f.form['end_date']
 
     if request.method == 'GET' and 'extract_button' in request.GET:
-        matching_expenses = Expense.objects.filter(date__gte=datetime.strptime(f_start_date.value(), "%Y-%m-%d"),
-                                                   date__lte=datetime.strptime(f_end_date.value(), "%Y-%m-%d"))
+        matching_expenses = Expense.objects.values('engagement__engagement_id', 'engagement__engagement_srg_id',
+                                'engagement__parent__parent_name', 'engagement__provider',
+                                'engagement__provider__provider_name', 'engagement__time_code',
+                                'engagement__time_code__time_code_desc', 'engagement__fye', 'expense_amount').filter(
+                                date__gte=datetime.strptime(f_start_date.value(), "%Y-%m-%d"),
+                                date__lte=datetime.strptime(f_end_date.value(), "%Y-%m-%d"))
+
         ts_data = read_frame(f.qs)
         ts_data['hours'] = pandas.to_numeric(ts_data['hours'], errors='coerce')
         ts_data = ts_data.rename(columns={'ts_date': 'Date', 'employee__user__username': 'Employee',
@@ -834,8 +839,8 @@ def AdminTimesheet(request):
     return render(request, 'adminTimesheet.html', context)
 
 
-def getStaffWeekHours(per_beg, per_end):
-    data = Todolist.objects.values('employee__user__username').filter(todo_date__gte=per_beg).filter(
+def getStaffWeekHours(emp, per_beg, per_end):
+    data = list(Todolist.objects.filter(employee_id=emp, todo_date__gte=per_beg).filter(
         todo_date__lte=per_end).annotate(
         total_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()),
         non_billable_hours_sum=Coalesce(
@@ -851,7 +856,7 @@ def getStaffWeekHours(per_beg, per_end):
                 )
             ), 0, output_field=DecimalField()
         )
-    )
+    ))
     return data
 
 
@@ -863,17 +868,41 @@ def getStaffNotInTodoList(per_beg, per_end):
 
     return data_none
 
+
 def getStaffToDoList(request, emp_id):
     emp = get_object_or_404(Employee, pk=emp_id)
-    today = datetime.now()
-    week_beg  = today - timedelta(days=today.weekday())
-    emp_td_list = list(Todolist.objects.values('todolist_id', 'todo_date', 'engagement__provider',
-                                'engagement__provider__provider_name',
-                                'engagement__time_code', 'engagement__time_code__time_code_desc',
-                                'engagement__fye', 'anticipated_hours').filter(todo_date__year=datetime.now().year,
-                                                                               employee=emp_id).order_by('todo_date'))
+    today = date.today()
+    week_beg = today - timedelta(days=today.weekday()) - timedelta(days=1)
+    week_end = week_beg + timedelta(days=6)
+    emp_td = Todolist.objects.values('todolist_id', 'todo_date', 'todo_date_end', 'engagement__provider',
+                                     'engagement__provider__provider_name',
+                                     'engagement__time_code', 'engagement__time_code__time_code_desc',
+                                     'engagement__fye', 'anticipated_hours',
+                                     'engagement__engagement_srg_id').filter(
+        todo_date__year=today.year,
+        employee=emp_id).order_by('todo_date')
 
-    return JsonResponse(emp_td_list, today, safe=False)
+    emp_td_list = list(emp_td)
+
+    total_billable_hours = emp_td.exclude(engagement__type_id='N').filter(todo_date__gte=week_beg, todo_date__lte=week_end).aggregate(total_billable_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()))
+    total_non_billable_hours = emp_td.filter(engagement__type_id='N', todo_date__gte=week_beg, todo_date__lte=week_end).aggregate(total_non_billable_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()))
+    total_hours = emp_td.filter(todo_date__gte=week_beg, todo_date__lte=week_end).aggregate(total_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()))
+    hours_avail = 40 - total_hours['total_hours_sum']
+
+    next_week_beg = week_beg + timedelta(days=7)
+    next_week_end = week_end + timedelta(days=7)
+
+    next_billable_hours = emp_td.exclude(engagement__type_id='N').filter(todo_date__gte=next_week_beg, todo_date__lte=next_week_end).aggregate(next_billable_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()))
+    next_non_billable_hours = emp_td.filter(engagement__type_id='N', todo_date__gte=next_week_beg, todo_date__lte=next_week_end).aggregate(next_non_billable_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()))
+    next_hours = emp_td.filter(todo_date__gte=next_week_beg, todo_date__lte=next_week_end).aggregate(next_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()))
+    next_avail = 40 - next_hours['next_hours_sum']
+
+    return JsonResponse({'emp_td_list': emp_td_list, 'today': today, 'week_beg': week_beg, 'week_end': week_end,
+                         'next_week_beg': next_week_beg, 'next_week_end': next_week_end,
+                         'next_billable_hours': next_billable_hours, 'next_non_billable_hours': next_non_billable_hours,
+                         'next_hours': next_hours, 'next_avail': next_avail,
+                         'total_hours': total_hours, 'total_billable_hours': total_billable_hours,
+                         'total_non_billable_hours': total_non_billable_hours, 'hours_avail': hours_avail}, safe=False)
 
 
 def AdminPlanning(request):
@@ -886,7 +915,8 @@ def AdminPlanning(request):
     for i in range(180):
         period_days.append(period_beg + timedelta(days=i))
 
-    employees = Employee.objects.values('user__username', 'employee_id', 'user__last_name').filter(is_billable=True).order_by('user__last_name')
+    employees = Employee.objects.values('user__username', 'employee_id', 'user__last_name').filter(
+        is_billable=True).order_by('user__last_name')
     # todolists = Todolist.objects.values('employee__user__username', 'engagement__provider',
     #                                    'engagement__provider__provider_name', 'todo_date',
     #                                    'engagement__engagement_srg_id', 'anticipated_hours').order_by('todo_date',
@@ -940,16 +970,16 @@ def AdminPlanning(request):
 
     context = {'employees': employees, 'period_days': period_days,
                'week_beg': week_beg, 'week_end': week_end,
-               'page_title': 'Admin Planning','today': today, 'user_info': user_info
+               'page_title': 'Admin Planning', 'today': today, 'user_info': user_info
                }
     return render(request, 'adminPlanningUpdate.html', context)
 
 
 def AdminEmployeeDashboard(request, pk, per_beg, per_end):
-    user_info = get_object_or_404(User, username=pk)
+    user_info = get_object_or_404(User, employee__employee_id=pk)
     user_filter_list = pk.split(".")
-    first_name = user_filter_list[0]
-    last_name = user_filter_list[1]
+    first_name = user_info.first_name
+    last_name = user_info.last_name
     today = date.today()
     per_beg_object = datetime.strptime(per_beg, "%Y-%m-%d")
     per_end_object = datetime.strptime(per_end, "%Y-%m-%d")
@@ -968,11 +998,11 @@ def AdminEmployeeDashboard(request, pk, per_beg, per_end):
                                                      'provider_id',
                                                      'engagement_hours_sum')
 
-    timesheet_hours = Time.objects.all().filter(employee__user__username=pk).filter(
+    timesheet_hours = Time.objects.all().filter(employee_id=user_info.employee.employee_id).filter(
         ts_date__gte=per_beg).filter(ts_date__lte=per_end).aggregate(
         amount=Coalesce(Sum('hours'), 0, output_field=DecimalField(0.00)))
 
-    todolist_entries = Todolist.objects.filter(employee__user__username=pk).filter(
+    todolist_entries = Todolist.objects.filter(employee_id=user_info.employee.employee_id).filter(
         todo_date__gte=per_beg).filter(todo_date__lte=per_end)
 
     todolist_hours = todolist_entries.aggregate(
@@ -1008,7 +1038,7 @@ def AdminEmployeeDashboard(request, pk, per_beg, per_end):
                                                       'engagement__provider_id__provider_name',
                                                       'engagement__time_code',
                                                       'engagement__time_code__time_code_desc').filter(
-        employee__user__username=pk).order_by('todo_date').annotate(
+        employee_id = user_info.employee.employee_id).order_by('todo_date').annotate(
         hsum=Sum('anticipated_hours'))
 
     employee_td_entries = employee_td_entries_all.filter(todo_date=today).order_by('todo_date')
@@ -1697,6 +1727,16 @@ def GetTdDayList(request, dte):
     return JsonResponse(tdDayList, safe=False)
 
 
+def AdminGetTdDayList(request, dte, emp_id):
+    AdminTdDayList = list(
+        Todolist.objects.values('todolist_id', 'engagement__provider', 'engagement__provider__provider_name',
+                                'engagement__time_code', 'engagement__time_code__time_code_desc',
+                                'engagement__fye', 'anticipated_hours').filter(
+            employee=emp_id).filter(todo_date=dte))
+    # tdDayListJson = serializers.serialize('json', tdDayList)
+    return JsonResponse(AdminTdDayList, safe=False)
+
+
 def GetTdWeekList(request, week_beg, week_end):
     tdWeekList = list(
         Todolist.objects.values('todolist_id', 'todo_date', 'engagement__provider',
@@ -1706,6 +1746,17 @@ def GetTdWeekList(request, week_beg, week_end):
             employee=request.user.employee).filter(todo_date__gte=week_beg, todo_date__lte=week_end).order_by(
             'todo_date'))
     return JsonResponse(tdWeekList, safe=False)
+
+
+def AdminGetTdWeekList(request, week_beg, week_end, emp_id):
+    adminTdWeekList = list(
+        Todolist.objects.values('todolist_id', 'todo_date', 'engagement__provider',
+                                'engagement__provider__provider_name',
+                                'engagement__time_code', 'engagement__time_code__time_code_desc',
+                                'engagement__fye', 'anticipated_hours').filter(
+            employee=emp_id).filter(todo_date__gte=week_beg, todo_date__lte=week_end).order_by(
+            'todo_date'))
+    return JsonResponse(adminTdWeekList, safe=False)
 
 
 def GetTdEntry(request, td_id):
