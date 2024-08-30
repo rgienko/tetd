@@ -2,12 +2,6 @@
 {% load mathfilters %}
 
 {% block content %}
-    <div id="loading-screen">
-        <div class="">
-            <div class="spinner"></div><br>
-            <p>Loading...</p>
-        </div>
-    </div>
     <!--
         <div class="row p-0">
             <div class="col-12 p-0">
@@ -25,8 +19,6 @@
                 <div class="card srg-border vh-100 overflow-auto">
                     <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center sticky-top">
                         <span class="display-6 fs-3 srg-text-secondary">Staff</span>
-                        <input class="search-box" type="text" id="searchBar" onkeyup="searchClients()" placeholder="Search for clients.." title="Type in a name">
-                        <a type="button" class="srg-link-secondary srg-text-secondary" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><svg class="bi" height=""><use xlink:href="#plus"/></svg></a>
                     </div>
 
                     <div class="card-body">
@@ -43,7 +35,7 @@
 
             <div class="col-xxl-10 col-xl-10 col-lg-8 col-md-8 col-8">
 
-                <div class="card">
+                <div class="card vh-100 overflow-auto">
                     <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-baseline">
                         <span class="display-5 fs-3"><span id="emp-name-text"></span>'s Availability</span>
                     </div>
@@ -184,6 +176,9 @@
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+    <script src="https://unpkg.com/@popperjs/core@2/dist/umd/popper.min.js"></script>
+    <script src="https://unpkg.com/tippy.js@6/dist/tippy-bundle.umd.js"></script>
+
 
     <script type="text/javascript">
         $(document).ready(function () {
@@ -221,6 +216,8 @@
     </script>
 
     <script type="text/javascript">
+
+
         $(document).ready(function () {
             $('a[data-bs-toggle="list"]').on('show.bs.tab', function (e) {
                 let employee = $(e.target).attr('data-bs-emp')
@@ -265,14 +262,6 @@
                             aspectRatio: 1.5,
                             navLinks: true,
                             weekNumbers: true,
-                            eventDidMount: function(info) {
-                                let tooltip = new Tooltip(info.el, {
-                                    title: info.event.extendedProps.description,
-                                    placement: 'bottom',
-                                    trigger: 'hover',
-                                    container: 'body'
-                                    });
-                                },
                             events:
                                 emp_td_list.map( event =>
                                     (
@@ -281,47 +270,46 @@
                                             title: event.engagement__engagement_srg_id + " - " + event.anticipated_hours,
                                             start: event.todo_date,
                                             end: event.todo_date_end,
-                                            description: event.engagement__provider__provider_name + ' - ' + event.engagement__time_code__time_code_desc
+                                            extendedProps: {
+                                                provider: event.engagement__provider__provider_name + " (" + event.engagement__provider + ")",
+                                                scope: event.engagement__time_code__time_code_desc,
+                                                fye: event.engagement__fye
+                                            },
                                         }
                                     )
                                 ),
                             eventBackgroundColor: '#02308C',
                             eventBorderColor: '#02308C',
-                            eventMouseEnter: function() {
-                                document.body.style.cursor = "pointer"
+                            eventMouseEnter: function(info) {
+                                document.body.style.cursor = "pointer";
+                                let fye;
+                                if (info.event.extendedProps.fye == null) {
+                                    fye = '';
+                                } else {
+                                    fye = new Date(info.event.extendedProps.fye).toLocaleDateString();
+                                }
+                                let tooltip = new tippy(info.el, {
+                                    content: '<span>' + info.event.extendedProps.provider + '<br>' + info.event.extendedProps.scope + '<br>' + fye + '</span>',
+                                    allowHTML: true,
+                                    placement: 'right',
+                                    trigger: 'mouseenter focus',
+                                    arrow: true,
+                                    maxWidth: '500',
+                                    theme: 'myTheme'
+                                });
                             },
                             eventMouseLeave: function() {
                                 document.body.style.cursor = "default"
                             },
                             navLinkWeekClick: function (weekStart) {
-                                $('#week-modal').modal('show')
-                                let weekBeg = weekStart
-                                document.getElementById('week-beg-text').innerText = weekStart.toLocaleDateString() + ' - '
-                                let weekEnd = new Date(weekBeg.getTime());
-                                weekEnd.setDate(weekEnd.getDate() + 6);
-                                document.getElementById('week-end-text').innerText = weekEnd.toLocaleDateString()
-
-                                let weekTableBody = document.querySelector("#week-table tbody")
-                                $.ajax({
-                                    url: '/admin_get_td_week_list/' + weekBeg.toISOString().split("T")[0] + "/" + weekEnd.toISOString().split("T")[0] + "/" + employee_id + "/",
-                                    type: 'GET',
-                                    success: function (adminTdWeekList) {
-                                        adminTdWeekList.forEach(item => {
-                                            let td_wk_row = document.createElement('tr')
-                                            let tdID = item.todolist_id
-                                            let todoDate = new Date(item.todo_date)
-                                            td_wk_row.innerHTML = `
-                                                            <td>${todoDate.toLocaleDateString()}</td>
-                                                            <td>${item.engagement__provider} - ${item.engagement__provider__provider_name}</td>
-                                                            <td>${item.engagement__time_code} - ${item.engagement__time_code__time_code_desc}</td>
-                                                            <td>${item.engagement__fye}</td>
-                                                            <td>${item.anticipated_hours}</td>
-                                                            `
-
-                                            weekTableBody.appendChild(td_wk_row)// Your code here...
-                                        })
-                                    }
-                                })
+                                let weekBeg = weekStart.toISOString().split("T")[0]
+                                let weekEnd = new Date(weekStart);
+                                weekEnd.setDate(weekStart.getDate() + 6)
+                                let weekEndF = weekEnd.toISOString().split("T")[0];
+                                console.log(weekBeg)
+                                console.log(weekEndF)
+                                console.log(employee_id)
+                                window.location = "/admin-employee-dashboard/" + employee_id + "/" + weekBeg + "/" + weekEndF
                             },
                             navLinkDayClick: function(info) {
                                 $('#day-modal').modal('show');
@@ -348,41 +336,7 @@
                                     }
                                 })
                             },
-                            eventClick: function (info) {
-                                // When an event is clicked, show the modal using Bootstrap's modal method
-                                $('#cal-modal').modal('show');
-                                // $('#edit-modal').modal('show');
-                                let editTdForm = $('#editTodoForm')
-                                // console.log(info.event.id)
-                                $.ajax({
-                                    url: '/get_td/' + info.event.id + '/',
-                                    type: 'GET',
-                                    success: function (data) {
-                                        // Populate From fields with task details
-                                        // document.getElementById('engagementText').innerText = data.td_id
-                                        // document.getElementById('providerText').innerText = data.provider_number + ' - ' + data.provider_name
-                                        // document.getElementById('timeCodeText').innerText = data.time_code + ' - ' + data.time_code_desc
-                                        // document.getElementById('startDateText').innerText = data.todo_date_formatted
-                                        // document.getElementById('FYEText').innerText = data.fiscal_year
-                                        // document.getElementById('hoursText').innerText = data.anticipated_hours
-                                        document.getElementById('pText').innerText = data.provider_number + ' - ' + data.provider_name
-                                        document.getElementById('tcText').innerText = data.time_code + ' - ' + data.time_code_desc
-                                        document.getElementById('dateText').innerText = data.todo_date_formatted
-                                        document.getElementById('fyText').innerText = data.fiscal_year
-                                        document.getElementById('hText').innerText = data.anticipated_hours
-                                        let url = `/delete-todo-entry/${info.event.id}/`
-                                        document.getElementById('td-modal-delete-button').setAttribute('href', url)
-                                        let myButton = document.querySelector('#edit-button');
-                                        myButton.dataset.tdId = info.event.id
-                                        // editTdForm.find('#td-id').val(info.event.id)
-                                        // editTdForm.find('#id_engagement').val(data.engagement)
-                                        // editTdForm.find('#id_todo_date').val(data.todo_date)
-                                        // editTdForm.find('#id_todo_date_end').val(data.todo_date_end)
-                                        // editTdForm.find('#id_anticipated_hours').val(data.anticipated_hours)
-                                        // editTdForm.find('#id_note').val(data.note)
-                                    }
-                                })
-                            }
+
 
                         });
                         calendar.render();
@@ -422,6 +376,12 @@
                                         <td>${next_hours_available}</td>
                         `
                         nextTdTableBody.append(new_next_row)
+                        let next_url_row = document.createElement('tr')
+                        let next_url = '/admin-employee-dashboard/' + employee_id + "/" + next_week_beg.toISOString().split("T")[0] + "/" + next_week_end.toISOString().split("T")[0] + "/"
+                        next_url_row.innerHTML = `
+                                         <td colspan="5" class="text-end srg-link"><a href="${next_url}">View Details</a></td>
+                        `
+                        nextTdTableBody.append(next_url_row)
                     }
                 })
             })
@@ -526,13 +486,7 @@
 
             </script>
 
-            <script>
-                // Hide the spinner when the page is fully loaded
-                window.addEventListener("beforeunload", function() {
-                    const spinner = document.getElementById("loading-screen");
-                    spinner.style.display = ""; // Change to "none" if you want it to hide initially
-                });
-        </script>
+
 
 
 
