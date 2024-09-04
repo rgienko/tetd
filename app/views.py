@@ -795,14 +795,28 @@ def AdminTimesheet(request):
 
     f_start_date = f.form['start_date']
     f_end_date = f.form['end_date']
+    f_employee = f.form['employee'].value()
 
     if request.method == 'GET' and 'extract_button' in request.GET:
-        matching_expenses = Expense.objects.values('engagement__engagement_id', 'engagement__engagement_srg_id',
-                                'engagement__parent__parent_name', 'engagement__provider',
-                                'engagement__provider__provider_name', 'engagement__time_code',
-                                'engagement__time_code__time_code_desc', 'engagement__fye', 'expense_amount').filter(
-                                date__gte=datetime.strptime(f_start_date.value(), "%Y-%m-%d"),
-                                date__lte=datetime.strptime(f_end_date.value(), "%Y-%m-%d"))
+        if f_employee == '':
+            matching_expenses = Expense.objects.values('employee__user__username', 'engagement__engagement_id',
+                                                       'engagement__engagement_srg_id',
+                                                       'engagement__parent__parent_name', 'engagement__provider',
+                                                       'engagement__provider__provider_name', 'engagement__time_code',
+                                                       'engagement__time_code__time_code_desc', 'engagement__fye',
+                                                       'expense_amount').filter(
+                date__gte=datetime.strptime(f_start_date.value(), "%Y-%m-%d"),
+                date__lte=datetime.strptime(f_end_date.value(), "%Y-%m-%d")).order_by('-date')
+        else:
+            matching_expenses = Expense.objects.values('employee__user__username', 'engagement__engagement_id',
+                                                       'engagement__engagement_srg_id',
+                                                       'engagement__parent__parent_name', 'engagement__provider',
+                                                       'engagement__provider__provider_name', 'engagement__time_code',
+                                                       'engagement__time_code__time_code_desc', 'engagement__fye',
+                                                       'expense_amount').filter(
+                date__gte=datetime.strptime(f_start_date.value(), "%Y-%m-%d"),
+                date__lte=datetime.strptime(f_end_date.value(), "%Y-%m-%d"),
+                employee=f_employee).order_by('-date')
 
         ts_data = read_frame(f.qs)
         ts_data['hours'] = pandas.to_numeric(ts_data['hours'], errors='coerce')
@@ -884,17 +898,27 @@ def getStaffToDoList(request, emp_id):
 
     emp_td_list = list(emp_td)
 
-    total_billable_hours = emp_td.exclude(engagement__type_id='N').filter(todo_date__gte=week_beg, todo_date__lte=week_end).aggregate(total_billable_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()))
-    total_non_billable_hours = emp_td.filter(engagement__type_id='N', todo_date__gte=week_beg, todo_date__lte=week_end).aggregate(total_non_billable_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()))
-    total_hours = emp_td.filter(todo_date__gte=week_beg, todo_date__lte=week_end).aggregate(total_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()))
+    total_billable_hours = emp_td.exclude(engagement__type_id='N').filter(todo_date__gte=week_beg,
+                                                                          todo_date__lte=week_end).aggregate(
+        total_billable_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()))
+    total_non_billable_hours = emp_td.filter(engagement__type_id='N', todo_date__gte=week_beg,
+                                             todo_date__lte=week_end).aggregate(
+        total_non_billable_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()))
+    total_hours = emp_td.filter(todo_date__gte=week_beg, todo_date__lte=week_end).aggregate(
+        total_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()))
     hours_avail = 40 - total_hours['total_hours_sum']
 
     next_week_beg = week_beg + timedelta(days=7)
     next_week_end = week_end + timedelta(days=7)
 
-    next_billable_hours = emp_td.exclude(engagement__type_id='N').filter(todo_date__gte=next_week_beg, todo_date__lte=next_week_end).aggregate(next_billable_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()))
-    next_non_billable_hours = emp_td.filter(engagement__type_id='N', todo_date__gte=next_week_beg, todo_date__lte=next_week_end).aggregate(next_non_billable_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()))
-    next_hours = emp_td.filter(todo_date__gte=next_week_beg, todo_date__lte=next_week_end).aggregate(next_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()))
+    next_billable_hours = emp_td.exclude(engagement__type_id='N').filter(todo_date__gte=next_week_beg,
+                                                                         todo_date__lte=next_week_end).aggregate(
+        next_billable_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()))
+    next_non_billable_hours = emp_td.filter(engagement__type_id='N', todo_date__gte=next_week_beg,
+                                            todo_date__lte=next_week_end).aggregate(
+        next_non_billable_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()))
+    next_hours = emp_td.filter(todo_date__gte=next_week_beg, todo_date__lte=next_week_end).aggregate(
+        next_hours_sum=Coalesce(Sum('anticipated_hours'), 0, output_field=DecimalField()))
     next_avail = 40 - next_hours['next_hours_sum']
 
     return JsonResponse({'emp_td_list': emp_td_list, 'today': today, 'week_beg': week_beg, 'week_end': week_end,
@@ -1038,7 +1062,7 @@ def AdminEmployeeDashboard(request, pk, per_beg, per_end):
                                                       'engagement__provider_id__provider_name',
                                                       'engagement__time_code',
                                                       'engagement__time_code__time_code_desc').filter(
-        employee_id = user_info.employee.employee_id).order_by('todo_date').annotate(
+        employee_id=user_info.employee.employee_id).order_by('todo_date').annotate(
         hsum=Sum('anticipated_hours'))
 
     employee_td_entries = employee_td_entries_all.filter(todo_date=today).order_by('todo_date')
