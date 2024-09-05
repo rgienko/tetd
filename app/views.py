@@ -358,7 +358,8 @@ def getCompilationData(mnth):
 
     srg_total_lost_revenue = vp_loss_rev + mgr_lost_rev + c_lost_rev
 
-    srg_billable_percentage = round((float(srg_total_billable_hours) / (billable_weeks * 40 * 21)) * 100, 0)
+    number_of_employees = Employee.objects.filter(is_billable=True).aggregate(Count('employee_id'))
+    srg_billable_percentage = round((float(srg_total_billable_hours) / (billable_weeks * 40 * number_of_employees['employee_id__count'])) * 100, 0)
 
     return vp_fixed_hours_by_employee, vp_hourly_hours_by_employee, vp_cgy_hours_by_employee, \
         vp_non_billable_hours_by_employee, vp_pto_hours_by_employee, vp_billable_hours_by_employee, \
@@ -2022,10 +2023,10 @@ def createEmployeeHoursCompilationReport(request, mnth):
         period_text = Paragraph('<para>' + str(period_date.strftime("%B")) + " " + str(period_date.year) + '</para>')
         period = period_date.month
         print(period)
-    vps = Employee.objects.filter(title='VP').values('employee_id', 'user__username').order_by('user__last_name')
-    smgrs = Employee.objects.filter(title='SM').values('employee_id', 'user__username').order_by('user__last_name')
-    mgrs = Employee.objects.filter(title='M').values('employee_id', 'user__username').order_by('user__last_name')
-    cs = Employee.objects.filter(Q(title='SC') | Q(title='C')).values('employee_id', 'user__username').order_by(
+    vps = Employee.objects.filter(title='VP', is_billable=True).values('employee_id', 'user__username').order_by('user__last_name')
+    smgrs = Employee.objects.filter(title='SM', is_billable=True).values('employee_id', 'user__username').order_by('user__last_name')
+    mgrs = Employee.objects.filter(title='M', is_billable=True).values('employee_id', 'user__username').order_by('user__last_name')
+    cs = Employee.objects.filter(Q(title='SC', is_billable=True) | Q(title='C')).values('employee_id', 'user__username').order_by(
         'user__last_name')
 
     tblStyleWithHeader = TableStyle([('BOX', (0, 0), (-1, -1), 1, colors.black),
@@ -2515,7 +2516,7 @@ def createEmployeeHoursCompilationReport(request, mnth):
                                     billable_weeks_blank_c3, billable_weeks_value, billable_weeks_blank_c4,
                                     billable_weeks_text2, billable_weeks_value2])
 
-    number_of_employees = Employee.objects.all().aggregate(total_employees=Count('employee_id'))
+    number_of_employees = Employee.objects.filter(is_billable=True).aggregate(total_employees=Count('employee_id'))
     total_billable_hours = billable_hours_per_month * number_of_employees['total_employees']
     srg_billable_percentage = round((compilationData[61] / total_billable_hours) * 100, 0)
 
