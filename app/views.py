@@ -343,18 +343,13 @@ def getCompilationData(mnth):
         amount=Coalesce(Sum('total_hours_sum'), 0, output_field=DecimalField(0.00)))
 
     # TOTAL HOURS ###
-    srg_total_fixed_hours = vp_total_fixed_hours['amount'] + mgr_total_fixed_hours['amount'] + c_total_fixed_hours[
-        'amount']
-    srg_total_hourly_hours = vp_total_hourly_hours['amount'] + mgr_total_hourly_hours['amount'] + c_total_hourly_hours[
-        'amount']
-    srg_total_cgy_hours = vp_total_cgy_hours['amount'] + mgr_total_cgy_hours['amount'] + c_total_cgy_hours['amount']
-    srg_total_non_billable_hours = vp_total_non_billable_hours['amount'] + mgr_total_non_billable_hours['amount'] + \
-                                   c_total_non_billable_hours['amount']
-    srg_total_pto_hours = vp_total_pto_hours['amount'] + mgr_total_pto_hours['amount'] + c_total_pto_hours['amount']
-    srg_total_billable_hours = vp_total_billable_hours['amount'] + mgr_total_billable_hours[
-        'amount'] + c_total_billable_hours['amount']
-    srg_total_hours = vp_total_hours['amount'] + mgr_total_hours['amount'] + c_total_hours[
-        'amount']
+    srg_total_fixed_hours = vp_total_fixed_hours['amount'] + smgr_total_fixed_hours['amount'] + mgr_total_fixed_hours['amount'] + c_total_fixed_hours['amount']
+    srg_total_hourly_hours = vp_total_hourly_hours['amount'] + smgr_total_hourly_hours['amount'] + mgr_total_hourly_hours['amount'] + c_total_hourly_hours['amount']
+    srg_total_cgy_hours = vp_total_cgy_hours['amount'] + smgr_total_cgy_hours ['amount'] + mgr_total_cgy_hours['amount'] + c_total_cgy_hours['amount']
+    srg_total_non_billable_hours = vp_total_non_billable_hours['amount'] + smgr_total_non_billable_hours['amount'] + mgr_total_non_billable_hours['amount'] + c_total_non_billable_hours['amount']
+    srg_total_pto_hours = vp_total_pto_hours['amount'] + smgr_total_pto_hours['amount'] + mgr_total_pto_hours['amount'] + c_total_pto_hours['amount']
+    srg_total_billable_hours = vp_total_billable_hours['amount'] + smgr_total_billable_hours['amount'] + mgr_total_billable_hours['amount'] + c_total_billable_hours['amount']
+    srg_total_hours = vp_total_hours['amount'] + smgr_total_hours['amount'] + mgr_total_hours['amount'] + c_total_hours['amount']
 
     vp_loss_rev = vp_total_non_billable_hours['amount'] * 300
     smgr_lost_rev = smgr_total_non_billable_hours['amount'] * 250
