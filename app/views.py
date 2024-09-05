@@ -795,20 +795,22 @@ def AdminTimesheet(request):
 
     if request.method == 'GET' and 'extract_button' in request.GET:
         if f_employee == '':
-            matching_expenses = Expense.objects.values('employee__user__username', 'engagement__engagement_id',
+            matching_expenses = Expense.objects.values('date','employee__user__username', 'engagement__engagement_id',
                                                        'engagement__engagement_srg_id',
                                                        'engagement__parent__parent_name', 'engagement__provider',
                                                        'engagement__provider__provider_name', 'engagement__time_code',
                                                        'engagement__time_code__time_code_desc', 'engagement__fye',
+                                                       'expense_category',
                                                        'expense_amount').filter(
                 date__gte=datetime.strptime(f_start_date.value(), "%Y-%m-%d"),
                 date__lte=datetime.strptime(f_end_date.value(), "%Y-%m-%d")).order_by('-date')
         else:
-            matching_expenses = Expense.objects.values('employee__user__username', 'engagement__engagement_id',
+            matching_expenses = Expense.objects.values('date','employee__user__username', 'engagement__engagement_id',
                                                        'engagement__engagement_srg_id',
                                                        'engagement__parent__parent_name', 'engagement__provider',
                                                        'engagement__provider__provider_name', 'engagement__time_code',
                                                        'engagement__time_code__time_code_desc', 'engagement__fye',
+                                                       'expense_category',
                                                        'expense_amount').filter(
                 date__gte=datetime.strptime(f_start_date.value(), "%Y-%m-%d"),
                 date__lte=datetime.strptime(f_end_date.value(), "%Y-%m-%d"),
