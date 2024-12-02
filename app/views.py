@@ -351,10 +351,16 @@ def getCompilationData(mnth):
     srg_total_billable_hours = vp_total_billable_hours['amount'] + smgr_total_billable_hours['amount'] + mgr_total_billable_hours['amount'] + c_total_billable_hours['amount']
     srg_total_hours = vp_total_hours['amount'] + smgr_total_hours['amount'] + mgr_total_hours['amount'] + c_total_hours['amount']
 
-    vp_loss_rev = vp_total_non_billable_hours['amount'] * 300
-    smgr_lost_rev = smgr_total_non_billable_hours['amount'] * 250
-    mgr_lost_rev = mgr_total_non_billable_hours['amount'] * 225
-    c_lost_rev = c_total_non_billable_hours['amount'] * 200
+    vp_rate = get_object_or_404(EmployeeTitles, pk='VP')
+    smgr_rate = get_object_or_404(EmployeeTitles, pk='SM')
+    mgr_rate = get_object_or_404(EmployeeTitles, pk='M')
+    c_rate = get_object_or_404(EmployeeTitles, pk='C')
+
+
+    vp_loss_rev = vp_total_non_billable_hours['amount'] * vp_rate.rate
+    smgr_lost_rev = smgr_total_non_billable_hours['amount'] * smgr_rate.rate
+    mgr_lost_rev = mgr_total_non_billable_hours['amount'] * mgr_rate.rate
+    c_lost_rev = c_total_non_billable_hours['amount'] * c_rate.rate
 
     srg_total_lost_revenue = vp_loss_rev + smgr_lost_rev + mgr_lost_rev + c_lost_rev
 
@@ -2452,26 +2458,31 @@ def createEmployeeHoursCompilationReport(request, mnth):
          total_billable_total, total_total_total, total_percent_billable_total])
 
     # ##################################### METRICS CREATION #####################################################
-    vp_loss_rev = round(300 * compilationData[10]['amount'], 0)
-    smgr_lost_rev = round(250 * compilationData[23]['amount'], 0)
-    mgr_lost_rev = round(225 * compilationData[38]['amount'], 0)
-    c_lost_rev = round(200 * compilationData[52]['amount'], 0)
+    vp_rate = get_object_or_404(EmployeeTitles, pk='VP')
+    smgr_rate = get_object_or_404(EmployeeTitles, pk='SM')
+    mgr_rate = get_object_or_404(EmployeeTitles, pk='M')
+    c_rate = get_object_or_404(EmployeeTitles, pk='C')
+
+    vp_loss_rev = round(vp_rate.rate * compilationData[10]['amount'], 0)
+    smgr_lost_rev = round(smgr_rate.rate * compilationData[24]['amount'], 0)
+    mgr_lost_rev = round(mgr_rate.rate * compilationData[38]['amount'], 0)
+    c_lost_rev = round(c_rate.rate * compilationData[52]['amount'], 0)
     srg_total_lost_revenue = round(vp_loss_rev + smgr_lost_rev + mgr_lost_rev + c_lost_rev, 0)
 
     vp_metric_row_data = []
     vp_nb_text = Paragraph('<para>VP Non-Billable</para>')
     vp_nb_hours = Paragraph('<para align=center>' + str(compilationData[10]['amount']) + '</para>')
     vp_x_text = Paragraph('<para align=center>X</para>')
-    vp_rate_text = Paragraph('<para align=center>$300</para>')
+    vp_rate_text = Paragraph('<para align=center>$' + str(vp_rate.rate) + '</para>')
     vp_loss_rev_text = Paragraph('<para align=center>$' + str('{:,}'.format(vp_loss_rev)) + '</para>')
 
     vp_metric_row_data.append([vp_nb_text, vp_nb_hours, vp_x_text, vp_rate_text, vp_loss_rev_text])
 
     smgr_metric_row_data = []
     smgr_nb_text = Paragraph('<para>Senior Mgr. Non-Billable</para>')
-    smgr_nb_hours = Paragraph('<para align=center>' + str(compilationData[23]['amount']) + '</para>')
+    smgr_nb_hours = Paragraph('<para align=center>' + str(compilationData[24]['amount']) + '</para>')
     smgr_x_text = Paragraph('<para align=center>X</para>')
-    smgr_rate_text = Paragraph('<para align=center>$250</para>')
+    smgr_rate_text = Paragraph('<para align=center>$' + str(smgr_rate.rate) + '</para>')
     smgr_lost_rev_text = Paragraph('<para align=center>$' + str('{:,}'.format(smgr_lost_rev)) + '</para>')
 
     smgr_metric_row_data.append([smgr_nb_text, smgr_nb_hours, smgr_x_text, smgr_rate_text, smgr_lost_rev_text])
@@ -2480,7 +2491,7 @@ def createEmployeeHoursCompilationReport(request, mnth):
     mgr_nb_text = Paragraph('<para>Manager Non-Billable</para>')
     mgr_nb_hours = Paragraph('<para align=center>' + str(compilationData[38]['amount']) + '</para>')
     mgr_x_text = Paragraph('<para align=center>X</para>')
-    mgr_rate_text = Paragraph('<para align=center>$225</para>')
+    mgr_rate_text = Paragraph('<para align=center>$' + str(mgr_rate.rate) + '</para>')
     mgr_lost_rev_text = Paragraph('<para align=center>$' + str('{:,}'.format(mgr_lost_rev)) + '</para>')
 
     mgr_metric_row_data.append([mgr_nb_text, mgr_nb_hours, mgr_x_text, mgr_rate_text, mgr_lost_rev_text])
@@ -2489,7 +2500,7 @@ def createEmployeeHoursCompilationReport(request, mnth):
     c_nb_text = Paragraph('<para>Consultant Non-Billable</para>')
     c_nb_hours = Paragraph('<para align=center>' + str(compilationData[52]['amount']) + '</para>')
     c_x_text = Paragraph('<para align=center>X</para>')
-    c_rate_text = Paragraph('<para align=center>$200</para>')
+    c_rate_text = Paragraph('<para align=center>$' + str(c_rate.rate) + '</para>')
     c_lost_rev_text = Paragraph('<para align=center>$' + str('{:,}'.format(c_lost_rev)) + '</para>')
 
     c_metric_row_data.append([c_nb_text, c_nb_hours, c_x_text, c_rate_text, c_lost_rev_text])
@@ -2573,27 +2584,27 @@ def createEmployeeHoursCompilationReport(request, mnth):
     total_total_row.setStyle(total_row_style)
 
     vp_metric_row = Table(vp_metric_row_data,
-                          colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm],
+                          colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 2 * cm],
                           hAlign='LEFT')
     vp_metric_row.setStyle(tblStyle)
 
     smgr_metric_row = Table(smgr_metric_row_data,
-                            colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm],
+                            colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 2 * cm],
                             hAlign='LEFT')
     smgr_metric_row.setStyle(tblStyle)
 
     mgr_metric_row = Table(mgr_metric_row_data,
-                           colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm],
+                           colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 2 * cm],
                            hAlign='LEFT')
     mgr_metric_row.setStyle(tblStyle)
 
     c_metric_row = Table(c_metric_row_data,
-                         colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm],
+                         colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 2 * cm],
                          hAlign='LEFT')
     c_metric_row.setStyle(tblStyle)
 
     total_metric_row = Table(total_metric_row_data,
-                             colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm],
+                             colWidths=[4.5 * cm, 1.75 * cm, 1.75 * cm, 1.75 * cm, 2 * cm],
                              hAlign='LEFT')
     total_metric_row.setStyle(tblStyle)
 
