@@ -166,6 +166,8 @@ def dashboard(request):
 def getCompilationData(mnth):
     number_of_workdays = 0
     billable_weeks = 0
+    useless_var = number_of_workdays + billable_weeks
+    useless_var_two = number_of_workdays + billable_weeks
     if mnth == 'YTD':
         current_year = datetime.now().year
         ytd_hours_by_employee = Time.objects.filter(employee__is_billable=True, ts_date__year=current_year).values(
