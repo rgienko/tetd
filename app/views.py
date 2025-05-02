@@ -27,7 +27,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django_pandas.io import read_frame
 from reportlab.lib import colors
-from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT
+from reportlab.lib.enums import TA_JUSTIFY, TA_LEFT 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import cm
@@ -886,6 +886,68 @@ def getStaffNotInTodoList(per_beg, per_end):
 
     return data_none
 
+def getSaturdaysBetweenDates(per_beg, per_end):
+    """
+    Generate a lit of all Saturdays between per_beg and per_end
+    """
+    saturdays = []
+    current_date = per_beg
+
+    # find the first Saturday after or ont he per_beg
+    while current_date.weekday() != 5:
+        current_date += timedelta(days=1)
+
+    # Add all Saturdays until the end_date
+    while current_date <= per_end:
+        saturdays.append(current_date)
+        current_date += timedelta(days=7)
+
+    return saturdays
+
+def AdminTimesheetReview(request):
+    user_info = get_object_or_404(User, pk=request.user.id)
+    employee_info = get_object_or_404(Employee, user=user_info.id)
+    today = date.today()
+    week_beg = today - timedelta(days=today.weekday())
+    week_end = week_beg + timedelta(days=5)
+    employees = Employee.objects.filter(is_billable=True).order_by('user').select_related('user')
+
+    # Define the range for the periods
+    today = date.today()
+    start_of_year = today.replace(month=1, day=1)
+
+    # Generate List of Periods
+    periods = getSaturdaysBetweenDates(start_of_year, today)
+
+    # Fetch data from Time model
+    employee_ts_submission_data = Time.objects.filter(ts_period__in=periods).select_related('employee')
+
+    # Organize data as a dictionary for efficient lookup
+    time_lookup = {}
+    for entry in employee_ts_submission_data:
+        time_lookup[(entry.employee.user.username, entry.ts_period)] = entry.submitted_on
+
+    preprocessed_data = {}
+    for emp in employees:
+        preprocessed_data[emp.user.username] = []
+        for period in periods:
+            exists = (emp.user.username, period) in time_lookup
+            preprocessed_data[emp.user.username].append({
+                'period': period,
+                'exists': exists,
+                'value': time_lookup.get((emp.user.username, period), "-")
+            })
+
+
+    lookup_set = set((entry.employee_id, entry.ts_period) for entry in employee_ts_submission_data)
+    print(time_lookup)
+    print(preprocessed_data)
+
+    context = {'user_info': user_info, 'employee_info': employee_info, 'today': today, 'week_beg': week_beg,
+               'week_end': week_end, 'employees': employees, 'periods': periods, 'time_lookup': time_lookup,
+               'lookup_set': lookup_set, 'page_title': 'Timesheet Review', 'preprocessed_data': preprocessed_data}
+
+    return render(request, 'adminTimesheetReview.html', context)
 
 def getStaffToDoList(request, emp_id):
     emp = get_object_or_404(Employee, pk=emp_id)
@@ -1191,6 +1253,9 @@ def EmployeeTimesheetReview(request):
     editExpForm = EditExpenseForm()
     if request.method == 'POST':
         if 'submit_button' in request.POST:
+            for entry in employee_ts_entries:
+                    entry.submitted_on = today
+                    entry.save()
             employee_instance = get_object_or_404(Employee, user=request.user.id)
             employee_instance.ts_is_submitted = True
             employee_instance.save()
@@ -1206,6 +1271,7 @@ def EmployeeTimesheetReview(request):
                 new_entry = time_form.save(commit=False)
                 new_entry.employee_id = employee_instance.employee_id
                 new_entry.engagement = engagement_instance
+                new_entry.ts_period = last_week_end
                 new_entry.save()
 
                 if engagement_instance.alert:
@@ -1298,6 +1364,7 @@ def EmployeeTimesheet(request):
     if request.method == 'POST':
         if 'time_button' in request.POST:
             time_form = TimeForm(request.POST, initial={'ts_date': today})
+            print("TIME BUTTON PRESSED")
             if time_form.is_valid():
                 engagement_id = request.POST.get('engagement-input')
                 engagement_instance = get_object_or_404(Engagement, engagement_srg_id=engagement_id)
@@ -1307,6 +1374,7 @@ def EmployeeTimesheet(request):
                 new_entry = time_form.save(commit=False)
                 new_entry.employee_id = employee_instance.employee_id
                 new_entry.engagement = engagement_instance
+                new_entry.ts_period = week_end
                 new_entry.save()
 
                 if engagement_instance.alert:
@@ -1318,6 +1386,8 @@ def EmployeeTimesheet(request):
                         overBudgetAlert(engagement_instance.engagement_id)
 
                 return redirect('employee-timesheet')
+            else:
+                print("Form Errors:", time_form.errors)
         elif 'expense_button' in request.POST:
             expense_form = ExpenseForm(request.POST, initial={'ts_date': today})
             if expense_form.is_valid():
@@ -1477,6 +1547,28 @@ def EmployeeExpense(request):
                'page_title': 'Expense Report', 'today': today, 'filter': f, 'qs_expense_total': qs_expense_total}
 
     return render(request, 'employeeExpense.html', context)
+
+
+def CheckDateRange(request, beg_range, end_range):
+    if request.method == 'POST':
+        ts_date = request.POST.get('ts_date')
+        print(ts_date)
+        if not ts_date:
+            return JsonResponse({'error': 'No date selected.'}, status=400)
+
+        try:
+            ts_date_obj = datetime.strptime(ts_date, "%Y-%m-%d")
+            beg_range_obj = datetime.strptime(beg_range, "%Y-%m-%d")
+            end_range_obj = datetime.strptime(end_range, "%Y-%m-%d")
+
+            if ts_date_obj < beg_range_obj or ts_date_obj > end_range_obj:
+                return JsonResponse({'show_modal': True, 'message': 'Date is out of range, please confirm'})
+            else:
+                return JsonResponse({'show_modal': False})
+        except ValueError:
+            return JsonResponse({'error': 'Invalid date format.'}, status=400)
+
+    return JsonResponse({'error': 'Invalid request method.'}, status=405)
 
 
 def ExtractEngagementTimesheet(request, pk):

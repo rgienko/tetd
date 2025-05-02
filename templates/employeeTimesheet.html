@@ -2,19 +2,26 @@
 {% load humanize %}
 
 {% block content %}
-    <div id="loading-screen">
-        <div class="">
-            <div class="spinner"></div><br>
-            <p>Loading...</p>
-        </div>
-
-    </div>
     <div class="row">
         <div class="col-xxl-5 col-xl-6 col-lg-5 col-md-12 col-sm-12 col-12">
             <div class="card vh-100 flex-shrink-1">
                 <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center">
                     <span class="display-6 fs-3">My Engagements</span>
                     <input class="search-box" type="text" id="searchBar" onkeyup="searchClients()" placeholder="Search for engagements.." title="Type in a name">
+                    <div class="dropped-down">
+                        <button class="srg-btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <svg class="bi"><use xlink:href="#filter"/></svg>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li class="p-2">
+                                <label for="timeCodeFilter">Filter By Time Code:</label>
+                                <select id="timeCodeFilter" class="form-select" onchange="filterTableByTimeCode()">
+                                    <option value="all">Show All</option>
+                                    <!--Dropdown options will be dynamically filled -->
+                                </select>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
 
                 <div class="card-body px-2 py-2 overflow-auto">
@@ -32,7 +39,8 @@
                             {% for engagement in user_engagements %}
                                 <tr>
                                     <td>{{ forloop.counter }}</td>
-                                    <td>{{ engagement.provider }}</td>
+                                    <td><span class="fw-semibold">{{ engagement.provider }}</span> <br>
+                                        <span class="fst-italic">{{ engagement.parent}}</span></td>
                                     <td>{{ engagement.time_code }}</td>
                                     <td>{{ engagement.fye|date:'m/d/Y' }}</td>
                                     <td class="">
@@ -60,8 +68,11 @@
                                     Record Time
                                 </div>
                                 <div class="modal-body">
-                                    <form class="" method="POST">
+                                    <form class="" method="POST" id="timeForm" action="{% url 'employee-timesheet' %}">
                                         {% csrf_token %}
+                                            <!-- Add the time_button as a hidden field -->
+                                            <input type="hidden" name="time_button" value="true">
+
                                             <label for="my-input">Engagement:</label><br>
                                             <input name="engagement-input" type="text" id="my-input" /><br>
                                         {% for field in time_form %}
@@ -73,8 +84,25 @@
                                             </div>
 
                                         {% endfor %}
-                                        <button name="time_button" class="srg-btn-primary my-2">Record Time</button>
+                                        <button name="time_button" id="time_button" type="submit" class="srg-btn-primary my-2">Record Time</button>
                                     </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal fade" id="confirm-date-modal" tabindex="-1" aria-labelledby="confirm-date-modal" aria-hidden="true">
+                        <div class="modal-dialog" id="modal">
+                            <div class="modal-content">
+                                <div class="modal-header srg-bg-success text-light fs-5">
+                                    Confirm Date
+                                </div>
+                                <div class="modal-body">
+                                    The provided date is out of the allowed range. Do you want to proceed?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn srg-bg-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="button" id="confirmSubmit" class="btn srg-btn-primary">Confirm</button>
                                 </div>
                             </div>
                         </div>
@@ -87,7 +115,7 @@
                                     Record Expense
                                 </div>
                                 <div class="modal-body">
-                                    <form class="" method="POST">
+                                    <form class="" method="POST" id="expenseForm" action="{% url 'employee-timesheet' %}">
                                         {% csrf_token %}
                                             <label for="my-input">Engagement:</label><br>
                                             <input name="expense-input" type="text" id="my-input" /><br>
@@ -100,7 +128,7 @@
                                             </div>
 
                                         {% endfor %}
-                                        <button name="expense_button" class="srg-btn-success my-2">Record Expense</button>
+                                        <button name="expense_button" id="expense_button" type="submit" class="srg-btn-success my-2">Record Expense</button>
                                     </form>
                                 </div>
                             </div>
@@ -175,7 +203,7 @@
                                                                     {% endif %}
                                                                 </td>
                                                                 <td class="text-center">
-                                                                    <a type="button" class="srg-link edit-button" data-bs-toggle="modal" href="#edit-modal" data-bs-placement="#" data-engagement-id="{{ entry.engagement_id }}" data-ts-id="{{ entry.timesheet_id }}">
+                                                                    <a type="button" class="srg-link edit-time-entry-button" data-bs-toggle="modal" href="#edit-modal" data-bs-placement="#" data-engagement-id="{{ entry.engagement_id }}" data-ts-id="{{ entry.timesheet_id }}">
                                                                       <i class="bi bi-pencil-square"></i>
                                                                     </a>
 
@@ -211,6 +239,7 @@
                             </div>
                         </div>
                     {% endfor %}
+
                         <div class="modal fade" id="edit-modal" tabindex="-1" aria-labelledby="edit-modal" aria-hidden="true">
                             <div class="modal-dialog" id="modal">
                                 <div class="modal-content">
@@ -296,121 +325,122 @@
         </div>
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
-    <script>
-        $(document).ready(function () {
-            // Handle "Edit" button clicks
-            $('.edit-button').click(function () {
-                let tsID = $(this).data('ts-id');
-                let editTsForm = $('#editTimeForm');
-
-                // Fetch details using AJAX
-                $.ajax({
-                    url: '/get_ts/' + tsID + '/',
-                    type: 'GET',
-                    success: function (data) {
-                        //Populate from fields with task details
-                        editTsForm.find('#ts-id').val(tsID)
-                        editTsForm.find('#id_engagement').val(data.engagement)
-                        editTsForm.find('#id_ts_date').val(data.ts_date)
-                        editTsForm.find('#id_hours').val(data.hours)
-                        editTsForm.find('#id_time_type_id').val(data.btype)
-                        editTsForm.find('#id_note').val(data.note)
-                    }
-                })
-            })
-        })
-    </script>
-    
-    <script>
-        const editExpenseModal = document.getElementById('edit-expense-modal');
-        editExpenseModal.addEventListener('show.bs.modal', event => {
-                let expID = $(event.relatedTarget).data("exp-id");
-                let editExpForm = $('#editExpForm')
-                console.log(expID)
-
-                // Fetch details using AJAX
-                $.ajax({
-                    url: '/get_expense/' + expID + '/',
-                    type: 'GET',
-                    success: function (data) {
-                        //Populate From fields with task details
-                        editExpForm.find('#exp-id').val(expID)
-                        editExpForm.find('#id_date').val(data.expense_date)
-                        editExpForm.find('#id_engagement').val(data.engagement)
-                        editExpForm.find('#id_expense_category').val(data.category)
-                        editExpForm.find('#id_expense_amount').val(data.expense_amount)
-                        editExpForm.find('#id_time_type_id').val(data.btype)
-                        editExpForm.find('#id_expense_note').val(data.note)
-                    }
-                })
-            })
-    </script>
 
     <script>
-        const myModal = document.getElementById('time-modal')
-        myModal.addEventListener('show.bs.modal', event => {
-            //get data-id attribute of clicked event
-            let engagementID = $(event.relatedTarget).data("engagement-id")
-            //populate the input field
-            $(event.currentTarget).find('input[name="engagement-input"]').val(engagementID)
-        });
+    //Populate the dropdown with unique 'parent' values from the table
+    document.addEventListener('DOMContentLoaded', () => {
+        const table = document.getElementById('engagement-table');
+        const rows = table.getElementsByTagName('tr');
+        const dropdown = document.getElementById('timeCodeFilter');
+        const timeCodeSet = new Set();
 
-        const expenseModal = document.getElementById('expense-modal')
-        expenseModal.addEventListener('show.bs.modal', event => {
-            let engagementID = $(event.relatedTarget).data("engagement-id")
-            $(event.currentTarget).find('input[name="expense-input"]').val(engagementID)
-        })
-    </script>
-
-
-
-    <script>
-        const expenseDayModal = document.getElementById('view-expense-modal');
-
-        expenseDayModal.addEventListener('hidden.bs.modal', event=> {
-            let expenseTableBody = document.querySelector("#expense-table tbody")
-            while (expenseTableBody.firstChild) {
-                expenseTableBody.removeChild(expenseTableBody.firstChild)
+        // Loop through the rows to find Parent values
+        for (let i = 1; i < rows.length; i++) { // Skip header row
+            const cells = rows[i].getElementsByTagName('td');
+            const timeCode = cells[2]?.textContent.trim();
+            if (timeCode) {
+                timeCodeSet.add(timeCode);
             }
-        })
+        }
 
-        expenseDayModal.addEventListener('show.bs.modal', event=> {
-            let dte = $(event.relatedTarget).data("dt")
-            let tableBody = document.querySelector("#expense-table tbody")
-            document.getElementById('expense-day-text').innerText = dte
+        const sortedTimeCodeSet = Array.from(timeCodeSet).sort();
 
-            $.ajax({
-                url:'/get_expense_list/' + dte + '/',
-                type: 'GET',
-                success: function (expenseDayList) {
-                    expenseDayList.forEach(item => {
-                        let row = document.createElement('tr')
-                        let expenseID = item.expense_id
-                        let url = `/delete-expense-current/${item.expense_id}/`
-                        row.innerHTML = `
-                                        <td>${item.engagement__provider} - ${item.engagement__provider__provider_name}</td>
-                                        <td>${item.engagement__time_code} - ${item.engagement__time_code__time_code_desc }</td>
-                                        <td>${item.expense_category__expense_category}</td>
-                                        <td>${item.expense_amount}</td>
-                                        <td>${item.time_type_id}</td>
-                                        <td class="text-center">
-                                                        <a type="button" class="srg-link edit-expense-button" data-bs-toggle="modal" href="#edit-expense-modal" data-exp-id="${expenseID}">
-                                                          <i class="bi bi-pencil-square"></i>
-                                                        </a>
+        // Add options to the dropdown
+        sortedTimeCodeSet.forEach(parent => {
+            const option = document.createElement('option');
+            option.value = parent;
+            option.textContent = parent;
+            dropdown.appendChild(option);
+        });
+    });
 
-                                                        <a type="button" class="srg-link-danger" href="${url}">
-                                                          <i class="bi bi-trash3"></i>
-                                                        </a>
-                                                    </td>
-                                        `
-                        tableBody.appendChild(row)
-                    })
-                }
-            })
-        })
+    // Filter table by selected parent from dropdown
+    function filterTableByTimeCode() {
+        const filterValue = document.getElementById('timeCodeFilter').value;
+        const table = document.getElementById('engagement-table');
+        const rows = table.getElementsByTagName('tr');
+
+        // Loop through rows and toggle visibility
+        for (let i =1; i < rows.length; i++) {
+            const cells = rows[i].getElementsByTagName('td');
+            const timeCode = cells[2]?.textContent.trim();
+
+            if (filterValue === 'all' || timeCode === filterValue) {
+                rows[i].style.display = '';
+            } else {
+                rows[i].style.display = 'none';
+            }
+        }
+    }
+
 
     </script>
+
+
+
+    <script data-rangebeg="{{ week_beg }}" data-rangeend="{{ week_end }}">
+        let data = document.currentScript.dataset;
+        let range_beg = data.rangebeg;
+        range_beg = new Date(range_beg)
+        range_beg = range_beg.toISOString().split('T')[0]
+        let range_end = data.rangeend;
+        range_end = new Date(range_end)
+        range_end = range_end.toISOString().split('T')[0]
+
+
+        $(document).ready(function () {
+            let manualSubmit = false;
+
+            $('#timeForm').submit(function (e) {
+                if (!manualSubmit) {
+                    e.preventDefault();
+                    let ts_date = $('#id_ts_date').val();
+
+                    let new_entry = $(this).serialize();
+                    let csrfToken = '{{ csrf_token }}';
+
+                    // AJAX Post Request
+                    $.ajax({
+                        url: '/check-date-range/' + range_beg + '/' + range_end + '/', // replace with my url
+                        method: 'POST',
+                        data: {
+                            ts_date: ts_date,
+                            new_entry: new_entry,
+                            time_button: true,
+                            csrfmiddlewaretoken: csrfToken // Include the CSRF token in the request
+                        },
+                        success: function (response) {
+                            if (response.show_modal) {
+                                $('#confirm-date-modal').modal('show');
+                            } else {
+                                manualSubmit = true;
+                                $('#timeForm')[0].submit();
+                                // $('#timeForm').off('submit').submit();
+                            }
+                        },
+                        error: function (xhr) {
+                            alert('An error occurred: ' + xhr.responseText);
+                        }
+                    });
+                } else {
+                    manualSubmit = false;
+                }
+            });
+
+            // Confirm button inside the modal to submit the form if the user confirms submission
+            $('#confirmSubmit').click(function () {
+                $('#confirm-date-modal').modal('hide'); // Hide modal before submission
+                manualSubmit = true; // Set flag to true
+                $('#timeForm')[0].submit(); // Manually submit form when clicking Confirm
+            });
+        })
+    </script>
+
+
+
+
     <script>
+
     function sumTableColumn() {
         let expense_day_total = 0
         let table = document.getElementById('expense-table')
@@ -420,33 +450,6 @@
         return expense_day_total;
     }
     </script>
-    <script>
-        function searchClients() {
-            let input, filter, table, rows, i, j, td, txtValue;
-            input = document.getElementById('searchBar')
-            filter = input.value.toUpperCase();
-            table = document.getElementById('engagement-table');
-            rows = table.getElementsByTagName("tr");
-
-            for (i = 1; i < rows.length; i++) {
-                let tds = rows[i].getElementsByTagName("td");
-                let rowContainsFilter = false;
-
-                for (j = 0; j < tds.length; j++) {
-                    td = tds[j];
-                    if (td) {
-                        txtValue = td.textContent || td.innerText;
-                        if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                            rowContainsFilter = true;
-                            break;  // no need to check other TDs, so break the loop
-                        }
-                    }
-                }
-
-                rows[i].style.display = rowContainsFilter ? "" : "none";
-            }
-        }
-    </script>
 
         <script>
           // Initialize the popover
@@ -455,23 +458,6 @@
           });
         </script>
 
-        <script>
-            // Hide the spinner when the page is fully loaded
-            window.onload = function () {
-              // Hide the loading screen when the entire page is loaded
-                const loadingScreen = document.getElementById("loading-screen");
-                loadingScreen.style.display = "none";
-                const scrollToElement = document.getElementById("today");
-
-                if (scrollToElement) {
-                   scrollToElement.scrollIntoView({
-                       behavior: "smooth",
-                       block: "start"
-                   })
-                }
-            };
-
-        </script>
 
         <script>
             // Hide the spinner when the page is fully loaded

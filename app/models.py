@@ -159,6 +159,8 @@ class Time(models.Model):
     hours = models.DecimalField(max_digits=4, decimal_places=2)
     time_type_id = models.ForeignKey(TimeType, on_delete=models.CASCADE, default='B')
     note = models.TextField(max_length=500, null=True, blank=True)
+    ts_period = models.DateField(blank=True, null=True)
+    submitted_on = models.DateField(blank=True, null=True)
     # add period_end filed to determine which TS period the entry applies to
     # this field will be calculated at the model level or at time entry submission
 

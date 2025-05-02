@@ -296,6 +296,12 @@
           <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71z"/>
           <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16m7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0"/>
         </symbol>
+        <symbol id="filter" viewBox="0 0 16 16">
+            <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5zm1 .5v1.308l4.372 4.858A.5.5 0 0 1 7 8.5v5.306l2-.666V8.5a.5.5 0 0 1 .128-.334L13.5 3.308V2z"/>
+        </symbol>
+        <symbol id="review" viewBox="0 0 16 16">
+            <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm15 2h-4v3h4zm0 4h-4v3h4zm0 4h-4v3h3a1 1 0 0 0 1-1zm-5 3v-3H6v3zm-5 0v-3H1v2a1 1 0 0 0 1 1zm-4-4h4V8H1zm0-4h4V4H1zm5-3v3h4V4zm4 4H6v3h4z"/>
+        </symbol>
     </svg>
 
     <div class="container-fluid ">
@@ -385,6 +391,14 @@
                                         Productivity Report
                                     </a>
                                 </li>
+                                <!--
+                                <li class="nav-item">
+                                    <a class="nav-link d-flex align-items-center gap-2" href="{% url 'admin-timesheet-review' %}">
+                                        <svg class="bi"><use xlink:href="#review"/></svg>
+                                        Review Timesheet
+                                    </a>
+                                </li>
+                                -->
                                 <li class="nav-item">
                                     <a class="nav-link d-flex align-items-center gap-2" href="{% url 'engagement-dashboard' %}">
                                         <svg class="bi"><use xlink:href="#file-earmark-text"/></svg>
@@ -457,7 +471,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
 
-
+    <script src="{% static 'js/scripts.js' %}"></script>
 
     <script type="text/javascript">
         $(function() {

@@ -20,6 +20,8 @@ from app import views
 from django.conf import settings
 from django.conf.urls.static import static
 
+from app.views import CheckDateRange
+
 urlpatterns = [
     path('', views.login, name='login'),
     path('logout', views.logout_view, name='logout'),
@@ -36,6 +38,7 @@ urlpatterns = [
     path('engagement-detail/<pk>/', views.AdminEngagementDetail, name='engagement-detail'),
     path('admin-assignments/', views.AdminAssignments, name='admin-assignments'),
     path('admin-timesheet/', views.AdminTimesheet, name='admin-timesheet'),
+    path('admin-timesheet-review', views.AdminTimesheetReview, name='admin-timesheet-review'),
     path('admin-planning/', views.AdminPlanning, name='admin-planning'),
     path('admin-employee-dashboard/<pk>/<per_beg>/<per_end>/', views.AdminEmployeeDashboard, name='admin-employee-dashboard'),
     path('assign/<pk>', views.AssignmentProjects, name='admin-assign'),
@@ -68,6 +71,7 @@ urlpatterns = [
     path('delete-expense-current/<pk>/', views.CurDeleteExpenseEntry, name='cur-delete-expense-entry'),
     path('get_expense_list/<dte>/', views.GetExpenseDayList, name='get-expense-day-list'),
     path('bulk-add-assignments/<eng>/<emp>/', views.BulkAddAssignment, name='bulk-add-assignments'),
+    path('check-date-range/<beg_range>/<end_range>/', views.CheckDateRange, name='check-date-range'),
     path('admin/', admin.site.urls),
     path('forgot_password/', views.ForgotPassword, name='forgot-password'),
     path('forogt_password_dne/<pk>/', views.ForgotPassDone, name='forgot-password-done'),

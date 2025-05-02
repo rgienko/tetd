@@ -5,9 +5,14 @@ from rest_framework import request
 
 from app.models import *
 from django import forms
-
+from django import template
 from app.widget import DatePickerInput
 
+register = template.Library()
+
+@register.filter
+def tuple_lookup(dictionary, key):
+    return dictionary.get(key, "-")
 
 class EngagementFilter(django_filters.FilterSet):
     fye = django_filters.DateFilter(field_name='fye', lookup_expr='exact', label='Fiscal Year',

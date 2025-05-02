@@ -1,0 +1,147 @@
+{% extends 'layoutV2.html' %}
+{% load mathfilters %}
+{% load humanize %}
+{% load custom_filters %}
+
+
+{% block content %}
+    <style>
+        @media print {
+            .print-bg-color-primary {
+                background-color: green;
+            }
+        }
+    </style>
+
+    <div id="loading-screen">
+        <div class="">
+            <div class="spinner"></div><br>
+            <p>Loading...</p>
+        </div>
+    </div>
+    <!--
+    <div class="row p-0">
+        <div class="col-12 srg-bg-primary px-4 py-2 shadow-sm d-flex flex-wrap justify-content-xl-between justify-content-md-start ">
+            <div class="col-lg-4 col-md-12">
+                <span class="srg-text-secondary display-6 fs-2 lh-base">Admin Dashboard</span>
+            </div>
+            <div class="col-lg-4 col-md-12 text-start">
+                <span class="srg-text-secondary display-6 fs-2 lh-base">{{ today|date:'l, F d, Y' }}</span>
+            </div>
+            <div class="col-lg-4 col-md-12 text-lg-end text-md-start">
+                <span class="srg-text-secondary display-6 fs-2 lh-base">Period: {{ week_beg|date:"m/d/y" }} - {{ week_end|date:"m/d/y" }}</span>
+            </div>
+        </div>
+    </div>
+    -->
+    <div class="container-fluid vh-100">
+        <div class="row d-flex justify-content-evenly p-0 vh-100">
+            <div class="card col-10 shadow-sm text-center p-0 vh-100 ">
+                <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center">
+                    <div class="text-start">
+                    <span class="display-6 fs-3 lh-4">Timesheet Submission Log</span><br>
+                    </div>
+                </div>
+                <div class="card-body overflow-auto">
+                    <table class="srg-table">
+                        <thead>
+                            <tr style="background-color:yellow;">
+                                <th style="background-color:yellow;">Employee</th>
+                                {% for period in periods %}
+                                    <th>{{ period|date:"M d, Y" }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for emp in employees %}
+                                <tr>
+                                    <td class="text-start">{{ emp.user.username }}</td>
+                                    {% for period_data in preprocessed_data.emp.user.username %}
+                                        <td>
+                                            {% if period_data.exists %}
+                                                {{ period_data.value }}
+                                            {% else %}
+                                                -
+                                            {% endif %}
+
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+
+                </div>
+            </div>
+
+        </div>
+
+
+        <script>
+            function getSaturdaysOfYear(year) {
+                const saturdays = [];
+                const date = new Date(year, 0, 1);
+
+                // Find the first Saturday of the year
+                while (date.getDay() !== 6) {
+                    date.setDate(date.getDate() + 1);
+                }
+
+                // Add the first Saturday to the array
+                saturdays.push(date);
+
+                // Find the rest of the Saturdays in the year
+                while (date.getFullYear() === year) {
+                    saturdays.push(new Date(date));
+                    date.setDate(date.getDate() + 7);
+                }
+                return saturdays;
+            }
+
+            function displaySaturdaysInColumns(saturdays) {
+                const saturdaysRow = document.getElementById("timesheet-table");
+
+                saturdays.forEach(saturday => {
+                    const cell = document.createElement('th');
+                    cell.textContent = saturday.toDateString();
+                    saturdaysRow.appendChild(cell);
+                });
+            }
+
+            // Get the current year
+            const currentYear = new Date().getFullYear();
+
+            // Generate a list of saturdays for the current year
+            const saturdays = getSaturdaysOfYear(currentYear);
+
+            // Display the saturdays in columns
+            displaySaturdaysInColumns(saturdays);
+        </script>
+
+        <script>
+            // Hide the spinner when the page is fully loaded
+            window.onload = function () {
+                  // Hide the loading screen when the entire page is loaded
+                const loadingScreen = document.getElementById("loading-screen");
+                loadingScreen.style.display = "none";
+                const scrollToElement = document.getElementById("today");
+
+                if (scrollToElement) {
+                   scrollToElement.scrollIntoView({
+                       behavior: "smooth",
+                       block: "start"
+                   })
+                }
+            };
+
+            </script>
+
+            <script>
+                // Hide the spinner when the page is fully loaded
+                window.addEventListener("beforeunload", function() {
+                    const spinner = document.getElementById("loading-screen");
+                    spinner.style.display = ""; // Change to "none" if you want it to hide initially
+                });
+        </script>
+    </div>
+{% endblock %}

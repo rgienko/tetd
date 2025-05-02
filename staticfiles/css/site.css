@@ -96,6 +96,16 @@
 
 }
 
+.details-row {
+    display: none; /* Initially hidden */
+    background-color: #fafafa;
+}
+
+.details-row.open {
+  display: table-row;
+}
+
+
 /* COLORS */
 .srg-bg-primary {
     background: #02308C

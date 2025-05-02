@@ -305,33 +305,7 @@
     </script>
 
 
-        <script>
-            function searchClients() {
-                let input, filter, table, rows, i, j, td, txtValue;
-                input = document.getElementById('searchBar')
-                filter = input.value.toUpperCase();
-                table = document.getElementById('engagement-table');
-                rows = table.getElementsByTagName("tr");
 
-                for (i = 1; i < rows.length; i++) {
-                    let tds = rows[i].getElementsByTagName("td");
-                    let rowContainsFilter = false;
-
-                    for (j = 0; j < tds.length; j++) {
-                        td = tds[j];
-                        if (td) {
-                            txtValue = td.textContent || td.innerText;
-                            if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                                rowContainsFilter = true;
-                                break;  // no need to check other TDs, so break the loop
-                            }
-                        }
-                    }
-
-                    rows[i].style.display = rowContainsFilter ? "" : "none";
-                }
-            }
-        </script>
 
         <script>
           // Initialize the popover
