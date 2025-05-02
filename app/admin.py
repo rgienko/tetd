@@ -10,6 +10,10 @@ admin.site.register(Provider)
 
 admin.site.register(ExpenseCategory)
 
+@admin.register(Assignments)
+class AssignmentsAdmin(admin.ModelAdmin):
+    list_display = ('assignment_id', 'engagement', 'employee')
+
 
 @admin.register(Time)
 class TimeAdmin(admin.ModelAdmin):

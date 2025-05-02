@@ -15,7 +15,7 @@
             <div class="card srg-border vh-100 overflow-auto">
                 <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center sticky-top">
                     <span class="display-6 fs-3 srg-text-secondary">Clients</span>
-                    <input class="search-box" type="text" id="searchBar" onkeyup="searchClients()" placeholder="Search for clients.." title="Type in a name">
+                    <input class="search-box" type="text" id="searchBar" onkeyup="searchClientsLocal()" placeholder="Search for clients.." title="Type in a name">
                     <a type="button" class="srg-link-secondary srg-text-secondary" data-bs-toggle="modal" data-bs-target="#createEngagementModal"><svg class="bi" height=""><use xlink:href="#plus"/></svg></a>
                 </div>
 
@@ -258,7 +258,7 @@
 
         <script>
 
-            function searchClients() {
+            function searchClientsLocal() {
                 // Declare Variables
                 let input, filter, ul, li, a, i, txtValue;
                 input = document.getElementById('searchBar')
