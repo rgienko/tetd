@@ -1209,12 +1209,13 @@ def EmployeeTimesheetReview(request):
     user_info = get_object_or_404(User, pk=request.user.id)
     ts_is_submitted = user_info.employee.ts_is_submitted
     today = date.today()
-    if today.weekday() == 5:
-        last_week_beg = today - timedelta(days=today.weekday())
+    print(today.weekday())
+    if today.weekday() == 4:
+        last_week_beg = today - timedelta(days=5)
         last_week_end = last_week_beg + timedelta(days=6)
-    elif today.weekday() == 6:
-        last_week_beg = today - timedelta(days=today.weekday()) - timedelta(days=1)
-        last_week_end = last_week_beg + timedelta(days=6)
+    elif today.weekday() == 5:
+        last_week_beg = today - timedelta(days=6)
+        last_week_end = today
     else:
         last_week_beg = today - timedelta(days=7) - timedelta(days=date.today().weekday()) - timedelta(days=1)
         last_week_end = last_week_beg + timedelta(days=6)
