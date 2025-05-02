@@ -32,7 +32,8 @@
                             {% for engagement in user_engagements %}
                                 <tr>
                                     <td>{{ forloop.counter }}</td>
-                                    <td>{{ engagement.provider }}</td>
+                                    <td><span class="fw-semibold">{{ engagement.provider }}</span> <br>
+                                        <span class="fst-italic">{{ engagement.parent}}</span></td>
                                     <td>{{ engagement.time_code }}</td>
                                     <td>{{ engagement.fye|date:'m/d/Y' }}</td>
                                     <td class="align-middle text-center">
