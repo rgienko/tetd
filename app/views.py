@@ -1,4 +1,5 @@
 import datetime
+import json
 import os
 import time
 from datetime import timedelta
@@ -906,6 +907,20 @@ def getSaturdaysBetweenDates(per_beg, per_end):
 
     return saturdays
 
+def custom_json_encoder(obj):
+    if isinstance(obj, date):
+        return obj.strftime('%Y-%m-%d')  # Convert date to a string in 'YYYY-MM-DD' format
+    raise TypeError(f"Type {type(obj)} not serializable")
+
+def getTimesheetSubmissionLog(request, per_end):
+
+    data = Time.objects.values('employee__user__username','submitted_on', 'ts_period').annotate(
+        hours_sum=Sum('hours')).filter(ts_period=per_end).order_by('ts_period')
+
+    print(data)
+    return JsonResponse({'data': list(data)}, safe=False)
+
+
 def AdminTimesheetReview(request):
     user_info = get_object_or_404(User, pk=request.user.id)
     employee_info = get_object_or_404(Employee, user=user_info.id)
@@ -915,7 +930,7 @@ def AdminTimesheetReview(request):
     employees = Employee.objects.filter(is_billable=True).order_by('user').select_related('user')
 
     # Define the range for the periods
-    today = date.today()
+    today = date.today() + timedelta(days=14)
     start_of_year = today.replace(month=1, day=1)
 
     # Generate List of Periods
@@ -926,28 +941,13 @@ def AdminTimesheetReview(request):
 
     # Organize data as a dictionary for efficient lookup
     time_lookup = {}
-    for entry in employee_ts_submission_data:
-        time_lookup[(entry.employee.user.username, entry.ts_period)] = entry.submitted_on
 
     preprocessed_data = {}
-    for emp in employees:
-        preprocessed_data[emp.user.username] = []
-        for period in periods:
-            exists = (emp.user.username, period) in time_lookup
-            preprocessed_data[emp.user.username].append({
-                'period': period,
-                'exists': exists,
-                'value': time_lookup.get((emp.user.username, period), "-")
-            })
 
-
-    lookup_set = set((entry.employee_id, entry.ts_period) for entry in employee_ts_submission_data)
-    print(time_lookup)
-    print(preprocessed_data)
 
     context = {'user_info': user_info, 'employee_info': employee_info, 'today': today, 'week_beg': week_beg,
                'week_end': week_end, 'employees': employees, 'periods': periods, 'time_lookup': time_lookup,
-               'lookup_set': lookup_set, 'page_title': 'Timesheet Review', 'preprocessed_data': preprocessed_data}
+               'page_title': 'Timesheet Review', 'preprocessed_data': json.dumps(preprocessed_data, default=custom_json_encoder)}
 
     return render(request, 'adminTimesheetReview.html', context)
 
@@ -1216,6 +1216,9 @@ def EmployeeTimesheetReview(request):
     elif today.weekday() == 5:
         last_week_beg = today - timedelta(days=6)
         last_week_end = today
+    elif today.weekday() == 6:
+        last_week_end = today - timedelta(days=1)
+        last_week_beg = last_week_end - timedelta(days=6)
     else:
         last_week_beg = today - timedelta(days=7) - timedelta(days=date.today().weekday()) - timedelta(days=1)
         last_week_end = last_week_beg + timedelta(days=6)

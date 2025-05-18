@@ -1,7 +1,6 @@
 {% extends 'layoutV2.html' %}
 {% load mathfilters %}
 {% load humanize %}
-{% load custom_filters %}
 
 
 {% block content %}
@@ -36,38 +35,32 @@
     -->
     <div class="container-fluid vh-100">
         <div class="row d-flex justify-content-evenly p-0 vh-100">
-            <div class="card col-10 shadow-sm text-center p-0 vh-100 ">
+            <div class="card col-5 shadow-sm text-center p-0 vh-100 ">
                 <div class="card-header srg-bg-primary srg-text-secondary d-flex justify-content-between align-items-center">
                     <div class="text-start">
                     <span class="display-6 fs-3 lh-4">Timesheet Submission Log</span><br>
                     </div>
                 </div>
                 <div class="card-body overflow-auto">
-                    <table class="srg-table">
+                    <h4>Select a Period:</h4>
+                    <form method="POST" action="">
+                        {% csrf_token %}
+                        <label for="period-select">Choose a period:</label>
+                        <select name="period" id="period-select">
+                            {% for ts_period in periods %}
+                                <option value="{{ ts_period|date:'Y-m-d' }}">{{ ts_period|date:'M d, y' }}</option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                    <table class="srg-table" id="submission-table">
                         <thead>
                             <tr style="background-color:yellow;">
                                 <th style="background-color:yellow;">Employee</th>
-                                {% for period in periods %}
-                                    <th>{{ period|date:"M d, Y" }}</th>
-                                {% endfor %}
+                                <th>Date Submitted</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {% for emp in employees %}
-                                <tr>
-                                    <td class="text-start">{{ emp.user.username }}</td>
-                                    {% for period_data in preprocessed_data.emp.user.username %}
-                                        <td>
-                                            {% if period_data.exists %}
-                                                {{ period_data.value }}
-                                            {% else %}
-                                                -
-                                            {% endif %}
+                        <tbody id="employee-data">
 
-                                        </td>
-                                    {% endfor %}
-                                </tr>
-                            {% endfor %}
                         </tbody>
                     </table>
 
@@ -75,6 +68,29 @@
             </div>
 
         </div>
+        <script>
+            document.getElementById("period-select").addEventListener('change', (event) => {
+                const selectedPeriod = event.target.value;
+                const tableBody = document.querySelector("#submission-table tbody");
+                // Fetch data using AJAX
+                $.ajax({
+                    url: `/get-ts-submission-data/${selectedPeriod}/`,
+                    type: 'GET',
+                    success: function (data) {
+                        console.log(data);
+                        tableBody.innerHTML = '';
+                        data.data.forEach((item) => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${item.employee__user__username}</td>
+                                <td>${item.submitted_on}</td>
+                            `;
+                            tableBody.appendChild(row);
+                        })
+                    }
+                })
+            })
+        </script>
 
 
         <script>

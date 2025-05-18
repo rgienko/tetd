@@ -72,6 +72,7 @@ urlpatterns = [
     path('get_expense_list/<dte>/', views.GetExpenseDayList, name='get-expense-day-list'),
     path('bulk-add-assignments/<eng>/<emp>/', views.BulkAddAssignment, name='bulk-add-assignments'),
     path('check-date-range/<beg_range>/<end_range>/', views.CheckDateRange, name='check-date-range'),
+    path('get-ts-submission-data/<str:per_end>/', views.getTimesheetSubmissionLog, name='get-ts-submission-data'),
     path('admin/', admin.site.urls),
     path('forgot_password/', views.ForgotPassword, name='forgot-password'),
     path('forogt_password_dne/<pk>/', views.ForgotPassDone, name='forgot-password-done'),
